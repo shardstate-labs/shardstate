@@ -378,6 +378,28 @@ function persistToUser() {
   u.gameState.deckPresets      = view.state.deckPresets;
   u.gameState.welcomePackClaimed = view.state.welcomePackClaimed;
   saveDb();
+
+  // Mirror to Supabase (debounced, queued, retried offline).
+  if (window.SHS_SYNC && u.uid) {
+    SHS_SYNC.queueState(u.uid, {
+      shards: view.state.shards|0,
+      flux:   view.state.flux|0,
+      shs:    Number(view.state.shs||0),
+      elo:    u.elo|0,
+      level:  u.accountLevel|0 || 1,
+      xp:     u.accountXp|0,
+      welcome_pack_claimed: !!view.state.welcomePackClaimed,
+    });
+    SHS_SYNC.queueCollection(u.uid, view.state.collection || {});
+    if (Array.isArray(view.state.deck) && view.state.deck.length === 8) {
+      SHS_SYNC.queueDeck(u.uid, 'Active', view.state.deck, true);
+    }
+    (view.state.deckPresets || []).forEach((preset, i) => {
+      const ids = Array.isArray(preset?.cards) ? preset.cards : (Array.isArray(preset) ? preset : null);
+      const name = preset?.name || ('Preset '+(i+1));
+      if (ids && ids.length === 8) SHS_SYNC.queueDeck(u.uid, name, ids, false);
+    });
+  }
 }
 
 function reloadPwaFrame() {
@@ -1743,7 +1765,8 @@ function connectWallet() {
 }
 
 // ── LOGOUT ─────────────────────────────────────────────────────
-function logoutWeb() {
+async function logoutWeb() {
+  try { if (window.SB) await SB.signOut(); } catch(_){}
   localStorage.removeItem(AUTH_SESSION_KEY);
   window.location.replace('../index.html');
 }
@@ -2029,10 +2052,54 @@ function applyCustomCardsToCollection() {
   } catch(_){}
 }
 
-function start() {
+/** Hydrate view.db.users[uid] from Supabase profile + game_state. */
+async function hydrateFromSupabase(authUser){
+  const uid = authUser.id;
+  let profile = null, gs = null;
+  try {
+    const r = await SB.loadProfile(uid);
+    profile = r.profile; gs = r.gameState;
+  } catch(_){}
+  const existing = view.db.users[uid] || {};
+  const u = Object.assign({
+    uid,
+    email: authUser.email || existing.email || '',
+    username: profile?.username || existing.username || 'Player',
+    avatar: existing.avatar || '⚡',
+    createdAt: existing.createdAt || Date.now(),
+    updatedAt: Date.now(),
+    gameState: existing.gameState || { collection:{}, deck:[], deckPresets:[], welcomePackClaimed:false, claimedMissions:[] },
+  }, existing);
+  if (profile) {
+    u.username = profile.username || u.username;
+  }
+  if (gs) {
+    u.shardsBalance = gs.shards ?? u.shardsBalance ?? 0;
+    u.fluxBalance   = gs.flux   ?? u.fluxBalance   ?? 0;
+    u.shsBalance    = Number(gs.shs ?? u.shsBalance ?? 0);
+    u.elo           = gs.elo    ?? u.elo ?? 0;
+    u.gameState.welcomePackClaimed = !!gs.welcome_pack_claimed;
+  }
+  view.db.users[uid] = u;
+  saveDb();
+  localStorage.setItem(AUTH_SESSION_KEY, uid);
+  return u;
+}
+
+async function start() {
   loadCustomCards();
   loadDb();
-  view.user = resolveCurrentUser();
+
+  // Try Supabase session first; fall back to legacy local session.
+  if (window.SB) {
+    try {
+      const sess = await SB.getSession();
+      if (sess && sess.user) {
+        view.user = await hydrateFromSupabase(sess.user);
+      }
+    } catch(_){}
+  }
+  if (!view.user) view.user = resolveCurrentUser();
 
   if (!view.user) {
     window.location.replace('../index.html');

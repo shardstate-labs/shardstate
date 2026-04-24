@@ -794,6 +794,8 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
   </div>
 </div>
 
+<script src="js/config.js"></script>
+<script src="js/sb.js"></script>
 <script>
 // ── COMPREHENSIVE LANG SYSTEM ──────────────────────────────────
 const LANDING_I18N = {
@@ -934,16 +936,71 @@ const PREVIEW_CARDS = [
 const RAR_COLORS = { C:'#6B7280', U:'#3498DB', R:'#F7B731', M:'#B5179E' };
 
 // ── INIT: check session ─────────────────────────────────────────
-(function checkSession(){
+(async function checkSession(){
   const ref = new URLSearchParams(location.search).get('ref');
   if(ref) sessionStorage.setItem(REF_SESSION_KEY, ref);
 
   loadAuthDb();
+
+  // Supabase session takes precedence (cross-device source of truth).
+  try {
+    if (window.SB) {
+      const sess = await SB.getSession();
+      if (sess && sess.user) {
+        await mirrorSupabaseUserToLocal(sess.user);
+        window.location.replace('gamehub/index.html');
+        return;
+      }
+    }
+  } catch(_){}
+
+  // Legacy localStorage fallback.
   const uid = localStorage.getItem(AUTH_SESSION_KEY);
   if(uid && AUTH.db.users[uid]){
     window.location.replace('gamehub/index.html');
   }
 })();
+
+/** Mirrors a Supabase auth user (+ profile + game_state) into the
+ *  legacy AUTH.db shape so the rest of the app keeps working. */
+async function mirrorSupabaseUserToLocal(authUser){
+  if(!authUser) return null;
+  let profile = null, gs = null;
+  try {
+    const r = await SB.loadProfile(authUser.id);
+    profile = r.profile; gs = r.gameState;
+  } catch(_){}
+  const uid = authUser.id;
+  const existing = AUTH.db.users[uid] || {};
+  const u = Object.assign({
+    uid,
+    email: authUser.email || existing.email || '',
+    providers: existing.providers || (authUser.app_metadata?.providers || ['password']),
+    username: profile?.username || existing.username || '',
+    createdAt: existing.createdAt || Date.now(),
+    updatedAt: Date.now(),
+    passwordHash: '',
+  }, existing);
+  // Pull DB values when present.
+  u.username = profile?.username || u.username;
+  if (gs) {
+    u.shardsBalance = gs.shards ?? u.shardsBalance;
+    u.fluxBalance   = gs.flux   ?? u.fluxBalance;
+    u.shsBalance    = Number(gs.shs ?? u.shsBalance ?? 0);
+    u.elo           = gs.elo    ?? u.elo;
+    u.accountLevel  = gs.level  ?? u.accountLevel;
+    u.accountXp     = gs.xp     ?? u.accountXp;
+    u.gameState     = u.gameState || {};
+    u.gameState.welcomePackClaimed = !!gs.welcome_pack_claimed;
+  }
+  ensureUserDefaults(u);
+  AUTH.db.users[uid] = u;
+  if (u.email) AUTH.db.emailToUid[u.email] = uid;
+  saveAuthDb();
+  localStorage.setItem(AUTH_SESSION_KEY, uid);
+  AUTH.currentUser = u;
+  return u;
+}
 
 // ── AUTH DB ─────────────────────────────────────────────────────
 function loadAuthDb(){
@@ -1067,6 +1124,21 @@ async function submitAuth(){
 }
 
 async function registerWithEmail(email, password){
+  authFeedback('Creating account…', true);
+  if (window.SB) {
+    const { user, session, error } = await SB.signUpEmail(email, password);
+    if (error) { authFeedback(error.message || 'Sign up failed.'); return; }
+    if (!user) { authFeedback('Sign up failed.'); return; }
+    // If the project requires email confirmation, session will be null.
+    if (!session) {
+      authFeedback('Check your email to confirm your account, then log in.', true);
+      return;
+    }
+    const u = await mirrorSupabaseUserToLocal(user);
+    finishAuth(u, true);
+    return;
+  }
+  // Offline fallback (legacy local-only flow).
   if(AUTH.db.emailToUid[email]){ authFeedback('Email already registered. Log in instead.'); return; }
   const newUid = genUid();
   AUTH.db.emailToUid[email] = newUid;
@@ -1077,6 +1149,16 @@ async function registerWithEmail(email, password){
 }
 
 async function loginWithEmail(email, password){
+  authFeedback('Signing in…', true);
+  if (window.SB) {
+    const { user, error } = await SB.signInEmail(email, password);
+    if (error) { authFeedback(error.message || 'Invalid credentials.'); return; }
+    if (!user) { authFeedback('Account not found.'); return; }
+    const u = await mirrorSupabaseUserToLocal(user);
+    finishAuth(u, false);
+    return;
+  }
+  // Offline fallback.
   const linkedUid = AUTH.db.emailToUid[email];
   if(!linkedUid){ authFeedback('Account not found. Register first.'); return; }
   const user = AUTH.db.users[linkedUid];
@@ -1086,13 +1168,21 @@ async function loginWithEmail(email, password){
   finishAuth(user, false);
 }
 
-function beginOAuth(provider){
+async function beginOAuth(provider){
   AUTH.provider = provider;
+  authFeedback('');
+  // Google → real Supabase OAuth redirect (no inline email prompt).
+  if (provider === 'google' && window.SB) {
+    authFeedback('Redirecting to Google…', true);
+    const { error } = await SB.signInGoogle();
+    if (error) authFeedback(error.message || 'Google sign-in failed.');
+    return;
+  }
+  // Apple (and offline) keep the legacy inline-email step until wired.
   const inline = document.getElementById('oauth-inline');
   inline.style.display='flex';
   document.getElementById('oauth-helper-text').textContent = `Enter your ${provider==='google'?'Google':'Apple'} email to continue.`;
   document.getElementById('oauth-email').value='';
-  authFeedback('');
 }
 
 async function completeOAuth(){
@@ -1131,12 +1221,22 @@ function finishAuth(user, isNew){
   redirectToApp();
 }
 
-function saveUsername(){
+async function saveUsername(){
   if(!AUTH.currentUser) return;
   const username = String(document.getElementById('auth-username').value||'').trim();
   if(!validUsername(username)){ usernameFeedback('3–16 chars: letters, numbers or underscore.'); return; }
-  const taken = Object.values(AUTH.db.users).some(u=> u.uid !== AUTH.currentUser.uid && String(u.username||'').toLowerCase()===username.toLowerCase());
-  if(taken){ usernameFeedback('Username taken. Try another.'); return; }
+  // Supabase-backed uniqueness when online; local fallback otherwise.
+  if (window.SB) {
+    try {
+      const ok = await SB.usernameAvailable(username, AUTH.currentUser.uid);
+      if (!ok) { usernameFeedback('Username taken. Try another.'); return; }
+    } catch(_){}
+    try { await SB.upsertProfile(AUTH.currentUser.uid, { username, language: landingLang || 'es' }); }
+    catch(e){ console.warn('upsertProfile failed:', e); }
+  } else {
+    const taken = Object.values(AUTH.db.users).some(u=> u.uid !== AUTH.currentUser.uid && String(u.username||'').toLowerCase()===username.toLowerCase());
+    if(taken){ usernameFeedback('Username taken. Try another.'); return; }
+  }
   // Apply referral
   const refCode = sessionStorage.getItem(REF_SESSION_KEY);
   const me = AUTH.db.users[AUTH.currentUser.uid];
