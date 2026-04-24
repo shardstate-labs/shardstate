@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#0A0C10"/>
+<title>SHARDSTATE · Play</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./style.css?v=8"/>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── LOADING ─────────────────────────────────────────── -->
+  <section id="screen-loading" class="screen active">
+    <div class="grid-bg"></div>
+    <div class="scanline"></div>
+    <div class="loading-frame">
+      <div class="loading-title">SHARD<span class="accent">STATE</span></div>
+      <div class="loading-bar"><div class="loading-fill" id="loading-fill"></div></div>
+      <div class="loading-sub" id="loading-sub">LINK ESTABLISHED</div>
+    </div>
+  </section>
+
+  <!-- ── MENU (minimal: only mode selector) ───────────────── -->
+  <section id="screen-menu" class="screen">
+    <div class="grid-bg"></div>
+    <div class="scanline"></div>
+
+    <div class="menu-minimal">
+      <div class="mm-heading">
+        <div class="mm-badge">
+          <span class="mm-badge-dot"></span>
+          <span>SELECT PROTOCOL</span>
+        </div>
+        <h1 class="mm-title">CHOOSE<span class="accent"> YOUR TRACK</span></h1>
+        <p class="mm-sub">13 clans · strategic pulsos · combat by turns.</p>
+      </div>
+      <div class="modes-grid" id="modes-grid"></div>
+    </div>
+  </section>
+
+  <!-- ── MATCHMAKING ─────────────────────────────────────── -->
+  <section id="screen-matchmaking" class="screen">
+    <div class="grid-bg"></div>
+    <div class="mm-card">
+      <div class="mm-tag" id="mm-tag">QUEUE</div>
+      <div class="mm-title" id="mm-title">CASUAL</div>
+      <div class="mm-sub" id="mm-sub">SCANNING NETWORK FOR OPPONENT</div>
+      <div class="mm-spinner"></div>
+      <div class="mm-cancel" onclick="backToMenu()">CANCEL</div>
+    </div>
+  </section>
+
+  <!-- ── BATTLE ──────────────────────────────────────────── -->
+  <section id="screen-battle" class="screen">
+    <div class="arena-bg" id="arena-bg"></div>
+    <div class="grid-bg"></div>
+
+    <!-- Top HUD: opponent -->
+    <div class="battle-hud top">
+      <div class="player-block opp">
+        <div class="avatar opp" id="opp-avatar">O</div>
+        <div class="player-info">
+          <div class="player-name" id="opp-name">RIVAL</div>
+          <div class="player-club" id="opp-club">SIN CLUB</div>
+        </div>
+      </div>
+      <div class="vitals">
+        <div class="vital-row">
+          <span class="lbl">HP</span>
+          <div class="bar hp opp"><div class="fill" id="o-hp-fill"></div></div>
+          <span class="num" id="o-hp-num">12</span>
+        </div>
+        <div class="vital-row">
+          <span class="lbl">PULSE</span>
+          <div class="bar pulse"><div class="fill" id="o-pulse-fill"></div></div>
+          <span class="num" id="o-pulse-num">12</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="battle-center-info">
+      <div class="round-tag">ROUND</div>
+      <div class="round-num"><span id="round-n">1</span><span class="max">/4</span></div>
+      <div class="round-dots" id="round-dots">
+        <div class="round-dot"></div><div class="round-dot"></div>
+        <div class="round-dot"></div><div class="round-dot"></div>
+      </div>
+    </div>
+
+    <div class="battle-tools">
+      <button class="tool-btn" title="Battle log" onclick="toggleLog()">≡</button>
+      <button class="tool-btn surrender-btn" title="Surrender" onclick="surrender()">⏻</button>
+    </div>
+
+    <!-- BATTLE FIELD (cards) -->
+    <div class="battle-field">
+      <div class="hand-row opp" id="hand-opp"></div>
+      <div class="center-status" id="center-status">YOUR TURN</div>
+      <div class="hand-row me" id="hand-me"></div>
+    </div>
+
+    <!-- Bottom HUD: me -->
+    <div class="battle-hud bot">
+      <div class="player-block me">
+        <div class="avatar me" id="me-avatar">B</div>
+        <div class="player-info">
+          <div class="player-name" id="me-name">BLAKCAAT</div>
+          <div class="player-club" id="me-club">SIN CLUB</div>
+        </div>
+      </div>
+      <div class="vitals">
+        <div class="vital-row">
+          <span class="lbl">HP</span>
+          <div class="bar hp me"><div class="fill" id="p-hp-fill"></div></div>
+          <span class="num" id="p-hp-num">12</span>
+        </div>
+        <div class="vital-row">
+          <span class="lbl">PULSE</span>
+          <div class="bar pulse"><div class="fill" id="p-pulse-fill"></div></div>
+          <span class="num" id="p-pulse-num">12</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Battle log (toggleable) -->
+    <div class="battle-log" id="battle-log"></div>
+
+    <!-- Action Panel -->
+    <div class="action-panel" id="action-panel">
+      <div class="ap-preview" id="ap-preview"></div>
+      <div class="ap-controls">
+        <div class="ap-head">
+          <span class="lbl">Selected</span>
+          <span class="name" id="ap-name">—</span>
+        </div>
+        <div class="pulse-block">
+          <div class="row">
+            <button class="step-btn" onclick="stepPulse(-1)">−</button>
+            <div class="pulse-row" id="pulse-row"></div>
+            <button class="step-btn" onclick="stepPulse(1)">+</button>
+          </div>
+        </div>
+        <div class="ap-row">
+          <div class="colapso-toggle" id="colapso-toggle" onclick="toggleColapso()">
+            <span>COLAPSO ×2 DMG</span>
+            <div class="colapso-cost">
+              <div class="cap"></div><div class="cap"></div><div class="cap"></div>
+            </div>
+          </div>
+          <div class="atk-display">
+            <div class="lbl">ATK</div>
+            <div class="val" id="atk-val">0</div>
+          </div>
+        </div>
+        <div class="ap-bottom">
+          <button class="btn-cancel" onclick="cancelAction()">Cancel</button>
+          <button class="btn-fight" id="btn-fight" onclick="confirmAction()">FIGHT</button>
+        </div>
+      </div>
+    </div>
+
+    <canvas class="combat-canvas" id="combat-canvas"></canvas>
+
+    <!-- COMBAT FOCUS STAGE -->
+    <div class="combat-stage" id="combat-stage">
+      <div class="cs-bg"></div>
+      <div class="cs-rays" id="cs-rays"></div>
+      <div class="cs-grid"></div>
+
+      <div class="cs-side opp" id="cs-side-opp">
+        <div class="cs-label">RIVAL</div>
+        <div class="cs-card-holder" id="cs-card-opp"></div>
+        <div class="cs-meta">
+          <div class="cs-pulse-bar" id="cs-pulse-opp"></div>
+          <div class="cs-pulse-tag" id="cs-pulse-num-opp">×0</div>
+        </div>
+        <div class="cs-atk">
+          <div class="cs-atk-lbl">ATK</div>
+          <div class="cs-atk-val" id="cs-atk-opp">0</div>
+        </div>
+        <div class="cs-bonus" id="cs-bonus-opp"></div>
+      </div>
+
+      <div class="cs-vs">
+        <div class="cs-vs-bar"></div>
+        <div class="cs-vs-text" id="cs-vs-text">VS</div>
+        <div class="cs-vs-bar"></div>
+      </div>
+
+      <div class="cs-side me" id="cs-side-me">
+        <div class="cs-label">YOU</div>
+        <div class="cs-card-holder" id="cs-card-me"></div>
+        <div class="cs-meta">
+          <div class="cs-pulse-bar" id="cs-pulse-me"></div>
+          <div class="cs-pulse-tag" id="cs-pulse-num-me">×0</div>
+        </div>
+        <div class="cs-atk">
+          <div class="cs-atk-lbl">ATK</div>
+          <div class="cs-atk-val" id="cs-atk-me">0</div>
+        </div>
+        <div class="cs-bonus" id="cs-bonus-me"></div>
+      </div>
+
+      <div class="cs-verdict" id="cs-verdict"></div>
+    </div>
+
+    <div class="round-banner" id="round-banner">ROUND</div>
+  </section>
+
+  <!-- ── END ─────────────────────────────────────────────── -->
+  <section id="screen-end" class="screen">
+    <div class="grid-bg"></div>
+    <div class="end-card" id="end-card">
+      <div class="end-tag" id="end-tag">RESULT</div>
+      <div class="end-title" id="end-title">VICTORY</div>
+      <div class="end-sub" id="end-sub">SHARDS SECURED</div>
+
+      <div class="end-player">
+        <div class="end-avatar" id="end-avatar">B</div>
+        <div class="end-player-info">
+          <div class="end-player-name" id="end-player-name">BLAKCAAT</div>
+          <div class="end-player-meta" id="end-player-meta">vs RIVAL · CASUAL</div>
+        </div>
+      </div>
+
+      <div class="end-rewards">
+        <div class="rw" id="rw-shards-box">
+          <div class="lbl">SHARDS</div>
+          <div class="val" id="rw-shards">+0</div>
+        </div>
+        <div class="rw" id="rw-xp-box">
+          <div class="lbl">XP</div>
+          <div class="val" id="rw-xp">+0</div>
+        </div>
+        <div class="rw" id="rw-elo-box">
+          <div class="lbl">ELO</div>
+          <div class="val" id="rw-elo">+0</div>
+        </div>
+      </div>
+
+      <div class="end-actions">
+        <button class="btn btn-ghost" onclick="backToMenu()">Menu</button>
+        <button class="btn btn-primary" onclick="rematch()">Rematch</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="../engine/cards.js?v=8"></script>
+<script src="./data.js?v=8"></script>
+<script src="./engine.js?v=8"></script>
+<script src="./render.js?v=8"></script>
+<script src="./main.js?v=8"></script>
+</body>
+</html>

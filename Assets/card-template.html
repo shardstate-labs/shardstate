@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SHARDSTATE — Card Admin Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --card-w:220px; --card-h:306px;
+  --bg:#07090f; --bg2:#0c1018; --bg3:#111827; --border:#1a2234;
+  --text:#c8cdd8; --text2:#6b7280; --acc:#00FFC6; --am:#f59e0b;
+  --font-head:'Orbitron',monospace; --font-body:'Space Grotesk',sans-serif;
+  --font-mono:'Share Tech Mono',monospace; --tr:150ms ease;
+  --cc:#6B5CE7;
+}
+html,body{height:100%;overflow-x:hidden}
+body{background:var(--bg);min-height:100vh;display:flex;gap:0;font-family:var(--font-body);color:var(--text);align-items:stretch}
+
+/* ── SIDEBAR ──────────────────────────────────────────── */
+.editor{width:300px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;overflow-y:auto;position:sticky;top:0}
+.editor-header{padding:14px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.editor-title{font-family:var(--font-head);font-size:10px;font-weight:900;color:var(--acc);letter-spacing:2px;margin-bottom:2px}
+.editor-sub{font-size:9px;color:var(--text2)}
+.editor-body{padding:12px 14px;display:flex;flex-direction:column;gap:9px;flex:1}
+.sep{font-family:var(--font-head);font-size:7.5px;letter-spacing:2px;color:var(--text2);text-transform:uppercase;padding:5px 0 3px;border-bottom:1px solid var(--border);margin-top:3px}
+
+/* Admin card picker */
+.admin-picker{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:7px}
+.admin-picker-title{font-family:var(--font-head);font-size:7.5px;letter-spacing:1.5px;color:var(--acc);text-transform:uppercase}
+.admin-search{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:9px;padding:5px 8px;outline:none;transition:border-color var(--tr)}
+.admin-search:focus{border-color:var(--acc)}
+.admin-list{max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.admin-card-row{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:4px;cursor:pointer;transition:background var(--tr);font-size:9px}
+.admin-card-row:hover{background:rgba(255,255,255,.05)}
+.admin-card-row.selected{background:rgba(0,255,198,.08);outline:1px solid rgba(0,255,198,.2)}
+.admin-card-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.admin-card-name{flex:1;font-weight:600}
+.admin-card-clan{font-size:7.5px;color:var(--text2)}
+.admin-card-custom{font-size:7px;padding:1px 4px;border-radius:2px;background:rgba(0,255,198,.12);color:var(--acc);font-family:var(--font-head);letter-spacing:.5px}
+.admin-empty{font-size:8.5px;color:var(--text2);padding:6px 2px;text-align:center}
+
+/* Fields */
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:7.5px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;font-family:var(--font-head)}
+.field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:9.5px;padding:5px 7px;outline:none;transition:border-color var(--tr)}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--acc)}
+.field textarea{resize:vertical;min-height:38px;line-height:1.4}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+
+/* Image group */
+.img-group{background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:8px 9px;display:flex;flex-direction:column;gap:5px}
+.img-group-title{font-size:7.5px;color:var(--acc);letter-spacing:.5px;text-transform:uppercase;font-family:var(--font-head)}
+.img-row{display:flex;gap:5px;align-items:center}
+.img-row label{font-size:7px;color:var(--text2);white-space:nowrap;flex-shrink:0;min-width:26px}
+.img-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--font-mono);font-size:8.5px;padding:3px 6px;outline:none;transition:border-color var(--tr)}
+.img-row input:focus{border-color:var(--acc)}
+.img-or{text-align:center;font-size:7.5px;color:var(--text2)}
+
+/* Buttons */
+.btn{padding:8px 12px;border-radius:5px;font-family:var(--font-head);font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;transition:all var(--tr);display:block;width:100%;text-align:center}
+.btn-primary{background:linear-gradient(135deg,var(--acc),#00d4a8);color:#000}
+.btn-primary:hover{box-shadow:0 0 16px rgba(0,255,198,.35);transform:translateY(-1px)}
+.btn-update{background:linear-gradient(135deg,#f59e0b,#f77f00);color:#000}
+.btn-update:hover{box-shadow:0 0 16px rgba(245,158,11,.35);transform:translateY(-1px)}
+.btn-export{background:linear-gradient(135deg,#6B5CE7,#8b7df0);color:#fff}
+.btn-export:hover{box-shadow:0 0 16px rgba(107,92,231,.35);transform:translateY(-1px)}
+.btn-danger{background:rgba(255,59,59,.1);color:#ff5252;border:1px solid rgba(255,59,59,.2);font-size:7.5px;padding:6px 10px}
+.btn-danger:hover{background:rgba(255,59,59,.18)}
+.btn-group{display:flex;flex-direction:column;gap:5px;margin-top:3px}
+.export-out{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:7px;font-family:var(--font-mono);font-size:7.5px;color:var(--acc);resize:vertical;min-height:70px;width:100%;outline:none;line-height:1.5;display:none}
+.export-out.show{display:block}
+.msg{font-size:8px;line-height:1.5;margin-top:2px;display:none;padding:6px 8px;border-radius:4px}
+.msg.ok{background:rgba(0,255,198,.07);color:var(--acc);border:1px solid rgba(0,255,198,.2);display:block}
+.msg.warn{background:rgba(245,158,11,.07);color:var(--am);border:1px solid rgba(245,158,11,.2);display:block}
+.msg.err{background:rgba(255,59,59,.07);color:#ff5252;border:1px solid rgba(255,59,59,.2);display:block}
+.hint{font-size:7.5px;color:var(--text2);line-height:1.5}
+
+/* ── MAIN ─────────────────────────────────────────────── */
+.main{flex:1;display:flex;gap:28px;padding:28px;flex-wrap:wrap;align-items:flex-start;overflow-y:auto}
+.preview-group{display:flex;flex-direction:column;gap:10px;align-items:center}
+.preview-label{font-size:8px;color:var(--text2);letter-spacing:1.5px;font-family:var(--font-head);text-transform:uppercase}
+.level-toggle{display:flex;gap:4px}
+.level-btn{padding:3px 10px;border-radius:3px;font-size:7px;font-family:var(--font-head);font-weight:700;letter-spacing:.8px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:none;transition:all var(--tr)}
+.level-btn.active{background:rgba(0,255,198,.12);border-color:rgba(0,255,198,.3);color:var(--acc)}
+
+/* ══════════════════════════════════════════════════════
+   CARD — Borderless, full-art, text overlay
+══════════════════════════════════════════════════════ */
+.card{
+  width:var(--card-w);height:var(--card-h);
+  border-radius:12px;position:relative;overflow:hidden;cursor:pointer;flex-shrink:0;
+  transition:transform .22s ease,box-shadow .22s ease;
+  box-shadow:0 10px 36px rgba(0,0,0,.8);
+}
+.card:hover{transform:translateY(-5px) scale(1.025);box-shadow:0 18px 50px rgba(0,0,0,.85),0 0 20px color-mix(in srgb,var(--cc) 40%,transparent)}
+
+/* Art fills entire card */
+.card-art{position:absolute;inset:0;z-index:0;background:linear-gradient(145deg,#141c30,#07090f)}
+.card-art img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.card-art-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:70px;opacity:.15;filter:drop-shadow(0 0 24px var(--cc))}
+.card-art.has-img .card-art-placeholder{display:none}
+
+/* Vignette for text readability */
+.card-vignette{
+  position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 30%),
+    linear-gradient(0deg,  rgba(0,0,0,.75) 0%,rgba(0,0,0,0) 45%);
+}
+
+/* TOP: name + clan logo + rarity */
+.card-top{
+  position:absolute;top:0;left:0;right:0;z-index:10;
+  display:flex;align-items:center;gap:5px;padding:8px 9px 9px;
+}
+.card-logo{width:16px;height:16px;object-fit:contain;flex-shrink:0;display:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.8))}
+.card-logo.show{display:block}
+.card-name{
+  flex:1;font-family:var(--font-head);font-size:8.5px;font-weight:900;
+  color:#fff;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  text-shadow:0 1px 6px rgba(0,0,0,.95);line-height:1.2;
+}
+.card-rar{font-family:var(--font-mono);font-size:8px;font-weight:900;padding:2px 5px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,.2)}
+.rar-C{background:rgba(107,114,128,.7);color:#fff}
+.rar-U{background:rgba(96,165,250,.65);color:#fff}
+.rar-R{background:rgba(167,139,250,.65);color:#fff}
+.rar-M{background:rgba(251,191,36,.85);color:#000}
+
+/* TYPE badge */
+.card-type-badge{position:absolute;top:8px;right:32px;z-index:11;font-family:var(--font-head);font-size:6px;font-weight:700;padding:2px 5px;border-radius:3px;letter-spacing:.6px;pointer-events:none}
+.type-echo .card-type-badge{background:rgba(245,240,232,.14);color:#f5f0e8;border:1px solid rgba(245,240,232,.4)}
+.type-nexus .card-type-badge{background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.45)}
+
+/* STATS: POW + DMG — no lv1/max labels */
+.card-stats{
+  position:absolute;bottom:82px;left:0;right:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 8px 4px;
+}
+.stat-pill{
+  display:flex;flex-direction:column;align-items:center;gap:0;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  border-radius:6px;padding:4px 8px 3px;border:1px solid rgba(255,255,255,.08);min-width:36px;
+}
+.stat-pill-num{font-family:var(--font-head);font-size:22px;font-weight:900;line-height:1;letter-spacing:-1px}
+.stat-pill-num.pow{color:#c8d8ff}
+.stat-pill-num.dmg{color:#ff6b6b}
+.stat-pill-label{font-size:6px;letter-spacing:1px;color:rgba(255,255,255,.45);text-transform:uppercase;font-family:var(--font-head)}
+
+/* BOTTOM PANEL — ability + bonus — softer opacity */
+.card-bottom{
+  position:absolute;bottom:0;left:0;right:0;z-index:10;
+  background:rgba(4,6,14,.58);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  padding:6px 8px 24px 8px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.card-ability{font-size:8px;color:#b2f5ea;line-height:1.4;min-height:16px;font-family:var(--font-mono)}
+.ability-condition{font-family:var(--font-head);font-size:7px;font-weight:700;color:color-mix(in srgb,var(--cc) 90%,white);letter-spacing:.5px;margin-right:3px}
+.card-bonus{display:flex;align-items:baseline;gap:4px;border-top:1px solid rgba(255,255,255,.07);padding-top:3px;margin-top:4px}
+.bonus-label{font-family:var(--font-head);font-size:5.5px;color:rgba(255,255,255,.25);letter-spacing:.5px;text-transform:uppercase;flex-shrink:0}
+.bonus-text{font-size:7.5px;color:#fcd34d;font-weight:600;font-family:var(--font-mono);line-height:1.35}
+
+/* STARS — bottom-right corner, floating over the bottom panel */
+.card-stars{
+  position:absolute;bottom:6px;right:8px;z-index:11;
+  display:flex;gap:1.5px;font-size:9px;line-height:1;
+}
+.star-filled{color:#f5c518;text-shadow:0 0 5px rgba(245,197,24,.5)}
+.star-empty{color:rgba(255,255,255,.15)}
+
+/* Type FX */
+.type-nexus .card-art::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(135deg,transparent 30%,rgba(251,191,36,.07) 50%,transparent 70%);animation:shimmer 3.5s ease-in-out infinite}
+.type-echo .card-art::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at 60% 30%,rgba(245,240,232,.05) 0%,transparent 70%)}
+@keyframes shimmer{0%,100%{opacity:0}50%{opacity:1}}
+
+/* ── GALLERY ──────────────────────────────────────────── */
+.gallery-section{display:flex;flex-direction:column;gap:12px;align-self:flex-start}
+.gallery-title{font-family:var(--font-head);font-size:8.5px;color:var(--text2);letter-spacing:2px;padding:5px 0;border-bottom:1px solid var(--border)}
+.gallery-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- Load game card data for admin panel -->
+<script src="../engine/cards.js"></script>
+
+<!-- ══════════════════════════════════════════════════════
+     EDITOR SIDEBAR
+══════════════════════════════════════════════════════ -->
+<div class="editor">
+  <div class="editor-header">
+    <div class="editor-title">⚡ Card Admin Studio</div>
+    <div class="editor-sub">Create · Edit · Balance · Inject</div>
+  </div>
+  <div class="editor-body">
+
+    <!-- ADMIN: LOAD EXISTING CARD -->
+    <div class="sep">Load Existing Card</div>
+    <div class="admin-picker">
+      <div class="admin-picker-title">Select card to edit / balance</div>
+      <input class="admin-search" id="admin-search" placeholder="Search by name, clan, ID…" oninput="filterAdminList()"/>
+      <div class="admin-list" id="admin-list">
+        <div class="admin-empty">Loading cards…</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="newCard()" style="font-size:7.5px;padding:6px">+ New Card</button>
+
+    <!-- IDENTITY -->
+    <div class="sep">Identity</div>
+    <div class="field">
+      <label>Card ID (unique, no spaces)</label>
+      <input id="f-id" value="axiarch_0" placeholder="e.g. nexus_axiarch" oninput="syncCard()"/>
+    </div>
+    <div class="field">
+      <label>Card Name</label>
+      <input id="f-name" value="AXIARCH-0" oninput="syncCard()"/>
+    </div>
+    <div class="field">
+      <label>Clan</label>
+      <select id="f-clan" onchange="syncCard()">
+        <option value="nexus"    data-color="#6B5CE7">⚡ NEXUS</option>
+        <option value="tidecall" data-color="#00B4D8">🌊 TIDECALL</option>
+        <option value="ashborn"  data-color="#FF6B35">🔥 ASHBORN</option>
+        <option value="errvoid"  data-color="#B5179E">👾 ERRVOID</option>
+        <option value="vault"    data-color="#F7B731">👑 VAULT</option>
+        <option value="mycelium" data-color="#2ECC71">🍄 MYCELIUM</option>
+        <option value="ironpact" data-color="#E74C3C">💀 IRONPACT</option>
+        <option value="synthos"  data-color="#3498DB">🔬 SYNTHOS</option>
+        <option value="loopkin"  data-color="#9B59B6">⏳ LOOPKIN</option>
+        <option value="phantom"  data-color="#1ABC9C">👁 PHANTOM</option>
+        <option value="frequenz" data-color="#F39C12">🎸 FREQUENZ</option>
+        <option value="protocol" data-color="#7F8C8D">🛡 PROTOCOL</option>
+        <option value="echo"     data-color="#F5F0E8">✨ ECHO</option>
+      </select>
+    </div>
+    <div class="img-group" style="margin-top:4px">
+      <div class="img-group-title">Clan Logo (optional)</div>
+      <div class="img-row"><label>URL</label><input id="f-logo-url" placeholder="/assets/clans/nexus.png" oninput="syncCard()"/></div>
+      <div class="img-or">— or file —</div>
+      <div class="img-row"><label>File</label><input type="file" id="f-logo-file" accept="image/*" onchange="handleLogo(this)"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Type</label>
+        <select id="f-type" onchange="syncCard()">
+          <option value="normal">Normal</option>
+          <option value="echo">Echo</option>
+          <option value="nexus">Nexus</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Rarity</label>
+        <select id="f-rarity" onchange="syncCard()">
+          <option value="C">C · Common</option>
+          <option value="U">U · Uncommon</option>
+          <option value="R">R · Rare</option>
+          <option value="M" selected>M · Mythic</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Stars (1–5)</label>
+      <select id="f-stars" onchange="syncCard()">
+        <option value="1">★</option>
+        <option value="2">★★</option>
+        <option value="3">★★★</option>
+        <option value="4" selected>★★★★</option>
+        <option value="5">★★★★★</option>
+      </select>
+    </div>
+
+    <!-- STATS -->
+    <div class="sep">Stats (Level 1 → Max)</div>
+    <p class="hint" style="margin-bottom:2px">Enter LV1 and MAX stats — intermediate levels are auto-interpolated.</p>
+    <div class="field-row">
+      <div class="field"><label>POW lv1</label><input id="f-pow1" type="number" value="7" min="1" max="12" oninput="syncCard()"/></div>
+      <div class="field"><label>POW max</label><input id="f-pow2" type="number" value="9" min="1" max="12" oninput="syncCard()"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>DMG lv1</label><input id="f-dmg1" type="number" value="3" min="1" max="12" oninput="syncCard()"/></div>
+      <div class="field"><label>DMG max</label><input id="f-dmg2" type="number" value="5" min="1" max="12" oninput="syncCard()"/></div>
+    </div>
+
+    <!-- ABILITIES -->
+    <div class="sep">Ability & Bonus</div>
+    <div class="field">
+      <label>Ability Condition (blank = always)</label>
+      <input id="f-condition" value="" placeholder="Courage / Reprisal / KO / Trust …" oninput="syncCard()"/>
+    </div>
+    <div class="field">
+      <label>Ability Type</label>
+      <select id="f-ability-type" onchange="syncCard()">
+        <option value="POWER_MOD">POWER_MOD</option>
+        <option value="DAMAGE_MOD">DAMAGE_MOD</option>
+        <option value="POISON" selected>POISON</option>
+        <option value="COPY_BONUS">COPY_BONUS</option>
+        <option value="PROTECT_ABILITY">PROTECT_ABILITY</option>
+        <option value="STOP">STOP</option>
+        <option value="WEAKEN">WEAKEN</option>
+        <option value="BRAWL">BRAWL</option>
+        <option value="BACKLASH">BACKLASH</option>
+        <option value="TRUST">TRUST</option>
+        <option value="NONE">NONE</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Ability Text</label>
+      <textarea id="f-ability" oninput="syncCard()">−5 ATQ rival (mín. 1). Si hace KO: +3 Pulsos.</textarea>
+    </div>
+    <div class="field">
+      <label>Clan Bonus Text</label>
+      <input id="f-bonus" value="−2 ATQ rival (mín. 5)" oninput="syncCard()"/>
+    </div>
+
+    <!-- ART -->
+    <div class="sep">Card Art</div>
+    <div class="img-group">
+      <div class="img-group-title">Level 1 art</div>
+      <div class="img-row"><label>URL</label><input id="f-art1-url" placeholder="/assets/cards/nexus/axiarch_lv1.png" oninput="syncCard()"/></div>
+      <div class="img-or">— or file —</div>
+      <div class="img-row"><label>File</label><input type="file" id="f-art1-file" accept="image/*" onchange="handleArt(this,'lv1')"/></div>
+    </div>
+    <div class="img-group">
+      <div class="img-group-title">Max level art</div>
+      <div class="img-row"><label>URL</label><input id="f-art2-url" placeholder="/assets/cards/nexus/axiarch_max.png" oninput="syncCard()"/></div>
+      <div class="img-or">— or file —</div>
+      <div class="img-row"><label>File</label><input type="file" id="f-art2-file" accept="image/*" onchange="handleArt(this,'max')"/></div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="sep">Save & Export</div>
+    <div id="export-msg" class="msg"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="addToGame()">⚡ Add / Update in Game</button>
+      <button class="btn btn-export" onclick="exportJS()">⬇ Copy JS for cards.js</button>
+    </div>
+    <textarea id="export-out" class="export-out" readonly onclick="this.select()"></textarea>
+    <button class="btn btn-danger" style="margin-top:8px" onclick="clearCustomCards()">🗑 Clear all custom card overrides</button>
+    <p class="hint" style="margin-top:4px">Custom cards are stored in localStorage and loaded automatically when the game starts. To make them permanent, copy the JS snippet and paste into engine/cards.js.</p>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     MAIN — Preview + Gallery
+══════════════════════════════════════════════════════ -->
+<div class="main">
+
+  <div class="preview-group">
+    <div class="preview-label">Live preview</div>
+    <div class="level-toggle"><!-- populated by rebuildLevelToggle() --></div>
+    <div id="preview-front" class="card" style="--cc:#6B5CE7">
+      <div class="card-art" id="p-art-wrap">
+        <div class="card-art-placeholder" id="p-art-ph">⚡</div>
+      </div>
+      <div class="card-vignette"></div>
+      <div class="card-top">
+        <img class="card-logo" id="p-logo" src="" alt=""/>
+        <span class="card-name" id="p-name">AXIARCH-0</span>
+        <span class="card-rar rar-M" id="p-rar">M</span>
+      </div>
+      <div class="card-type-badge" id="p-type-badge" style="display:none">NEXUS</div>
+      <div class="card-stats">
+        <div class="stat-pill">
+          <span class="stat-pill-num pow" id="p-pow">9</span>
+          <span class="stat-pill-label">POW</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-num dmg" id="p-dmg">5</span>
+          <span class="stat-pill-label">DMG</span>
+        </div>
+      </div>
+      <div class="card-bottom">
+        <div class="card-ability" id="p-ability">
+          <span class="ability-condition" id="p-cond" style="display:none"></span
+          ><span id="p-ability-text">−5 ATQ rival (mín. 1). Si hace KO: +3 Pulsos.</span>
+        </div>
+        <div class="card-bonus">
+          <span class="bonus-label">Bonus</span>
+          <span class="bonus-text" id="p-bonus">−2 ATQ rival (mín. 5)</span>
+        </div>
+      </div>
+      <div class="card-stars" id="p-stars">
+        <span class="star-filled">★</span><span class="star-filled">★</span>
+        <span class="star-filled">★</span><span class="star-filled">★</span>
+        <span class="star-empty">★</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- GALLERY: reference cards -->
+  <div class="gallery-section">
+    <div class="gallery-title">Reference Gallery</div>
+    <div class="gallery-row">
+
+      <div class="preview-group">
+        <div class="preview-label">IRONPACT · C</div>
+        <div class="card" style="--cc:#E74C3C">
+          <div class="card-art"><div class="card-art-placeholder">💀</div></div>
+          <div class="card-vignette"></div>
+          <div class="card-top"><span class="card-name">KRAG</span><span class="card-rar rar-C">C</span></div>
+          <div class="card-stats">
+            <div class="stat-pill"><span class="stat-pill-num pow">8</span><span class="stat-pill-label">POW</span></div>
+            <div class="stat-pill"><span class="stat-pill-num dmg">5</span><span class="stat-pill-label">DMG</span></div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-ability"><span class="ability-condition">KO:</span> +2 HP</div>
+            <div class="card-bonus"><span class="bonus-label">Bonus</span><span class="bonus-text">+2 POD si rival tiene más DMG</span></div>
+          </div>
+          <div class="card-stars"><span class="star-filled">★</span><span class="star-filled">★</span><span class="star-empty">★</span><span class="star-empty">★</span><span class="star-empty">★</span></div>
+        </div>
+      </div>
+
+      <div class="preview-group">
+        <div class="preview-label">ERRVOID · R</div>
+        <div class="card" style="--cc:#B5179E">
+          <div class="card-art"><div class="card-art-placeholder">👾</div></div>
+          <div class="card-vignette"></div>
+          <div class="card-top"><span class="card-name">GLITCH-X</span><span class="card-rar rar-R">R</span></div>
+          <div class="card-stats">
+            <div class="stat-pill"><span class="stat-pill-num pow">7</span><span class="stat-pill-label">POW</span></div>
+            <div class="stat-pill"><span class="stat-pill-num dmg">7</span><span class="stat-pill-label">DMG</span></div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-ability"><span class="ability-condition">Courage:</span> Anula habilidad rival</div>
+            <div class="card-bonus"><span class="bonus-label">Bonus</span><span class="bonus-text">Anulan habilidad rival</span></div>
+          </div>
+          <div class="card-stars"><span class="star-filled">★</span><span class="star-filled">★</span><span class="star-filled">★</span><span class="star-empty">★</span><span class="star-empty">★</span></div>
+        </div>
+      </div>
+
+      <div class="preview-group">
+        <div class="preview-label">ECHO · U</div>
+        <div class="card type-echo" style="--cc:#F5F0E8">
+          <div class="card-art"><div class="card-art-placeholder">✨</div></div>
+          <div class="card-vignette"></div>
+          <div class="card-type-badge" style="display:block">ECHO</div>
+          <div class="card-top"><span class="card-name">NULLSONG</span><span class="card-rar rar-U">U</span></div>
+          <div class="card-stats">
+            <div class="stat-pill"><span class="stat-pill-num pow">6</span><span class="stat-pill-label">POW</span></div>
+            <div class="stat-pill"><span class="stat-pill-num dmg">5</span><span class="stat-pill-label">DMG</span></div>
+          </div>
+          <div class="card-bottom">
+            <div class="card-ability">Anula bonus rival</div>
+            <div class="card-bonus"><span class="bonus-label">Bonus</span><span class="bonus-text">Sin bonus (ECHO)</span></div>
+          </div>
+          <div class="card-stars"><span class="star-filled">★</span><span class="star-filled">★</span><span class="star-filled">★</span><span class="star-empty">★</span><span class="star-empty">★</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CLAN DATA (from cards.js already loaded) ───────────────
+const CLAN_DATA = (typeof CLANS !== 'undefined') ? CLANS : {};
+// Note: cards.js already defines RAR_MAP as {common:'C',...} — we define the inverse
+const RAR_TO_FULL = {C:'common', U:'uncommon', R:'rare', M:'mythic'};
+const INV_RAR = {common:'C', uncommon:'U', rare:'R', mythic:'M'};
+
+let blobArt1 = null, blobArt2 = null;
+let previewLv = 2; // current preview level (1..stars)
+let selectedCardId = null; // currently editing
+
+const LEVEL_XP_THRESHOLDS = [50, 120, 220, 350];
+function abilityUnlockLv(stars){ return (stars >= 5) ? 4 : 2; }
+function interpolateStat(v0, vMax, lv, maxLv){
+  if(maxLv <= 1) return vMax;
+  const t = (lv - 1) / (maxLv - 1);
+  return Math.round(v0 + (vMax - v0) * t);
+}
+
+function $(id){ return document.getElementById(id); }
+
+// ── ADMIN LIST ─────────────────────────────────────────────
+function getAllCards() {
+  const base = (typeof ALL_CARDS !== 'undefined' && Array.isArray(ALL_CARDS)) ? ALL_CARDS : [];
+  const customRaw = localStorage.getItem('shs_custom_cards');
+  let custom = [];
+  try { custom = JSON.parse(customRaw || '[]'); } catch(_){}
+  // Merge: custom overrides base if same ID
+  const map = new Map(base.map(c => [c.id, c]));
+  custom.forEach(c => map.set(c.id, {...c, isCustom:true}));
+  return Array.from(map.values());
+}
+
+let adminFilter = '';
+function filterAdminList() {
+  adminFilter = $('admin-search').value.toLowerCase();
+  renderAdminList();
+}
+
+function renderAdminList() {
+  const all = getAllCards();
+  const q = adminFilter;
+  const filtered = q
+    ? all.filter(c => c.id.includes(q) || c.name?.toLowerCase().includes(q) || c.clan?.includes(q))
+    : all;
+
+  const list = $('admin-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="admin-empty">No cards found</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(c => {
+    const cc = CLAN_DATA[c.clan]?.color || '#6B5CE7';
+    const isSel = c.id === selectedCardId;
+    return `<div class="admin-card-row${isSel?' selected':''}" onclick="loadCard('${c.id}')">
+      <div class="admin-card-dot" style="background:${cc}"></div>
+      <span class="admin-card-name">${c.name || c.id}</span>
+      <span class="admin-card-clan">${(c.clan||'').toUpperCase()}</span>
+      ${c.isCustom?'<span class="admin-card-custom">CUSTOM</span>':''}
+    </div>`;
+  }).join('');
+}
+
+function loadCard(id) {
+  const all = getAllCards();
+  const c = all.find(x => x.id === id);
+  if (!c) return;
+  selectedCardId = id;
+
+  $('f-id').value    = c.id || '';
+  $('f-name').value  = c.name || '';
+
+  // Clan
+  const clanSel = $('f-clan');
+  if (c.clan) { for (let o of clanSel.options) if (o.value === c.clan) { clanSel.value = c.clan; break; } }
+
+  // Type
+  const typeSel = $('f-type');
+  const cardType = c.type || 'normal';
+  for (let o of typeSel.options) if (o.value === cardType) { typeSel.value = cardType; break; }
+
+  // Rarity
+  const rarChar = c.rar || INV_RAR[c.rarity] || 'C';
+  $('f-rarity').value = rarChar;
+
+  // Stars
+  $('f-stars').value = c.stars || 3;
+
+  // Stats
+  $('f-pow1').value = Array.isArray(c.pow) ? c.pow[0] : (c.stats?.level1?.power || 1);
+  $('f-pow2').value = Array.isArray(c.pow) ? c.pow[1] : (c.stats?.max?.power || 1);
+  $('f-dmg1').value = Array.isArray(c.dmg) ? c.dmg[0] : (c.stats?.level1?.damage || 1);
+  $('f-dmg2').value = Array.isArray(c.dmg) ? c.dmg[1] : (c.stats?.max?.damage || 1);
+
+  // Ability
+  const abilData = c.abilityData || c.ability_data;
+  const abilText = typeof c.ability === 'string' ? c.ability : (abilData?.text || '');
+  $('f-condition').value = abilData?.condition || '';
+  const abilType = abilData?.type || 'POWER_MOD';
+  $('f-ability-type').value = abilType;
+  $('f-ability').value = abilText;
+
+  // Bonus
+  const bonusText = typeof c.bonus === 'string' ? c.bonus : (c.bonus?.text || CLAN_DATA[c.clan]?.bonus || '');
+  $('f-bonus').value = bonusText;
+
+  // Lore
+  // lore field removed
+
+  // Art + logo
+  $('f-art2-url').value  = c.visual?.image    || '';
+  $('f-art1-url').value  = c.visual?.imageLv1 || '';
+  $('f-logo-url').value  = c.visual?.logo     || '';
+  blobLogo = null;
+
+  renderAdminList();
+  syncCard();
+  showMsg(`Loaded: ${c.name} (${id})`, 'ok');
+}
+
+function newCard() {
+  selectedCardId = null;
+  $('f-id').value = 'custom_' + Date.now();
+  $('f-name').value = 'NEW CARD';
+  $('f-clan').value = 'nexus';
+  $('f-type').value = 'normal';
+  $('f-rarity').value = 'C';
+  $('f-stars').value = '3';
+  $('f-pow1').value = '5';
+  $('f-pow2').value = '7';
+  $('f-dmg1').value = '3';
+  $('f-dmg2').value = '4';
+  $('f-condition').value = '';
+  $('f-ability-type').value = 'POWER_MOD';
+  $('f-ability').value = 'New ability text';
+  $('f-bonus').value = 'Clan bonus text';
+  $('f-lore').value = '';
+  $('f-art1-url').value  = '';
+  $('f-art2-url').value  = '';
+  $('f-logo-url').value  = '';
+  blobArt1 = null; blobArt2 = null; blobLogo = null;
+  previewLv = 1;
+  renderAdminList();
+  syncCard();
+}
+
+// ── ART / LOGO HANDLERS ───────────────────────────────────
+function handleArt(input, level) {
+  if (input.files && input.files[0]) {
+    const url = URL.createObjectURL(input.files[0]);
+    if (level === 'lv1') blobArt1 = url; else blobArt2 = url;
+    syncCard();
+  }
+}
+let blobLogo = null;
+function handleLogo(input) {
+  if (input.files && input.files[0]) {
+    blobLogo = URL.createObjectURL(input.files[0]);
+    $('f-logo-url').value = '';
+    syncCard();
+  }
+}
+
+function getArtUrl() {
+  if (previewLv === 1) return $('f-art1-url').value.trim() || blobArt1 || '';
+  return $('f-art2-url').value.trim() || blobArt2 || $('f-art1-url').value.trim() || blobArt1 || '';
+}
+
+function setImg(wrap, phId, url, emoji) {
+  $(phId).textContent = emoji;
+  let img = wrap.querySelector('img');
+  if (url) {
+    if (!img) { img = document.createElement('img'); wrap.insertBefore(img, $(phId)); }
+    img.src = url;
+    img.onload  = () => wrap.classList.add('has-img');
+    img.onerror = () => wrap.classList.remove('has-img');
+  } else {
+    if (img) img.remove();
+    wrap.classList.remove('has-img');
+  }
+}
+
+function starsHtml(filled, total) {
+  if (total === undefined) { total = filled; }
+  return Array.from({length:total},(_,i)=>`<span class="${i<filled?'star-filled':'star-empty'}">★</span>`).join('');
+}
+
+function rebuildLevelToggle(stars) {
+  const container = document.querySelector('.level-toggle');
+  container.innerHTML = '';
+  for (let i = 1; i <= stars; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'level-btn' + (i === previewLv ? ' active' : '');
+    btn.textContent = i === stars ? 'MAX' : `LV ${i}`;
+    btn.onclick = function(){ setLevel(i, this); };
+    container.appendChild(btn);
+  }
+  // Clamp previewLv to valid range
+  if (previewLv > stars) { previewLv = stars; }
+  if (previewLv < 1) previewLv = 1;
+  // Re-mark active
+  const btns = container.querySelectorAll('.level-btn');
+  btns.forEach((b, idx) => b.classList.toggle('active', idx + 1 === previewLv));
+}
+
+function setLevel(lv, btn) {
+  previewLv = lv;
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  syncCard();
+}
+
+// ── SYNC PREVIEW ──────────────────────────────────────────
+function syncCard() {
+  const name     = $('f-name').value || 'UNNAMED';
+  const clan     = $('f-clan').value;
+  const type     = $('f-type').value;
+  const rar      = $('f-rarity').value;
+  const stars    = parseInt($('f-stars').value) || 2;
+  const pow1     = parseInt($('f-pow1').value) || 1;
+  const pow2     = parseInt($('f-pow2').value) || 1;
+  const dmg1     = parseInt($('f-dmg1').value) || 1;
+  const dmg2     = parseInt($('f-dmg2').value) || 1;
+  const cond     = $('f-condition').value.trim();
+  const abilText = $('f-ability').value || '';
+  const bonus    = $('f-bonus').value || '';
+  const logoUrl  = $('f-logo-url').value.trim() || blobLogo || '';
+
+  const c  = CLAN_DATA[clan] || {color:'#6B5CE7', emoji:'⚡'};
+  const cc = c.color;
+  const emoji = c.emoji || '⚡';
+
+  // Rebuild level toggle buttons if star count changed
+  const curBtnCount = document.querySelectorAll('.level-btn').length;
+  if (curBtnCount !== stars) rebuildLevelToggle(stars);
+  // Clamp preview level to valid range
+  previewLv = Math.max(1, Math.min(previewLv, stars));
+
+  // Interpolated stats for current preview level
+  const showPow = interpolateStat(pow1, pow2, previewLv, stars);
+  const showDmg = interpolateStat(dmg1, dmg2, previewLv, stars);
+
+  // Art: lv1 art until max level, then max art
+  const artUrl = previewLv >= stars
+    ? ($('f-art2-url').value.trim() || blobArt2 || $('f-art1-url').value.trim() || blobArt1 || '')
+    : ($('f-art1-url').value.trim() || blobArt1 || $('f-art2-url').value.trim() || blobArt2 || '');
+
+  // Ability locked?
+  const unlockAt   = abilityUnlockLv(stars);
+  const abilLocked = previewLv < unlockAt;
+
+  const front = $('preview-front');
+  front.style.setProperty('--cc', cc);
+  front.className = `card type-${type}`;
+
+  setImg($('p-art-wrap'), 'p-art-ph', artUrl, emoji);
+
+  // Clan logo
+  const logoEl = $('p-logo');
+  if (logoUrl) {
+    logoEl.src = logoUrl;
+    logoEl.classList.add('show');
+    logoEl.onerror = () => logoEl.classList.remove('show');
+  } else {
+    logoEl.classList.remove('show');
+  }
+
+  $('p-name').textContent = name;
+  $('p-rar').textContent  = rar;
+  $('p-rar').className    = `card-rar rar-${rar}`;
+
+  const badge = $('p-type-badge');
+  if (type !== 'normal') { badge.textContent = type.toUpperCase(); badge.style.display = 'block'; }
+  else badge.style.display = 'none';
+
+  $('p-pow').textContent = showPow;
+  $('p-dmg').textContent = showDmg;
+  $('p-stars').innerHTML = starsHtml(previewLv, stars);
+
+  // Ability display — show locked state
+  const condEl = $('p-cond');
+  const abilWrap = $('p-ability-text').parentElement;
+  if (abilLocked) {
+    abilWrap.style.opacity = '0.4';
+    condEl.style.display = 'none';
+    $('p-ability-text').textContent = `🔒 Unlocks at LV${unlockAt}`;
+  } else {
+    abilWrap.style.opacity = '1';
+    if (cond) { condEl.textContent = cond + ':'; condEl.style.display = 'inline'; }
+    else condEl.style.display = 'none';
+    $('p-ability-text').textContent = abilText;
+  }
+  $('p-bonus').textContent = bonus;
+}
+
+// ── BUILD ENGINE CARD ─────────────────────────────────────
+function buildCard() {
+  const id    = $('f-id').value.trim().toLowerCase().replace(/\s+/g,'_') || 'custom_card';
+  const name  = $('f-name').value.trim() || 'UNNAMED';
+  const clan  = $('f-clan').value;
+  const type  = $('f-type').value;
+  const rar   = $('f-rarity').value;
+  const stars = parseInt($('f-stars').value) || 3;
+  const pow1  = parseInt($('f-pow1').value) || 1;
+  const pow2  = parseInt($('f-pow2').value) || 1;
+  const dmg1  = parseInt($('f-dmg1').value) || 1;
+  const dmg2  = parseInt($('f-dmg2').value) || 1;
+  const cond  = $('f-condition').value.trim();
+  const abilType = $('f-ability-type').value;
+  const abilText = $('f-ability').value.trim();
+  const bonus  = $('f-bonus').value.trim();
+  const lore   = '';
+  const art1   = $('f-art1-url').value.trim() || blobArt1 || `/assets/cards/${id}_lv1.png`;
+  const art2   = $('f-art2-url').value.trim() || blobArt2 || `/assets/cards/${id}_max.png`;
+  const logoUrl = $('f-logo-url').value.trim();
+  const c      = CLAN_DATA[clan] || {color:'#6B5CE7'};
+
+  return {
+    id, name, clan,
+    stars, rar,
+    pow:  [pow1, pow2],
+    dmg:  [dmg1, dmg2],
+    lv: 1, lv_max: stars,
+    type: type || 'normal',
+    rarity: RAR_TO_FULL[rar] || 'common',
+    ability: abilText,
+    abilityData: { type: abilType, text: abilText, condition: cond || null },
+    bonus: { type: 'CLAN_BONUS', text: bonus },
+    lore,
+    tags: [],
+    visual: {
+      image:    art2,
+      imageLv1: art1,
+      logo:     logoUrl || null,
+      frame:    clan,
+      color:    c.color || '#6B5CE7',
+    },
+    rules: {},
+    economy: { tradable: true },
+    isCustom: true,
+  };
+}
+
+// ── ADD TO GAME ───────────────────────────────────────────
+function addToGame() {
+  const card = buildCard();
+  if (!card.id || card.id === 'custom_card') {
+    showMsg('Give the card a unique ID before saving.', 'warn');
+    return;
+  }
+
+  // Read existing custom overrides
+  let customs = [];
+  try { customs = JSON.parse(localStorage.getItem('shs_custom_cards') || '[]'); } catch(_){}
+  customs = customs.filter(c => c.id !== card.id);
+  customs.push(card);
+  localStorage.setItem('shs_custom_cards', JSON.stringify(customs));
+
+  selectedCardId = card.id;
+  renderAdminList();
+  showMsg(`✓ "${card.name}" saved to game. Refresh web/index.html to see it in Collection.`, 'ok');
+}
+
+// ── EXPORT JS ─────────────────────────────────────────────
+function exportJS() {
+  const card = buildCard();
+  // Generate createCard() compatible snippet
+  const cfg = {
+    id: card.id, name: card.name, clan: card.clan,
+    type: card.type, rarity: card.rarity, stars: card.stars,
+    stats: {
+      level1: { power: card.pow[0], damage: card.dmg[0] },
+      max:    { power: card.pow[1], damage: card.dmg[1] },
+    },
+    ability: card.abilityData,
+    bonus:   card.bonus,
+    lore:    card.lore,
+    visual:  { image: card.visual.image, imageLv1: card.visual.imageLv1 },
+    rules: {}, economy: { tradable: true },
+  };
+  const snippet = `createCard(${JSON.stringify(cfg, null, 2)}),\n`;
+  const out = $('export-out');
+  out.value = snippet;
+  out.classList.add('show');
+  out.select();
+  try { document.execCommand('copy'); showMsg('Snippet copied. Paste into ALL_CARDS array in engine/cards.js.', 'ok'); }
+  catch(_) { showMsg('Copy the snippet manually from the box below.', 'warn'); }
+}
+
+// ── CLEAR CUSTOMS ─────────────────────────────────────────
+function clearCustomCards() {
+  if (!confirm('Remove all custom card overrides from localStorage?\n\nBase game cards will not be affected.')) return;
+  localStorage.removeItem('shs_custom_cards');
+  selectedCardId = null;
+  renderAdminList();
+  showMsg('All custom overrides cleared.', 'warn');
+}
+
+function showMsg(text, type) {
+  const el = $('export-msg');
+  el.textContent = text;
+  el.className = `msg ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'msg'; }, 6000);
+}
+
+// ── INIT ──────────────────────────────────────────────────
+renderAdminList();
+previewLv = parseInt($('f-stars').value) || 2; // start at max level
+rebuildLevelToggle(previewLv);
+syncCard();
+</script>
+</body>
+</html>

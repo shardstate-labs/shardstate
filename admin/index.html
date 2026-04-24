@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SHARDSTATE — CARD EDITOR</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./style.css?v=2"/>
+</head>
+<body>
+
+<script src="../engine/cards.js?v=6"></script>
+
+<aside class="editor">
+  <div class="editor-header">
+    <a href="../gamehub/index.html" class="back-link">← BACK TO GAMEHUB</a>
+    <div class="editor-title">⚡ Card Admin Studio</div>
+    <div class="editor-sub">Create · Edit · Inject</div>
+  </div>
+  <div class="editor-body">
+
+    <div class="sep">Load Existing Card</div>
+    <div class="admin-picker">
+      <div class="admin-picker-title">Select card to edit</div>
+      <input class="admin-search" id="admin-search" placeholder="Search by name, clan, ID…" oninput="filterAdminList()"/>
+      <div class="admin-list" id="admin-list"><div class="admin-empty">Loading cards…</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="newCard()" style="font-size:7.5px;padding:6px">+ New Card</button>
+
+    <div class="sep">Identity</div>
+    <div class="field"><label>Card ID (unique)</label><input id="f-id" placeholder="e.g. nexus_axiarch" oninput="syncCard()"/></div>
+    <div class="field"><label>Card Name</label><input id="f-name" oninput="syncCard()"/></div>
+    <div class="field">
+      <label>Clan</label>
+      <select id="f-clan" onchange="syncCard()">
+        <option value="nexus">⚡ NEXUS</option>
+        <option value="tidecall">🌊 TIDECALL</option>
+        <option value="ashborn">🔥 ASHBORN</option>
+        <option value="errvoid">👾 ERRVOID</option>
+        <option value="vault">👑 VAULT</option>
+        <option value="mycelium">🍄 MYCELIUM</option>
+        <option value="ironpact">💀 IRONPACT</option>
+        <option value="synthos">🔬 SYNTHOS</option>
+        <option value="loopkin">⏳ LOOPKIN</option>
+        <option value="phantom">👁 PHANTOM</option>
+        <option value="frequenz">🎸 FREQUENZ</option>
+        <option value="protocol">🛡 PROTOCOL</option>
+        <option value="echo">✨ ECHO</option>
+      </select>
+    </div>
+    <div class="img-group" style="margin-top:4px">
+      <div class="img-group-title">Clan Logo (optional)</div>
+      <div class="img-row"><label>URL</label><input id="f-logo-url" placeholder="/assets/clans/nexus.png" oninput="syncCard()"/></div>
+      <div class="img-or">— or file —</div>
+      <div class="img-row"><label>File</label><input type="file" id="f-logo-file" accept="image/*" onchange="handleLogo(this)"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Type</label>
+        <select id="f-type" onchange="syncCard()">
+          <option value="normal">Normal</option>
+          <option value="titan">Titan</option>
+          <option value="grand">Grand</option>
+        </select>
+      </div>
+      <div class="field"><label>Rarity</label>
+        <select id="f-rarity" onchange="syncCard()">
+          <option value="C">C · Common</option>
+          <option value="U">U · Uncommon</option>
+          <option value="R">R · Rare</option>
+          <option value="M">M · Mythic</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Stars (1–5)</label>
+      <select id="f-stars" onchange="syncCard()">
+        <option value="1">★</option><option value="2">★★</option>
+        <option value="3" selected>★★★</option>
+        <option value="4">★★★★</option><option value="5">★★★★★</option>
+      </select>
+    </div>
+
+    <div class="sep">Stats (Level 1 → Max)</div>
+    <p class="hint">Intermediate levels are auto-interpolated.</p>
+    <div class="field-row">
+      <div class="field"><label>POW lv1</label><input id="f-pow1" type="number" value="3" min="1" max="20" oninput="syncCard()"/></div>
+      <div class="field"><label>POW max</label><input id="f-pow2" type="number" value="5" min="1" max="20" oninput="syncCard()"/></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>DMG lv1</label><input id="f-dmg1" type="number" value="2" min="1" max="20" oninput="syncCard()"/></div>
+      <div class="field"><label>DMG max</label><input id="f-dmg2" type="number" value="3" min="1" max="20" oninput="syncCard()"/></div>
+    </div>
+
+    <div class="sep">Ability & Bonus</div>
+    <div class="field"><label>Ability Condition (blank = always)</label>
+      <input id="f-condition" placeholder="Courage / Reprisal / KO …" oninput="syncCard()"/></div>
+    <div class="field"><label>Ability Type</label>
+      <select id="f-ability-type" onchange="syncCard()">
+        <option value="POWER_MOD">POWER_MOD</option>
+        <option value="DAMAGE_MOD">DAMAGE_MOD</option>
+        <option value="POISON">POISON</option>
+        <option value="COPY_BONUS">COPY_BONUS</option>
+        <option value="COPY_ABILITY">COPY_ABILITY</option>
+        <option value="PROTECT_ABILITY">PROTECT_ABILITY</option>
+        <option value="STOP">STOP</option>
+        <option value="WEAKEN">WEAKEN</option>
+        <option value="BRAWL">BRAWL</option>
+        <option value="BACKLASH">BACKLASH</option>
+        <option value="REGEN">REGEN</option>
+        <option value="PILLZ">PILLZ</option>
+        <option value="CANCEL_ALL">CANCEL_ALL</option>
+        <option value="NONE">NONE</option>
+      </select>
+    </div>
+    <div class="field"><label>Ability Text</label><textarea id="f-ability" oninput="syncCard()"></textarea></div>
+    <div class="field"><label>Clan Bonus Text</label><input id="f-bonus" oninput="syncCard()"/></div>
+
+    <div class="sep">Card Art</div>
+    <div class="img-group">
+      <div class="img-group-title">Level 1 art</div>
+      <div class="img-row"><label>URL</label><input id="f-art1-url" placeholder="https://… or /Assets/cards/x_lv1.png" oninput="syncCard()"/></div>
+      <div class="img-or">— or file —</div>
+      <div class="img-row"><label>File</label><input type="file" id="f-art1-file" accept="image/*" onchange="handleArt(this,'lv1')"/></div>
+    </div>
+    <div class="img-group">
+      <div class="img-group-title">Max level art</div>
+      <div class="img-row"><label>URL</label><input id="f-art2-url" placeholder="https://… or /Assets/cards/x_max.png" oninput="syncCard()"/></div>
+      <div class="img-or">— or file —</div>
+      <div class="img-row"><label>File</label><input type="file" id="f-art2-file" accept="image/*" onchange="handleArt(this,'max')"/></div>
+    </div>
+
+    <div class="sep">Save & Export</div>
+    <div id="export-msg" class="msg"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="addToGame()">⚡ Add / Update in Game</button>
+      <button class="btn btn-export" onclick="exportJS()">⬇ Copy JS for cards.js</button>
+    </div>
+    <textarea id="export-out" class="export-out" readonly onclick="this.select()"></textarea>
+    <button class="btn btn-danger" style="margin-top:8px" onclick="clearCustomCards()">🗑 Clear all custom overrides</button>
+    <p class="hint" style="margin-top:4px">Custom edits live in localStorage and load automatically in gamehub + game. To make them permanent, paste the JS snippet into engine/cards.js.</p>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="preview-group">
+    <div class="preview-label">Live preview</div>
+    <div class="level-toggle"></div>
+    <div id="preview-front" class="card" style="--cc:#6B5CE7">
+      <div class="card-art" id="p-art-wrap">
+        <div class="card-art-placeholder" id="p-art-ph">⚡</div>
+      </div>
+      <div class="card-vignette"></div>
+      <div class="card-top">
+        <img class="card-logo" id="p-logo" src="" alt=""/>
+        <span class="card-name" id="p-name">SELECT A CARD</span>
+        <span class="card-rar rar-C" id="p-rar">C</span>
+      </div>
+      <div class="card-type-badge" id="p-type-badge" style="display:none">NEXUS</div>
+      <div class="card-stats">
+        <div class="stat-pill"><span class="stat-pill-num pow" id="p-pow">3</span><span class="stat-pill-label">POW</span></div>
+        <div class="stat-pill"><span class="stat-pill-num dmg" id="p-dmg">2</span><span class="stat-pill-label">DMG</span></div>
+      </div>
+      <div class="card-bottom">
+        <div class="card-ability" id="p-ability">
+          <span class="ability-condition" id="p-cond" style="display:none"></span><span id="p-ability-text">—</span>
+        </div>
+        <div class="card-bonus">
+          <span class="bonus-label">Bonus</span>
+          <span class="bonus-text" id="p-bonus">—</span>
+        </div>
+      </div>
+      <div class="card-stars" id="p-stars"></div>
+    </div>
+  </div>
+</main>
+
+<script src="./app.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SHARDSTATE — Control the Pulsos</title>
+<meta name="description" content="Competitive TCG where humanity is the resource. 13 clans. On-chain ownership. Dominate the Shardstate."/>
+<link rel="icon" href="icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET & BASE ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #0A0C10;
+  --bg2:      #0F1115;
+  --bg3:      #1A1F2B;
+  --acc:      #00FFC6;
+  --red:      #FF3B3B;
+  --bio:      #9BFF00;
+  --text:     #E6EAF0;
+  --muted:    #6B7280;
+  --border:   rgba(255,255,255,0.08);
+  --font-head:'Orbitron',monospace;
+  --font-body:'Space Grotesk',sans-serif;
+  --tr:       160ms cubic-bezier(.4,0,.2,1);
+  --glow-acc: 0 0 24px rgba(0,255,198,0.3);
+  --glow-red: 0 0 24px rgba(255,59,59,0.3);
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.6;overflow-x:hidden}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:var(--font-body);border:none;background:none}
+
+/* ── SCROLLBAR ──────────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+
+/* ── TYPOGRAPHY ─────────────────────────────────────────────── */
+h1,h2,h3,h4{font-family:var(--font-head);line-height:1.1;letter-spacing:0.02em}
+.label{font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--acc);font-weight:600}
+.mono{font-family:'Space Grotesk',monospace;font-variant-numeric:tabular-nums}
+
+/* ── LAYOUT HELPERS ─────────────────────────────────────────── */
+.container{max-width:1280px;margin:0 auto;padding:0 24px}
+.section{padding:100px 0;scroll-margin-top:64px}
+section{scroll-margin-top:64px}
+.section-header{text-align:center;margin-bottom:64px}
+.section-header h2{font-size:clamp(1.8rem,4vw,3rem);margin-top:12px}
+.section-header p{color:var(--muted);max-width:520px;margin:16px auto 0;font-size:1.05rem}
+
+/* ── BUTTONS ────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border-radius:4px;font-weight:700;font-size:0.9rem;letter-spacing:0.08em;text-transform:uppercase;transition:all var(--tr)}
+.btn-primary{background:var(--acc);color:#000}
+.btn-primary:hover{box-shadow:var(--glow-acc);transform:translateY(-2px)}
+.btn-outline{border:1.5px solid var(--acc);color:var(--acc)}
+.btn-outline:hover{background:rgba(0,255,198,0.08);box-shadow:var(--glow-acc);transform:translateY(-2px)}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{box-shadow:var(--glow-red);transform:translateY(-2px)}
+.btn svg{width:18px;height:18px;flex-shrink:0}
+
+/* ── NAV ─────────────────────────────────────────────────────── */
+#nav{position:fixed;top:0;left:0;right:0;z-index:100;transition:background var(--tr),border-color var(--tr)}
+#nav.scrolled{background:rgba(10,12,16,0.95);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1280px;margin:0 auto;padding:0 24px}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo-img{height:36px;width:36px;border-radius:6px;object-fit:cover}
+.nav-logo-text{font-family:var(--font-head);font-size:1.05rem;font-weight:900;letter-spacing:0.06em;color:var(--text)}
+.nav-links{display:flex;align-items:center;gap:32px}
+.nav-links a{font-size:0.82rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);transition:color var(--tr)}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{display:flex;gap:12px}
+
+/* ── HERO ─────────────────────────────────────────────────────── */
+#hero{position:relative;height:100vh;min-height:640px;display:flex;align-items:center;overflow:hidden}
+.hero-bg{position:absolute;inset:0}
+.hero-bg-img{width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0.35;transform:scale(1.04);animation:heroScale 20s ease-in-out infinite alternate}
+@keyframes heroScale{from{transform:scale(1.04)}to{transform:scale(1.12)}}
+.hero-bg-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,12,16,0.92) 0%,rgba(10,12,16,0.6) 60%,rgba(10,12,16,0.85) 100%)}
+.hero-grid-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,198,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,198,0.04) 1px,transparent 1px);background-size:60px 60px;pointer-events:none}
+.hero-content{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 24px;padding-top:64px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid rgba(0,255,198,0.3);border-radius:2px;margin-bottom:28px}
+.hero-badge-dot{width:6px;height:6px;background:var(--acc);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,198,0.4)}50%{opacity:0.6;box-shadow:0 0 0 6px rgba(0,255,198,0)}}
+.hero-badge span{font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--acc);font-weight:600}
+.hero-title{font-size:clamp(2.4rem,7vw,5.5rem);font-weight:900;max-width:800px;margin-bottom:24px;line-height:1.0}
+.hero-title .accent{color:var(--acc)}
+.hero-sub{font-size:clamp(1rem,2vw,1.25rem);color:var(--muted);max-width:480px;margin-bottom:40px;font-weight:400}
+.hero-actions{display:flex;gap:16px;flex-wrap:wrap}
+.hero-stats{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);display:flex;gap:48px;z-index:2}
+.hero-stat{text-align:center}
+.hero-stat-num{font-family:var(--font-head);font-size:1.6rem;font-weight:900;color:var(--text);line-height:1}
+.hero-stat-label{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.hero-floating-cards{position:absolute;right:4%;top:50%;transform:translateY(-50%);display:flex;gap:20px;z-index:1;align-items:center;filter:drop-shadow(0 32px 80px rgba(0,0,0,0.8));pointer-events:none}
+.hero-content{position:relative;z-index:3}
+.hero-card{border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,0.14);box-shadow:0 32px 80px rgba(0,0,0,0.7);transition:transform 0.25s ease}
+.hero-card:nth-child(1){width:160px;animation:floatA 6s ease-in-out infinite}
+.hero-card:nth-child(2){width:200px;z-index:2;animation:floatB 7s ease-in-out infinite;box-shadow:0 40px 100px rgba(0,0,0,0.8),0 0 40px rgba(107,92,231,0.3)}
+.hero-card:nth-child(3){width:160px;animation:floatA 5s ease-in-out infinite reverse}
+@keyframes floatA{0%,100%{transform:rotate(-5deg) translateY(18px)}50%{transform:rotate(-5deg) translateY(-4px)}}
+@keyframes floatB{0%,100%{transform:rotate(0deg) translateY(0px)}50%{transform:rotate(0deg) translateY(-18px)}}
+.hero-card img{width:100%;height:auto;display:block}
+
+/* ── GLITCH TEXT ────────────────────────────────────────────── */
+.glitch{position:relative}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;inset:0;pointer-events:none}
+.glitch::before{color:var(--red);animation:glitch1 8s infinite;clip-path:polygon(0 20%,100% 20%,100% 40%,0 40%)}
+.glitch::after{color:var(--acc);animation:glitch2 8s infinite;clip-path:polygon(0 60%,100% 60%,100% 75%,0 75%)}
+@keyframes glitch1{0%,94%,100%{transform:none;opacity:0}95%{transform:translateX(-3px);opacity:0.7}97%{transform:translateX(2px);opacity:0.7}}
+@keyframes glitch2{0%,94%,100%{transform:none;opacity:0}96%{transform:translateX(3px);opacity:0.6}98%{transform:translateX(-1px);opacity:0.6}}
+
+/* ── CLANS ────────────────────────────────────────────────────── */
+#clans{background:var(--bg2)}
+.clans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:2px}
+.clan-card{position:relative;padding:24px 20px;background:var(--bg);border:1px solid var(--border);cursor:pointer;overflow:hidden;transition:border-color var(--tr),transform var(--tr)}
+.clan-card::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.7));opacity:0;transition:opacity var(--tr)}
+.clan-card:hover{transform:translateY(-4px);border-color:var(--cc)}
+.clan-card:hover .clan-lore{opacity:1;transform:translateY(0)}
+.clan-card:hover::before{opacity:1}
+.clan-color-bar{width:3px;height:32px;border-radius:2px;background:var(--cc);margin-bottom:16px;box-shadow:0 0 12px var(--cc)}
+.clan-name{font-family:var(--font-head);font-size:0.95rem;font-weight:900;letter-spacing:0.06em;margin-bottom:6px;color:var(--cc)}
+.clan-bonus{font-size:0.75rem;color:var(--muted);line-height:1.4}
+.clan-lore{position:absolute;bottom:0;left:0;right:0;padding:12px 20px;background:rgba(10,12,16,0.92);font-size:0.72rem;color:var(--text);opacity:0;transform:translateY(6px);transition:all var(--tr);border-top:1px solid var(--border)}
+.clan-echo{grid-column:span 2}
+
+/* ── GAMEPLAY ────────────────────────────────────────────────── */
+#gameplay{background:var(--bg)}
+.gameplay-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+.gameplay-visual{position:relative}
+.battle-arena{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.battle-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.3)}
+.battle-round-label{font-family:var(--font-head);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)}
+.battle-round-num{font-family:var(--font-head);font-size:0.95rem;font-weight:900;color:var(--acc)}
+.battle-life-bars{display:flex;gap:20px;padding:16px 20px 0;align-items:center}
+.life-bar-wrap{flex:1}
+.life-bar-label{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-bottom:6px;font-family:var(--font-head)}
+.life-bar-label span:last-child{color:var(--text);font-weight:700}
+.life-bar-track{height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+.life-bar-fill{height:100%;border-radius:3px;transition:width 0.6s ease}
+.life-bar-fill.player{background:var(--acc);box-shadow:0 0 8px rgba(0,255,198,0.5)}
+.life-bar-fill.opp{background:var(--red);box-shadow:0 0 8px rgba(255,59,59,0.5)}
+.battle-vs-divider{font-family:var(--font-head);font-size:0.8rem;font-weight:900;color:var(--muted);flex-shrink:0}
+.battle-cards-area{display:flex;gap:16px;padding:20px;align-items:stretch}
+.battle-side{flex:1;display:flex;flex-direction:column;gap:10px}
+.battle-side-label{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;font-family:var(--font-head);font-weight:700}
+.battle-side-label.you{color:var(--acc)}
+.battle-side-label.opp{color:var(--red);text-align:right}
+.battle-card-slot{border-radius:8px;border:1.5px solid var(--border);overflow:hidden;background:var(--bg);transition:border-color 0.3s,box-shadow 0.3s;position:relative}
+.battle-card-slot.active{border-color:var(--slot-color,var(--acc));box-shadow:0 0 20px var(--slot-glow,rgba(0,255,198,0.25))}
+.bcs-header{padding:6px 10px;font-family:var(--font-head);font-size:0.65rem;font-weight:700;color:rgba(0,0,0,0.85)}
+.bcs-body{display:flex;gap:10px;padding:10px}
+.bcs-art{width:48px;height:64px;border-radius:4px;overflow:hidden;flex-shrink:0}
+.bcs-art img{width:100%;height:100%;object-fit:cover;object-position:top}
+.bcs-info{flex:1;min-width:0}
+.bcs-name{font-family:var(--font-head);font-size:0.7rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.bcs-stats{display:flex;gap:12px}
+.bcs-pow{font-family:var(--font-head);font-size:1rem;font-weight:900;color:#e8f0ff;line-height:1}
+.bcs-dmg{font-family:var(--font-head);font-size:1rem;font-weight:900;color:var(--red);line-height:1}
+.bcs-stat-label{font-size:0.6rem;color:var(--muted)}
+.bcs-pillz{position:absolute;top:8px;right:8px;font-family:var(--font-head);font-size:0.75rem;font-weight:900;color:var(--acc);background:rgba(0,255,198,0.12);border:1px solid rgba(0,255,198,0.3);padding:2px 6px;border-radius:3px;opacity:0;transition:opacity 0.3s}
+.battle-card-slot.active .bcs-pillz{opacity:1}
+.battle-middle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;flex-shrink:0;width:40px}
+.battle-vs-big{font-family:var(--font-head);font-size:1.2rem;font-weight:900;color:var(--red)}
+.battle-atq-indicator{display:flex;flex-direction:column;align-items:center;gap:3px}
+.atq-val{font-family:var(--font-head);font-size:0.72rem;font-weight:900;line-height:1;transition:color 0.3s}
+.atq-val.win{color:var(--acc)}
+.atq-val.lose{color:var(--red)}
+.battle-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;min-height:52px}
+.battle-log{font-family:var(--font-head);font-size:0.72rem;font-weight:700;letter-spacing:0.04em;transition:all 0.3s}
+.battle-log.win{color:var(--acc)}
+.battle-log.lose{color:var(--red)}
+.battle-log.neutral{color:var(--muted)}
+.battle-pillz-remaining{display:flex;gap:5px;align-items:center}
+.pr-dot{width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 5px rgba(0,255,198,0.6);transition:all 0.3s}
+.pr-dot.used{background:var(--bg3);box-shadow:none}
+.gameplay-steps{display:flex;flex-direction:column;gap:28px}
+.step{display:flex;gap:20px;align-items:flex-start}
+.step-num{flex-shrink:0;width:36px;height:36px;border-radius:4px;background:rgba(0,255,198,0.1);border:1px solid rgba(0,255,198,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-head);font-size:0.85rem;font-weight:900;color:var(--acc)}
+.step-body h4{font-family:var(--font-head);font-size:0.95rem;margin-bottom:6px}
+.step-body p{font-size:0.88rem;color:var(--muted);line-height:1.6}
+
+/* ── CARDS PREVIEW ───────────────────────────────────────────── */
+#cards{background:var(--bg2)}
+.cards-showcase{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;perspective:1400px;padding:8px 0 24px}
+/* ── Showcase cards: card-template structure ──────────── */
+.showcase-card{position:relative;width:220px;height:306px;border-radius:12px;overflow:hidden;cursor:pointer;flex-shrink:0;transition:transform .22s ease, box-shadow .22s ease;box-shadow:0 10px 36px rgba(0,0,0,.8)}
+.showcase-card:hover{transform:translateY(-6px) scale(1.025);box-shadow:0 18px 50px rgba(0,0,0,.85),0 0 22px color-mix(in srgb,var(--cc) 40%,transparent)}
+.showcase-card .card-art{position:absolute;inset:0;z-index:0;background:linear-gradient(145deg,#141c30,#07090f)}
+.showcase-card .card-art img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block;transition:transform .5s ease}
+.showcase-card:hover .card-art img{transform:scale(1.05)}
+.showcase-card .card-art-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:70px;opacity:.18;filter:drop-shadow(0 0 24px var(--cc,#6B5CE7))}
+.showcase-card .card-art.has-img .card-art-placeholder{display:none}
+.showcase-card .card-vignette{position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 30%),linear-gradient(0deg,rgba(0,0,0,.75) 0%,rgba(0,0,0,0) 45%)}
+.showcase-card .card-top{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;gap:5px;padding:8px 9px 9px}
+.showcase-card .card-name{flex:1;font-family:var(--font-head);font-size:9px;font-weight:900;color:#fff;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 6px rgba(0,0,0,.95);line-height:1.2}
+.showcase-card .card-rar{font-family:var(--font-mono);font-size:8px;font-weight:900;padding:2px 5px;border-radius:3px;flex-shrink:0;border:1px solid rgba(255,255,255,.2)}
+.showcase-card .rar-C{background:rgba(107,114,128,.7);color:#fff}
+.showcase-card .rar-U{background:rgba(96,165,250,.65);color:#fff}
+.showcase-card .rar-R{background:rgba(167,139,250,.65);color:#fff}
+.showcase-card .rar-M{background:rgba(251,191,36,.85);color:#000}
+.showcase-card .card-stats{position:absolute;bottom:82px;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0 8px 4px}
+.showcase-card .stat-pill{display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:6px;padding:4px 8px 3px;border:1px solid rgba(255,255,255,.08);min-width:36px}
+.showcase-card .stat-pill-num{font-family:var(--font-head);font-size:22px;font-weight:900;line-height:1;letter-spacing:-1px}
+.showcase-card .stat-pill-num.pow{color:#c8d8ff}
+.showcase-card .stat-pill-num.dmg{color:#ff6b6b}
+.showcase-card .stat-pill-label{font-size:6px;letter-spacing:1px;color:rgba(255,255,255,.45);text-transform:uppercase;font-family:var(--font-head)}
+.showcase-card .card-bottom{position:absolute;bottom:0;left:0;right:0;z-index:10;background:rgba(4,6,14,.58);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:6px 8px 24px 8px;border-top:1px solid rgba(255,255,255,.06)}
+.showcase-card .card-ability{font-size:8.5px;color:#b2f5ea;line-height:1.4;min-height:16px;font-family:var(--font-mono)}
+.showcase-card .card-stars{position:absolute;bottom:6px;right:8px;z-index:11;display:flex;gap:1.5px;font-size:9px;line-height:1}
+.showcase-card .card-stars .f{color:#f5c518;text-shadow:0 0 5px rgba(245,197,24,.5)}
+.showcase-card .card-stars .e{color:rgba(255,255,255,.15)}
+
+/* ── COMPETITIVE ─────────────────────────────────────────────── */
+#competitive{background:var(--bg)}
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.comp-tier{padding:32px 28px;background:var(--bg2);border:1px solid var(--border);position:relative;overflow:hidden}
+.comp-tier::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--tc)}
+.comp-tier-icon{width:48px;height:48px;border-radius:6px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;background:rgba(255,255,255,0.04);border:1px solid var(--border)}
+.comp-tier-icon svg{width:24px;height:24px}
+.comp-tier h3{font-family:var(--font-head);font-size:1rem;margin-bottom:8px}
+.comp-tier p{font-size:0.85rem;color:var(--muted);line-height:1.5;margin-bottom:16px}
+.comp-tag{display:inline-block;padding:3px 8px;border-radius:2px;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;border:1px solid}
+.comp-tag.free{color:#9BFF00;border-color:rgba(155,255,0,0.3)}
+.comp-tag.ranked{color:var(--acc);border-color:rgba(0,255,198,0.3)}
+.comp-tag.chain{color:#f59e0b;border-color:rgba(245,158,11,0.3)}
+
+/* ── SOCIAL PROOF ─────────────────────────────────────────────── */
+#proof{background:var(--bg2)}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin-bottom:64px}
+.stat-cell{padding:32px 24px;background:var(--bg);border:1px solid var(--border);text-align:center}
+.stat-cell-num{font-family:var(--font-head);font-size:2.2rem;font-weight:900;color:var(--text);line-height:1}
+.stat-cell-num .acc{color:var(--acc)}
+.stat-cell-label{font-size:0.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-top:8px}
+.testimonials{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.testi{padding:28px;background:var(--bg);border:1px solid var(--border)}
+.testi-text{font-size:0.92rem;color:var(--text);line-height:1.7;margin-bottom:20px;font-style:italic}
+.testi-author{display:flex;align-items:center;gap:12px}
+.testi-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:1px solid var(--border)}
+.testi-name{font-weight:700;font-size:0.88rem}
+.testi-rank{font-size:0.75rem;color:var(--muted)}
+
+/* ── CTA SECTION ─────────────────────────────────────────────── */
+#play-entry{background:var(--bg);position:relative;overflow:hidden;text-align:center;padding:120px 24px}
+.cta-glow{position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 50%,rgba(0,255,198,0.08) 0%,transparent 70%);pointer-events:none}
+.cta-lines{position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,198,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,198,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none}
+.cta-label{display:inline-block;padding:6px 16px;border:1px solid rgba(0,255,198,0.3);font-size:0.7rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--acc);margin-bottom:24px}
+.cta-title{font-size:clamp(2rem,5vw,4rem);font-weight:900;margin-bottom:16px;position:relative}
+.cta-sub{font-size:1.05rem;color:var(--muted);max-width:480px;margin:0 auto 40px}
+.cta-actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+
+/* ── FOOTER ──────────────────────────────────────────────────── */
+footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 32px}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+.footer-brand h3{font-family:var(--font-head);font-size:1.1rem;margin-bottom:12px}
+.footer-brand p{font-size:0.85rem;color:var(--muted);line-height:1.6;max-width:280px}
+.footer-col h4{font-family:var(--font-head);font-size:0.75rem;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;margin-bottom:16px}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:10px}
+.footer-col ul li a{font-size:0.85rem;color:var(--muted);transition:color var(--tr)}
+.footer-col ul li a:hover{color:var(--text)}
+.footer-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:24px;border-top:1px solid var(--border)}
+.footer-copy{font-size:0.78rem;color:var(--muted)}
+.footer-protocol{font-family:var(--font-head);font-size:0.72rem;letter-spacing:0.12em;color:rgba(127,140,141,0.5);text-transform:uppercase}
+
+/* ── AUTH MODAL ──────────────────────────────────────────────── */
+#auth-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px}
+#auth-overlay.open{display:flex}
+.auth-modal{background:var(--bg2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:440px;padding:36px;position:relative;animation:slideUp 0.2s ease-out}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.auth-close{position:absolute;top:16px;right:16px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--muted);transition:color var(--tr);font-size:1.2rem}
+.auth-close:hover{color:var(--text)}
+.auth-logo{font-family:var(--font-head);font-size:1.2rem;font-weight:900;letter-spacing:0.06em;margin-bottom:8px}
+.auth-tagline{font-size:0.82rem;color:var(--muted);margin-bottom:28px}
+.auth-tabs{display:flex;gap:2px;margin-bottom:24px;background:var(--bg);border-radius:4px;padding:3px}
+.auth-tab{flex:1;padding:9px;border-radius:3px;font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);transition:all var(--tr)}
+.auth-tab.active{background:var(--bg3);color:var(--text)}
+.auth-step{display:none}
+.auth-step.active{display:block}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:600}
+.field input{width:100%;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-body);font-size:0.92rem;transition:border-color var(--tr)}
+.field input:focus{outline:none;border-color:var(--acc)}
+.field input::placeholder{color:var(--muted)}
+.pw-rule{font-size:0.72rem;color:var(--muted);margin-top:4px;display:none}
+.auth-feedback{font-size:0.8rem;color:var(--red);margin-bottom:12px;min-height:18px;display:block}
+.auth-feedback.ok{color:var(--acc)}
+.auth-submit{width:100%;padding:14px;background:var(--acc);color:#000;font-family:var(--font-head);font-size:0.88rem;font-weight:700;letter-spacing:0.08em;border-radius:4px;transition:all var(--tr);margin-top:4px}
+.auth-submit:hover{box-shadow:var(--glow-acc);transform:translateY(-1px)}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--muted);font-size:0.78rem}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.oauth-btns{display:flex;gap:10px}
+.oauth-btn{flex:1;padding:11px;border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.82rem;font-weight:600;color:var(--muted);transition:all var(--tr)}
+.oauth-btn:hover{border-color:rgba(255,255,255,0.2);color:var(--text)}
+.auth-username-step h3{font-family:var(--font-head);font-size:1rem;margin-bottom:6px}
+.auth-username-step p{font-size:0.82rem;color:var(--muted);margin-bottom:24px}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media(max-width:1200px){
+  .hero-floating-cards{right:2%;gap:12px}
+  .hero-card:nth-child(2){width:160px}
+  .hero-card:nth-child(1),.hero-card:nth-child(3){width:130px}
+}
+@media(max-width:1024px){
+  .hero-floating-cards{display:none}
+  .gameplay-grid{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:768px){
+  .section{padding:72px 0}
+  .nav-links{display:none}
+  .hero-stats{gap:24px;flex-wrap:wrap;justify-content:center}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .comp-grid{grid-template-columns:1fr}
+  .testimonials{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr}
+  .footer-col:not(.footer-brand){display:none}
+  .clans-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .clan-echo{grid-column:span 1}
+}
+@media(max-width:480px){
+  .hero-title{font-size:2.2rem}
+  .cards-showcase .showcase-card:nth-child(n+4){display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ─────────────────────────────────────────────────────── -->
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <img class="nav-logo-img" src="Assets/Logo/b0938c26-65b2-48a8-972d-2aaa00ef13de.jpg" alt="SHARDSTATE" onerror="this.style.display='none'"/>
+      <span class="nav-logo-text">SHARDSTATE</span>
+    </div>
+    <div class="nav-links">
+      <a href="#clans" id="nav-clans">Clans</a>
+      <a href="#gameplay" id="nav-howto">How to Play</a>
+      <a href="#cards" id="nav-cards">Cards</a>
+      <a href="#competitive" id="nav-competitive">Competitive</a>
+    </div>
+    <div class="nav-cta">
+      <button id="lang-toggle-landing" class="btn btn-outline" style="padding:8px 14px;font-size:0.75rem;letter-spacing:0.1em;font-weight:700" onclick="toggleLandingLang()">ES</button>
+      <button id="nav-login-btn" class="btn btn-outline" style="padding:10px 20px;font-size:0.8rem" onclick="openAuth('login')">Log In</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ─────────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="hero-bg">
+    <img class="hero-bg-img" src="Assets/Homescreen/bdf68e41-7784-4e12-bc7f-0a7686af895a.jpg" alt="" onerror="this.style.display='none'"/>
+    <div class="hero-bg-overlay"></div>
+    <div class="hero-grid-lines"></div>
+  </div>
+
+  <div class="hero-content">
+    <h1 class="hero-title glitch" id="hero-title" data-text="CONTROL THE PULSOS. DOMINATE THE SHARDSTATE.">
+      <span id="hero-title-1">CONTROL THE </span><span class="accent" id="hero-title-accent">PULSOS.</span><br/><span id="hero-title-2">DOMINATE THE SHARDSTATE.</span>
+    </h1>
+    <p class="hero-sub" id="hero-sub">Competitive TCG where humanity is the resource. 13 clans. Strategic depth. On-chain ownership.</p>
+    <div class="hero-actions">
+      <button class="btn btn-primary" onclick="openAuth('register')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5,3 19,12 5,21"/></svg>
+        <span id="hero-play-btn">Play Now</span>
+      </button>
+      <a href="#clans" class="btn btn-outline" id="hero-explore-btn">Explore Clans</a>
+    </div>
+  </div>
+
+  <div class="hero-floating-cards">
+    <div class="hero-card">
+      <img src="Assets/Cards/CLAN NEXUS/05de5ca0-707f-4bb0-9128-046b5078395d.jpg" alt="Card" onerror="this.parentNode.style.background='#1A1F2B';this.style.display='none'"/>
+    </div>
+    <div class="hero-card">
+      <img src="Assets/Cards/CLAN NEXUS/22484ba0-a968-4503-b029-030555ac97a7.jpg" alt="Card" onerror="this.parentNode.style.background='#1A1F2B';this.style.display='none'"/>
+    </div>
+    <div class="hero-card">
+      <img src="Assets/Cards/CLAN NEXUS/255f4a95-8073-485e-bdd1-f5f6ea28e58b.jpg" alt="Card" onerror="this.parentNode.style.background='#1A1F2B';this.style.display='none'"/>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-num">13</div>
+      <div class="hero-stat-label" id="stat-clans-l">Clans</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">166</div>
+      <div class="hero-stat-label" id="stat-cards-l">Cards</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">4</div>
+      <div class="hero-stat-label" id="stat-modes-l">Game Modes</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num" style="color:var(--acc)" id="stat-free-n">Free</div>
+      <div class="hero-stat-label" id="stat-free-l">To Play</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num" style="color:#FF6B35" id="stat-b2e-n">Battle</div>
+      <div class="hero-stat-label" id="stat-b2e-l">to Earn</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CLANS ─────────────────────────────────────────────────────── -->
+<section id="clans" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="label" id="clans-label">13 Factions</span>
+      <h2 id="clans-h2">Choose Your Clan</h2>
+      <p id="clans-p">Each faction controls a different survival strategy in the fractured world. Your clan defines your combat identity.</p>
+    </div>
+    <div class="clans-grid" id="clans-grid">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ── GAMEPLAY ───────────────────────────────────────────────────── -->
+<section id="gameplay" class="section">
+  <div class="container">
+    <div class="gameplay-grid">
+      <div class="gameplay-visual">
+        <div class="battle-arena" id="battle-demo">
+          <!-- HEADER -->
+          <div class="battle-header">
+            <span class="battle-round-label">Round</span>
+            <span class="battle-round-num" id="bd-round">1 / 4</span>
+            <span class="battle-round-label" id="bd-phase">Choose your card</span>
+          </div>
+          <!-- LIFE BARS -->
+          <div class="battle-life-bars">
+            <div class="life-bar-wrap">
+              <div class="life-bar-label"><span>YOU</span><span id="bd-player-life">12</span></div>
+              <div class="life-bar-track"><div class="life-bar-fill player" id="bd-player-bar" style="width:100%"></div></div>
+            </div>
+            <div class="battle-vs-divider">VS</div>
+            <div class="life-bar-wrap">
+              <div class="life-bar-label"><span>RIVAL</span><span id="bd-opp-life">12</span></div>
+              <div class="life-bar-track"><div class="life-bar-fill opp" id="bd-opp-bar" style="width:100%"></div></div>
+            </div>
+          </div>
+          <!-- CARDS -->
+          <div class="battle-cards-area">
+            <div class="battle-side">
+              <div class="battle-side-label you">Your Card</div>
+              <div class="battle-card-slot" id="bd-player-card" style="--slot-color:#6B5CE7;--slot-glow:rgba(107,92,231,0.3)">
+                <div class="bcs-header" id="bd-pc-header" style="background:#6B5CE7">NEXUS</div>
+                <div class="bcs-body">
+                  <div class="bcs-art"><img src="Assets/Cards/CLAN NEXUS/447819e2-952f-4bd9-8d3b-17cf4f625279.jpg" id="bd-pc-img" alt="" onerror="this.style.display='none'"/></div>
+                  <div class="bcs-info">
+                    <div class="bcs-name" id="bd-pc-name">Nyx</div>
+                    <div class="bcs-stats">
+                      <div><div class="bcs-pow" id="bd-pc-pow">7</div><div class="bcs-stat-label">POW</div></div>
+                      <div><div class="bcs-dmg" id="bd-pc-dmg">3</div><div class="bcs-stat-label">DMG</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="bcs-pillz" id="bd-pc-pillz">+3 Pulsos</div>
+              </div>
+            </div>
+            <div class="battle-middle">
+              <div class="battle-vs-big">VS</div>
+              <div class="battle-atq-indicator">
+                <div class="atq-val" id="bd-atq-you" style="color:var(--muted)">—</div>
+                <div style="font-size:0.55rem;color:var(--muted);font-family:var(--font-head)">ATQ</div>
+                <div class="atq-val" id="bd-atq-opp" style="color:var(--muted)">—</div>
+              </div>
+            </div>
+            <div class="battle-side">
+              <div class="battle-side-label opp">Rival Card</div>
+              <div class="battle-card-slot" id="bd-opp-card" style="--slot-color:#E74C3C;--slot-glow:rgba(231,76,60,0.3)">
+                <div class="bcs-header" id="bd-oc-header" style="background:#E74C3C">IRONPACT</div>
+                <div class="bcs-body">
+                  <div class="bcs-art"><img src="Assets/Cards/CLAN NEXUS/4c52d2b3-87ab-4991-b9a6-1596013db8fb.jpg" id="bd-oc-img" alt="" onerror="this.style.display='none'"/></div>
+                  <div class="bcs-info">
+                    <div class="bcs-name" id="bd-oc-name">Krag</div>
+                    <div class="bcs-stats">
+                      <div><div class="bcs-pow" id="bd-oc-pow">6</div><div class="bcs-stat-label">POW</div></div>
+                      <div><div class="bcs-dmg" id="bd-oc-dmg">5</div><div class="bcs-stat-label">DMG</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="bcs-pillz" id="bd-oc-pillz">+2 Pulsos</div>
+              </div>
+            </div>
+          </div>
+          <!-- FOOTER -->
+          <div class="battle-footer">
+            <div class="battle-log neutral" id="bd-log">Pulsos allocated...</div>
+            <div class="battle-pillz-remaining" id="bd-pillz-dots">
+              <div class="pr-dot"></div><div class="pr-dot"></div><div class="pr-dot"></div>
+              <div class="pr-dot"></div><div class="pr-dot"></div><div class="pr-dot"></div>
+              <div class="pr-dot"></div><div class="pr-dot"></div><div class="pr-dot"></div>
+              <div class="pr-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="label" id="gameplay-label">Combat System</span>
+        <h2 id="gameplay-h2" style="margin-top:12px;margin-bottom:24px;font-size:2.2rem">How Battles Work</h2>
+        <div class="gameplay-steps">
+          <div class="step">
+            <div class="step-num">01</div>
+            <div class="step-body">
+              <h4 id="step1-h">Build Your Deck</h4>
+              <p id="step1-p">Choose 8 cards across up to 2 clans. Each battle draws 4 cards from your deck — plan for variance.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <div class="step-body">
+              <h4 id="step2-h">Play Pulsos — Wager Your Multiplier</h4>
+              <p id="step2-p">Each round you assign Pulsos to a card. More Pulsos = higher ATQ <em>(ATQ = Power × (1 + Pulsos))</em>. First to drain the opponent's 12 HP wins.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <div class="step-body">
+              <h4 id="step3-h">Clan Bonuses Activate</h4>
+              <p id="step3-p">Running 3+ cards of the same clan unlocks a passive bonus. NEXUS crushes enemy ATQ. VAULT ignores Pulsos. ECHO rewrites rules entirely.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">04</div>
+            <div class="step-body">
+              <h4 id="step4-h">Abilities Change Everything</h4>
+              <p id="step4-p">Each card has a unique ability — Poison, Weaken, Copy, Stop. Reading the battlefield is half the game.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CARDS PREVIEW ──────────────────────────────────────────────── -->
+<section id="cards" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="label" id="cards-label">Card System</span>
+      <h2 id="cards-h2">Every Card Tells a Story</h2>
+      <p id="cards-p">166 unique cards. Rarity tiers from Common to Mythic. Each one a weapon. Each one a lore fragment.</p>
+    </div>
+    <div class="cards-showcase" id="cards-showcase">
+      <!-- Rendered by JS -->
+    </div>
+    <div style="text-align:center;margin-top:48px">
+      <button class="btn btn-outline" id="unlock-btn" onclick="openAuth('register')">Unlock Full Collection</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── COMPETITIVE ────────────────────────────────────────────────── -->
+<section id="competitive" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="label" id="comp-label">Competitive</span>
+      <h2 id="comp-h2">Three Paths to Dominance</h2>
+      <p id="comp-p">Casual warmup. Off-chain leaderboards. On-chain stakes. Choose your arena.</p>
+    </div>
+    <div class="comp-grid">
+      <div class="comp-tier" style="--tc:#9BFF00">
+        <div class="comp-tier-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#9BFF00" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+        </div>
+        <h3 id="mode1-h">Training Mode</h3>
+        <p id="mode1-p">Practice mechanics, test deck builds, and learn clan interactions. No stakes. Pure skill development.</p>
+        <span class="comp-tag free" id="mode1-tag">Free · No Stakes</span>
+      </div>
+      <div class="comp-tier" style="--tc:var(--acc)">
+        <div class="comp-tier-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </div>
+        <h3 id="mode2-h">Ranked Off-Chain</h3>
+        <p id="mode2-p">Compete on the global ELO ladder. Earn Shards, climb brackets from Astilla to Singularidad.</p>
+        <span class="comp-tag ranked" id="mode2-tag">ELO · SHARD Rewards</span>
+      </div>
+      <div class="comp-tier" style="--tc:#f59e0b">
+        <div class="comp-tier-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-4 0v2M12 12v4M8 12h8"/></svg>
+        </div>
+        <h3 id="mode3-h">Ranked On-Chain</h3>
+        <p id="mode3-p">True ownership. Cards as NFTs. Wager $SHS tokens. Wins mean real value. Losses mean real loss.</p>
+        <span class="comp-tag chain" id="mode3-tag">Abstract Chain · $SHS</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-top:2px">
+      <div style="padding:20px;background:var(--bg2);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-head);font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Bracket</div>
+        <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:700;color:var(--muted)">Astilla</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">0 — 799</div>
+      </div>
+      <div style="padding:20px;background:var(--bg2);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-head);font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Bracket</div>
+        <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:700;color:#9B59B6">Grieta</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">800 — 1199</div>
+      </div>
+      <div style="padding:20px;background:var(--bg2);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-head);font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Bracket</div>
+        <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:700;color:#f59e0b">Fractura</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">1200 — 1599</div>
+      </div>
+      <div style="padding:20px;background:var(--bg2);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-head);font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Bracket</div>
+        <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:700;color:var(--red)">Abismo</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">1600 — 1999</div>
+      </div>
+      <div style="padding:20px;background:var(--bg2);border:1px solid var(--border);text-align:center">
+        <div style="font-family:var(--font-head);font-size:0.72rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px">Bracket</div>
+        <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:700;color:var(--acc)">Singularidad</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px">2000+</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SOCIAL PROOF ───────────────────────────────────────────────── -->
+<section id="proof" class="section">
+  <div class="container">
+    <div class="section-header">
+      <span class="label" id="proof-label">Community</span>
+      <h2 id="proof-h2">Trusted by Competitive Players</h2>
+    </div>
+    <div class="stats-row">
+      <div class="stat-cell">
+        <div class="stat-cell-num"><span class="acc">3.2</span>K+</div>
+        <div class="stat-cell-label" id="proof-stat1">Active Players</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-num"><span class="acc">48</span>K+</div>
+        <div class="stat-cell-label" id="proof-stat2">Battles Played</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-num"><span class="acc">166</span></div>
+        <div class="stat-cell-label" id="proof-stat3">Unique Cards</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-cell-num"><span class="acc">13</span></div>
+        <div class="stat-cell-label" id="proof-stat4">Factions</div>
+      </div>
+    </div>
+    <div class="testimonials">
+      <div class="testi">
+        <div class="testi-text">"The clan bonus system adds a layer of depth I haven't seen in any other TCG. Running a pure ERRVOID deck against an ability-heavy opponent is a completely different game."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">⚡</div>
+          <div><div class="testi-name">VexCore_77</div><div class="testi-rank">Fractura · 1487 ELO</div></div>
+        </div>
+      </div>
+      <div class="testi">
+        <div class="testi-text">"Finally a game where bluffing Pulsos allocation is a real mechanic. You can outplay someone with a statistically weaker deck. The mind games are real."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">🌊</div>
+          <div><div class="testi-name">AquaMind</div><div class="testi-rank">Abismo · 1712 ELO</div></div>
+        </div>
+      </div>
+      <div class="testi">
+        <div class="testi-text">"ECHO clan breaks every rule. Every card feels like a different game mode. Once you start playing ECHO you can't go back to anything else."</div>
+        <div class="testi-author">
+          <div class="testi-avatar">✨</div>
+          <div><div class="testi-name">NullSingr</div><div class="testi-rank">Singularidad · 2104 ELO</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ────────────────────────────────────────────────────────── -->
+<section id="play-entry">
+  <div class="cta-glow"></div>
+  <div class="cta-lines"></div>
+  <div style="position:relative;z-index:2">
+    <div class="cta-label" id="cta-label">Enter the System</div>
+    <h2 class="cta-title">Enter <span style="color:var(--acc)">SHARDSTATE</span></h2>
+    <p class="cta-sub" id="cta-sub">Create your account. Build your deck. Climb the ladder. Own your cards on-chain.</p>
+    <div class="cta-actions">
+      <button class="btn btn-primary" style="font-size:1rem;padding:16px 36px" onclick="openAuth('register')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5,3 19,12 5,21"/></svg>
+        <span id="cta-main-btn-text">Enter SHARDSTATE</span>
+      </button>
+      <button id="cta-login-btn" class="btn btn-outline" style="padding:16px 28px" onclick="openAuth('login')">Log In</button>
+    </div>
+    <p id="cta-hint" style="margin-top:20px;font-size:0.78rem;color:var(--muted)">Browser-based · No install required · All platforms</p>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <h3>SHARDSTATE</h3>
+        <p id="footer-brand-p">A competitive TCG set in a fractured world where humanity is the resource and 13 clans fight for dominance over the PULSOS system.</p>
+      </div>
+      <div class="footer-col">
+        <h4 id="footer-col1-h">Game</h4>
+        <ul>
+          <li><a href="#clans" id="footer-clans">Clans</a></li>
+          <li><a href="#gameplay" id="footer-howto">How to Play</a></li>
+          <li><a href="#cards" id="footer-carddb">Card Database</a></li>
+          <li><a href="#competitive" id="footer-ranked">Ranked</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 id="footer-col2-h">Account</h4>
+        <ul>
+          <li><a href="#" id="footer-register" onclick="openAuth('register');return false">Create Account</a></li>
+          <li><a href="#" id="footer-login" onclick="openAuth('login');return false">Log In</a></li>
+          <li><a href="gamehub/index.html" id="footer-portal">Web Portal</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 id="footer-col3-h">Ecosystem</h4>
+        <ul>
+          <li><a href="#">Abstract Chain</a></li>
+          <li><a href="#">Guilds</a></li>
+          <li><a href="#">Market</a></li>
+          <li><a href="#">$SHS Token</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy" id="footer-copy">© 2026 SHARDSTATE. All rights reserved.</span>
+      <span class="footer-protocol" id="footer-protocol">PROTOCOL OBSERVES ALL</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ── AUTH MODAL ─────────────────────────────────────────────────── -->
+<div id="auth-overlay" role="dialog" aria-modal="true" aria-label="Authentication">
+  <div class="auth-modal">
+    <button class="auth-close" onclick="closeAuth()" aria-label="Close">&times;</button>
+    <div class="auth-logo">SHARDSTATE</div>
+    <p class="auth-tagline">FRACTURE NETWORK · COMPETITIVE TCG</p>
+
+    <!-- STEP 1: Login / Register -->
+    <div class="auth-step active" id="auth-main-step">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Log In</button>
+        <button class="auth-tab" id="tab-register" onclick="setAuthMode('register')">Create Account</button>
+        <!-- translated by JS -->
+      </div>
+      <span class="auth-feedback" id="auth-feedback"></span>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="your@email.com" autocomplete="email"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password"/>
+        <div class="pw-rule" id="auth-password-rule">Min 8 chars · uppercase · lowercase · number</div>
+      </div>
+      <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">ENTER SHARDSTATE</button>
+      <div class="auth-divider">or continue with</div>
+      <div class="oauth-btns">
+        <button class="oauth-btn" onclick="beginOAuth('google')">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Google
+        </button>
+        <button class="oauth-btn" onclick="beginOAuth('apple')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          Apple
+        </button>
+      </div>
+      <!-- Inline OAuth email confirmation -->
+      <div id="oauth-inline" style="display:none;flex-direction:column;gap:10px;margin-top:16px;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
+        <p id="oauth-helper-text" style="font-size:0.8rem;color:var(--muted)"></p>
+        <input type="email" id="oauth-email" placeholder="Provider email" style="width:100%;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-body)"/>
+        <button class="auth-submit" onclick="completeOAuth()">Continue</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Choose Username -->
+    <div class="auth-step auth-username-step" id="auth-username-step">
+      <h3>Choose Your Name</h3>
+      <p>This is your public identity in the Shardstate. 3–16 chars: letters, numbers, underscore.</p>
+      <span class="auth-feedback" id="username-feedback"></span>
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="auth-username" placeholder="YourHandle" autocomplete="username" maxlength="16"/>
+      </div>
+      <div class="field" id="auth-sponsor-wrap">
+        <label>Sponsor (optional)</label>
+        <input type="text" id="auth-sponsor-username" placeholder="Referral username" maxlength="16"/>
+      </div>
+      <div id="auth-ref-applied-note" style="display:none;font-size:0.78rem;color:var(--acc);margin-bottom:12px"></div>
+      <button class="auth-submit" onclick="saveUsername()">ENTER SHARDSTATE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── COMPREHENSIVE LANG SYSTEM ──────────────────────────────────
+const LANDING_I18N = {
+  en: {
+    'nav-clans':'Clans','nav-howto':'How to Play','nav-cards':'Cards','nav-competitive':'Competitive',
+    'nav-login-btn':'Log In',
+    'hero-badge-text':'FRACTURE NETWORK · TCG ON-CHAIN',
+    'hero-title-1':'CONTROL THE ','hero-title-accent':'PULSOS.','hero-title-2':'DOMINATE THE SHARDSTATE.',
+    'hero-sub':'Competitive TCG where humanity is the resource. 13 clans. Strategic depth. On-chain ownership.',
+    'hero-play-btn':'Play Now','hero-explore-btn':'Explore Clans',
+    'stat-clans-l':'Clans','stat-cards-l':'Cards','stat-modes-l':'Game Modes','stat-free-n':'Free','stat-free-l':'To Play','stat-b2e-n':'Battle','stat-b2e-l':'to Earn',
+    'clans-label':'13 Factions','clans-h2':'Choose Your Clan',
+    'clans-p':'Each faction controls a different survival strategy in the fractured world. Your clan defines your combat identity.',
+    'gameplay-label':'Combat System','gameplay-h2':'How Battles Work',
+    'step1-h':'Build Your Deck','step1-p':'Choose 8 cards across up to 2 clans. Each battle draws 4 cards from your deck — plan for variance.',
+    'step2-h':'Play Pulsos — Wager Your Multiplier','step2-p':'Each round you assign Pulsos to a card. More Pulsos = higher ATQ (ATQ = Power × (1 + Pulsos)). First to drain the opponent\'s 12 HP wins.',
+    'step3-h':'Clan Bonuses Activate','step3-p':'Running 3+ cards of the same clan unlocks a passive bonus. NEXUS crushes enemy ATQ. VAULT ignores Pulsos. ECHO rewrites rules entirely.',
+    'step4-h':'Abilities Change Everything','step4-p':'Each card has a unique ability — Poison, Weaken, Copy, Stop. Reading the battlefield is half the game.',
+    'cards-label':'Card System','cards-h2':'Every Card Tells a Story',
+    'cards-p':'166 unique cards. Rarity tiers from Common to Mythic. Each one a weapon. Each one a lore fragment.',
+    'unlock-btn':'Unlock Full Collection',
+    'comp-label':'Competitive','comp-h2':'Three Paths to Dominance',
+    'comp-p':'Casual warmup. Off-chain leaderboards. On-chain stakes. Choose your arena.',
+    'mode1-h':'Training Mode','mode1-p':'Practice mechanics, test deck builds, and learn clan interactions. No stakes. Pure skill development.','mode1-tag':'Free · No Stakes',
+    'mode2-h':'Ranked Off-Chain','mode2-p':'Compete on the global ELO ladder. Earn Shards, climb brackets from Astilla to Singularidad.','mode2-tag':'ELO · SHARD Rewards',
+    'mode3-h':'Ranked On-Chain','mode3-p':'True ownership. Cards as NFTs. Wager $SHS tokens. Wins mean real value. Losses mean real loss.','mode3-tag':'Abstract Chain · $SHS',
+    'proof-label':'Community','proof-h2':'Trusted by Competitive Players',
+    'proof-stat1':'Active Players','proof-stat2':'Battles Played','proof-stat3':'Unique Cards','proof-stat4':'Factions',
+    'cta-label':'Enter the System','cta-sub':'Create your account. Build your deck. Climb the ladder. Own your cards on-chain.',
+    'cta-main-btn-text':'Enter SHARDSTATE','cta-login-btn':'Log In',
+    'cta-hint':'Browser-based · No install required · All platforms',
+    'footer-brand-p':'A competitive TCG set in a fractured world where humanity is the resource and 13 clans fight for dominance over the PULSOS system.',
+    'footer-col1-h':'Game','footer-clans':'Clans','footer-howto':'How to Play','footer-carddb':'Card Database','footer-ranked':'Ranked',
+    'footer-col2-h':'Account','footer-register':'Create Account','footer-login':'Log In','footer-portal':'Web Portal',
+    'footer-col3-h':'Ecosystem',
+    'footer-copy':'© 2026 SHARDSTATE. All rights reserved.','footer-protocol':'PROTOCOL OBSERVES ALL',
+    'tab-login':'Log In','tab-register':'Create Account',
+  },
+  es: {
+    'nav-clans':'Clanes','nav-howto':'Cómo Jugar','nav-cards':'Cartas','nav-competitive':'Competitivo',
+    'nav-login-btn':'Entrar',
+    'hero-badge-text':'FRACTURE NETWORK · TCG ON-CHAIN',
+    'hero-title-1':'CONTROLA EL ','hero-title-accent':'PULSO.','hero-title-2':'DOMINA EL SHARDSTATE.',
+    'hero-sub':'TCG competitivo donde la humanidad es el recurso. 13 clanes. Profundidad estratégica. Propiedad on-chain.',
+    'hero-play-btn':'Jugar Ahora','hero-explore-btn':'Explorar Clanes',
+    'stat-clans-l':'Clanes','stat-cards-l':'Cartas','stat-modes-l':'Modos de Juego','stat-free-n':'Jugá','stat-free-l':'Gratis','stat-b2e-n':'Luchá','stat-b2e-l':'para Ganar',
+    'clans-label':'13 Facciones','clans-h2':'Elige Tu Clan',
+    'clans-p':'Cada facción controla una estrategia de supervivencia diferente en el mundo fracturado. Tu clan define tu identidad en combate.',
+    'gameplay-label':'Sistema de Combate','gameplay-h2':'Cómo Funcionan las Batallas',
+    'step1-h':'Construye tu Deck','step1-p':'Elige 8 cartas de hasta 2 clanes. Cada batalla saca 4 cartas de tu deck — planea para la varianza.',
+    'step2-h':'Juega Pulsos — Apostá tu Multiplicador','step2-p':'Cada ronda asignás Pulsos a una carta. Más Pulsos = mayor ATQ (ATQ = Poder × (1 + Pulsos)). El primero en drenar los 12 HP del rival gana.',
+    'step3-h':'Se Activan los Bonos de Clan','step3-p':'Tener 3+ cartas del mismo clan desbloquea un bono pasivo. NEXUS destruye el ATQ enemigo. VAULT ignora los Pulsos. ECHO reescribe las reglas.',
+    'step4-h':'Las Habilidades Lo Cambian Todo','step4-p':'Cada carta tiene una habilidad única — Veneno, Debilitar, Copiar, Parar. Leer el campo de batalla es la mitad del juego.',
+    'cards-label':'Sistema de Cartas','cards-h2':'Cada Carta Cuenta una Historia',
+    'cards-p':'166 cartas únicas. Niveles de rareza de Común a Mítica. Cada una es un arma. Cada una un fragmento de historia.',
+    'unlock-btn':'Desbloquear Colección Completa',
+    'comp-label':'Competitivo','comp-h2':'Tres Caminos hacia la Dominación',
+    'comp-p':'Calentamiento casual. Tablas de clasificación off-chain. Apuestas on-chain. Elige tu arena.',
+    'mode1-h':'Modo Entrenamiento','mode1-p':'Practica mecánicas, prueba decks y aprende interacciones de clan. Sin apuestas. Desarrollo de habilidades puro.','mode1-tag':'Gratis · Sin Apuestas',
+    'mode2-h':'Ranked Off-Chain','mode2-p':'Compite en la tabla ELO global. Gana Shards, sube de Astilla a Singularidad.','mode2-tag':'ELO · Recompensas SHARD',
+    'mode3-h':'Ranked On-Chain','mode3-p':'Propiedad real. Cartas como NFTs. Apuesta $SHS. Ganar tiene valor real. Perder tiene consecuencias reales.','mode3-tag':'Abstract Chain · $SHS',
+    'proof-label':'Comunidad','proof-h2':'La Confianza de Jugadores Competitivos',
+    'proof-stat1':'Jugadores Activos','proof-stat2':'Batallas Jugadas','proof-stat3':'Cartas Únicas','proof-stat4':'Facciones',
+    'cta-label':'Entra al Sistema','cta-sub':'Crea tu cuenta. Construye tu deck. Sube la escalera. Posee tus cartas on-chain.',
+    'cta-main-btn-text':'Entrar a SHARDSTATE','cta-login-btn':'Iniciar Sesión',
+    'cta-hint':'Basado en navegador · Sin instalación · Todas las plataformas',
+    'footer-brand-p':'Un TCG competitivo en un mundo fracturado donde la humanidad es el recurso y 13 clanes luchan por el dominio del sistema PULSOS.',
+    'footer-col1-h':'Juego','footer-clans':'Clanes','footer-howto':'Cómo Jugar','footer-carddb':'Base de Cartas','footer-ranked':'Clasificados',
+    'footer-col2-h':'Cuenta','footer-register':'Crear Cuenta','footer-login':'Entrar','footer-portal':'Portal Web',
+    'footer-col3-h':'Ecosistema',
+    'footer-copy':'© 2026 SHARDSTATE. Todos los derechos reservados.','footer-protocol':'EL PROTOCOLO TODO LO OBSERVA',
+    'tab-login':'Entrar','tab-register':'Crear Cuenta',
+  }
+};
+
+let landingLang = localStorage.getItem('shs_lang') || 'en';
+
+function applyLandingLang(lang) {
+  const T = LANDING_I18N[lang] || LANDING_I18N.en;
+  Object.entries(T).forEach(([id, text]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+  // Update glitch data-text attribute
+  const ht = document.getElementById('hero-title');
+  if (ht) ht.dataset.text = (T['hero-title-1']||'') + (T['hero-title-accent']||'') + ' ' + (T['hero-title-2']||'');
+  document.documentElement.lang = lang;
+  const btn = document.getElementById('lang-toggle-landing');
+  if (btn) btn.textContent = lang === 'en' ? 'ES' : 'EN';
+}
+
+function toggleLandingLang() {
+  landingLang = landingLang === 'en' ? 'es' : 'en';
+  localStorage.setItem('shs_lang', landingLang);
+  applyLandingLang(landingLang);
+}
+
+// Apply on load
+(function(){ applyLandingLang(landingLang); })();
+
+// ── AUTH CONSTANTS ─────────────────────────────────────────────
+const AUTH_DB_KEY      = 'shardstate_auth_db_v2';
+const AUTH_SESSION_KEY = 'shardstate_auth_session_v1';
+const REF_SESSION_KEY  = 'shardstate_pending_ref';
+const AUTH = {
+  mode: 'login',
+  provider: null,
+  db: {users:{}, emailToUid:{}, usernameToUid:{}, marketListings:[]},
+  currentUser: null,
+};
+
+// ── GAME DATA (inline from design.md) ─────────────────────────
+const CLANS = [
+  { id:'nexus',    name:'NEXUS',    color:'#6B5CE7', bonus:'−2 ATQ rival (min. 5)',              lore:'Illegal implants. Neon-lit alleys. Control through augmentation.' },
+  { id:'tidecall', name:'TIDECALL', color:'#00B4D8', bonus:'+1 Pulso per round won',             lore:'Ocean nomads with bioluminescent tattoos. Tide knows no master.' },
+  { id:'ashborn',  name:'ASHBORN',  color:'#FF6B35', bonus:'+2 Damage when winning the round',   lore:'Pyromaniac cult. They worship the burn and wear the scars.' },
+  { id:'errvoid',  name:'ERRVOID',  color:'#B5179E', bonus:'Cancel rival ability',               lore:'Nihilist hackers. They delete what they cannot understand.' },
+  { id:'vault',    name:'VAULT',    color:'#F7B731', bonus:'+8 ATQ base (sin necesitar Pulsos)',   lore:'Post-apoc aristocracy. Hoarding beauty in a world of ash.' },
+  { id:'mycelium', name:'MYCELIUM', color:'#2ECC71', bonus:'Poison 1 per round won',             lore:'Human-fungal fusion. The forest claims what the system abandons.' },
+  { id:'ironpact', name:'IRONPACT', color:'#E74C3C', bonus:'+2 POW if rival has more DMG',      lore:'Tribal mercenaries. War paint and salvage. No mercy.' },
+  { id:'synthos',  name:'SYNTHOS',  color:'#3498DB', bonus:'Copy rival ability on win',          lore:'Techno-utopian scientists. Hope persists in the ruins.' },
+  { id:'loopkin',  name:'LOOPKIN',  color:'#9B59B6', bonus:'+1 Pulso per round from round 2',   lore:'Time-displaced warriors. Afterimages of battles not yet fought.' },
+  { id:'phantom',  name:'PHANTOM',  color:'#1ABC9C', bonus:'−1 POW to rival (min. 1)',          lore:'Shadow operatives. If you see them, it\'s already over.' },
+  { id:'frequenz', name:'FREQUENZ', color:'#F39C12', bonus:'+2 Pulsos on KO',                    lore:'Post-apoc artists. Instruments as weapons. Chaos as signal.' },
+  { id:'protocol', name:'PROTOCOL', color:'#7F8C8D', bonus:'Immune to ability cancellation',    lore:'Military government remnants. The system never stops watching.' },
+  { id:'echo',     name:'ECHO',     color:'#F5BC94', bonus:'No clan bonus (beyond-system gods)', lore:'Anomalous. Alien. Visually wrong. Not part of the fracture. Before it.', special:true },
+];
+
+const PREVIEW_CARDS = [
+  { name:'Nyx',      clan:'nexus',    color:'#6B5CE7', rar:'U', stars:3, pow:7, dmg:3, ability:'Weaken: −1 ATQ al rival (always)', img:'Assets/Cards/CLAN NEXUS/22484ba0-a968-4503-b029-030555ac97a7.jpg' },
+  { name:'Skrell',   clan:'nexus',    color:'#6B5CE7', rar:'C', stars:2, pow:4, dmg:2, ability:'Weaken: −1 ATQ al rival este turno', img:'Assets/Cards/CLAN NEXUS/05de5ca0-707f-4bb0-9128-046b5078395d.jpg' },
+  { name:'Glyph',    clan:'nexus',    color:'#6B5CE7', rar:'R', stars:4, pow:7, dmg:4, ability:'Poison 2 min 1 on win', img:'Assets/Cards/CLAN NEXUS/255f4a95-8073-485e-bdd1-f5f6ea28e58b.jpg' },
+  { name:'Vex',      clan:'nexus',    color:'#6B5CE7', rar:'R', stars:4, pow:8, dmg:3, ability:'Stop: Nullify rival bonus', img:'Assets/Cards/CLAN NEXUS/381e02e1-df2a-449d-9236-5e4f849614e1.jpg' },
+  { name:'Krix',     clan:'nexus',    color:'#6B5CE7', rar:'C', stars:3, pow:5, dmg:3, ability:'Support: +1 ATQ per ally NEXUS', img:'Assets/Cards/CLAN NEXUS/447819e2-952f-4bd9-8d3b-17cf4f625279.jpg' },
+  { name:'Shiv',     clan:'nexus',    color:'#6B5CE7', rar:'M', stars:5, pow:8, dmg:5, ability:'Confidence: +2 DMG if winning', img:'Assets/Cards/CLAN NEXUS/4c52d2b3-87ab-4991-b9a6-1596013db8fb.jpg' },
+];
+
+const RAR_COLORS = { C:'#6B7280', U:'#3498DB', R:'#F7B731', M:'#B5179E' };
+
+// ── INIT: check session ─────────────────────────────────────────
+(function checkSession(){
+  const ref = new URLSearchParams(location.search).get('ref');
+  if(ref) sessionStorage.setItem(REF_SESSION_KEY, ref);
+
+  loadAuthDb();
+  const uid = localStorage.getItem(AUTH_SESSION_KEY);
+  if(uid && AUTH.db.users[uid]){
+    window.location.replace('gamehub/index.html');
+  }
+})();
+
+// ── AUTH DB ─────────────────────────────────────────────────────
+function loadAuthDb(){
+  try{
+    const raw = localStorage.getItem(AUTH_DB_KEY);
+    if(!raw) return;
+    const p = JSON.parse(raw);
+    AUTH.db.users          = p.users          || {};
+    AUTH.db.emailToUid     = p.emailToUid     || {};
+    AUTH.db.usernameToUid  = p.usernameToUid  || {};
+    AUTH.db.marketListings = p.marketListings  || [];
+    rebuildUsernameIndex();
+  }catch(_){}
+}
+function saveAuthDb(){
+  rebuildUsernameIndex();
+  localStorage.setItem(AUTH_DB_KEY, JSON.stringify(AUTH.db));
+}
+function rebuildUsernameIndex(){
+  AUTH.db.usernameToUid = {};
+  Object.values(AUTH.db.users||{}).forEach(u=>{
+    if(u && u.username) AUTH.db.usernameToUid[u.username.toLowerCase()] = u.uid;
+  });
+}
+function genUid(){
+  return (crypto.randomUUID && crypto.randomUUID()) || ('uid_'+Date.now()+'_'+Math.random().toString(36).slice(2));
+}
+function normalizeEmail(e){ return String(e||'').trim().toLowerCase(); }
+function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+function validPassword(p){ return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(p||''); }
+function validUsername(n){ return /^[a-zA-Z0-9_]{3,16}$/.test(String(n||'').trim()); }
+async function sha256(text){
+  if(window.crypto && crypto.subtle){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  return btoa(unescape(encodeURIComponent(text)));
+}
+function ensureUserDefaults(u){
+  const d = {
+    username:'', guild:'', avatarId:'av1', frameId:'fr1', bio:'',
+    accountLevel:1, accountXp:0, battleWins:0, battleLosses:0, battlesTotal:0,
+    elo:1248, onchainElo:1000, friends:[], friendRequestsIn:[], friendRequestsOut:[],
+    referredByUid:null, referralCode:'', referrals:[], buyHistory:[], sellHistory:[],
+    firstPremiumPurchaseDone:false, shs:0, shardsBalance:1240, fluxBalance:3, shsBalance:0,
+    gameState:null, pendingFluxCredit:0,
+  };
+  Object.keys(d).forEach(k=>{ if(u[k]==null) u[k]=d[k]; });
+  if(!u.referralCode){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    u.referralCode = Array.from({length:8},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  }
+}
+
+// ── AUTH UI ─────────────────────────────────────────────────────
+function openAuth(mode){
+  setAuthMode(mode);
+  document.getElementById('auth-overlay').classList.add('open');
+  document.getElementById('auth-main-step').style.display='block';
+  document.getElementById('auth-username-step').classList.remove('active');
+  document.getElementById('auth-feedback').textContent='';
+  document.getElementById('oauth-inline').style.display='none';
+}
+function closeAuth(){
+  document.getElementById('auth-overlay').classList.remove('open');
+}
+document.getElementById('auth-overlay').addEventListener('click', e=>{
+  if(e.target === document.getElementById('auth-overlay')) closeAuth();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeAuth(); });
+
+function setAuthMode(mode){
+  AUTH.mode = mode === 'register' ? 'register' : 'login';
+  document.getElementById('tab-login').classList.toggle('active', AUTH.mode==='login');
+  document.getElementById('tab-register').classList.toggle('active', AUTH.mode==='register');
+  document.getElementById('auth-submit-btn').textContent = AUTH.mode==='login' ? 'ENTER SHARDSTATE' : 'CREATE ACCOUNT';
+  const pwRule = document.getElementById('auth-password-rule');
+  if(pwRule) pwRule.style.display = AUTH.mode==='register' ? 'block' : 'none';
+  const sponsorWrap = document.getElementById('auth-sponsor-wrap');
+  const refCode = sessionStorage.getItem(REF_SESSION_KEY);
+  if(refCode && AUTH.mode==='register'){
+    if(sponsorWrap) sponsorWrap.style.display='none';
+    const note = document.getElementById('auth-ref-applied-note');
+    const sponsor = Object.values(AUTH.db.users||{}).find(u=>u.referralCode===refCode);
+    if(note){
+      note.style.display='block';
+      note.textContent = sponsor && sponsor.username ? `Sponsor applied: ${sponsor.username}` : 'Referral sponsor applied.';
+    }
+  } else {
+    if(sponsorWrap) sponsorWrap.style.display='block';
+    const note = document.getElementById('auth-ref-applied-note');
+    if(note) note.style.display='none';
+  }
+  document.getElementById('auth-feedback').textContent='';
+}
+function authFeedback(msg, ok=false){
+  const el = document.getElementById('auth-feedback');
+  if(!el) return;
+  el.textContent = msg||'';
+  el.className = 'auth-feedback' + (ok ? ' ok' : '');
+}
+function usernameFeedback(msg, ok=false){
+  const el = document.getElementById('username-feedback');
+  if(!el) return;
+  el.textContent = msg||'';
+  el.className = 'auth-feedback' + (ok ? ' ok' : '');
+}
+
+async function submitAuth(){
+  const email    = normalizeEmail(document.getElementById('auth-email').value);
+  const password = document.getElementById('auth-password').value||'';
+  if(!validEmail(email)){ authFeedback('Enter a valid email.'); return; }
+  if(AUTH.mode==='register' && !validPassword(password)){
+    authFeedback('Password: 8+ chars, upper, lower and a number.'); return;
+  }
+  if(AUTH.mode==='login'){
+    await loginWithEmail(email, password);
+  } else {
+    await registerWithEmail(email, password);
+  }
+}
+
+async function registerWithEmail(email, password){
+  if(AUTH.db.emailToUid[email]){ authFeedback('Email already registered. Log in instead.'); return; }
+  const newUid = genUid();
+  AUTH.db.emailToUid[email] = newUid;
+  AUTH.db.users[newUid] = { uid:newUid, email, passwordHash: await sha256(password), providers:['password'], username:'', createdAt:Date.now(), updatedAt:Date.now() };
+  ensureUserDefaults(AUTH.db.users[newUid]);
+  saveAuthDb();
+  finishAuth(AUTH.db.users[newUid], true);
+}
+
+async function loginWithEmail(email, password){
+  const linkedUid = AUTH.db.emailToUid[email];
+  if(!linkedUid){ authFeedback('Account not found. Register first.'); return; }
+  const user = AUTH.db.users[linkedUid];
+  if(!user || !user.providers.includes('password')){ authFeedback('Use Google or Apple for this account.'); return; }
+  const hash = await sha256(password);
+  if(hash !== user.passwordHash){ authFeedback('Invalid credentials.'); return; }
+  finishAuth(user, false);
+}
+
+function beginOAuth(provider){
+  AUTH.provider = provider;
+  const inline = document.getElementById('oauth-inline');
+  inline.style.display='flex';
+  document.getElementById('oauth-helper-text').textContent = `Enter your ${provider==='google'?'Google':'Apple'} email to continue.`;
+  document.getElementById('oauth-email').value='';
+  authFeedback('');
+}
+
+async function completeOAuth(){
+  const provider = AUTH.provider;
+  const email    = normalizeEmail(document.getElementById('oauth-email').value);
+  if(!provider){ authFeedback('Pick Google or Apple first.'); return; }
+  if(!validEmail(email)){ authFeedback('Enter a valid provider email.'); return; }
+  const linkedUid = AUTH.db.emailToUid[email];
+  if(linkedUid){
+    const user = AUTH.db.users[linkedUid];
+    if(!user.providers.includes(provider)){ authFeedback(`This email uses ${user.providers.join(', ')} login.`); return; }
+    finishAuth(user, false); return;
+  }
+  const newUid = genUid();
+  const user = { uid:newUid, email, passwordHash:'', providers:[provider], username:'', createdAt:Date.now(), updatedAt:Date.now() };
+  ensureUserDefaults(user);
+  AUTH.db.users[newUid] = user;
+  AUTH.db.emailToUid[email] = newUid;
+  saveAuthDb();
+  finishAuth(user, true);
+}
+
+function finishAuth(user, isNew){
+  AUTH.currentUser = user;
+  AUTH.db.users[user.uid].updatedAt = Date.now();
+  saveAuthDb();
+  localStorage.setItem(AUTH_SESSION_KEY, user.uid);
+  document.getElementById('oauth-inline').style.display='none';
+  if(!user.username){
+    document.getElementById('auth-main-step').style.display='none';
+    document.getElementById('auth-username-step').classList.add('active');
+    document.getElementById('auth-username').value='';
+    usernameFeedback('');
+    return;
+  }
+  redirectToApp();
+}
+
+function saveUsername(){
+  if(!AUTH.currentUser) return;
+  const username = String(document.getElementById('auth-username').value||'').trim();
+  if(!validUsername(username)){ usernameFeedback('3–16 chars: letters, numbers or underscore.'); return; }
+  const taken = Object.values(AUTH.db.users).some(u=> u.uid !== AUTH.currentUser.uid && String(u.username||'').toLowerCase()===username.toLowerCase());
+  if(taken){ usernameFeedback('Username taken. Try another.'); return; }
+  // Apply referral
+  const refCode = sessionStorage.getItem(REF_SESSION_KEY);
+  const me = AUTH.db.users[AUTH.currentUser.uid];
+  if(refCode && !me.referredByUid){
+    const sponsor = Object.values(AUTH.db.users).find(x=>x.referralCode===refCode);
+    if(sponsor && sponsor.uid !== AUTH.currentUser.uid){
+      me.referredByUid = sponsor.uid;
+      sponsor.referrals = sponsor.referrals||[];
+      if(!sponsor.referrals.includes(AUTH.currentUser.uid)) sponsor.referrals.push(AUTH.currentUser.uid);
+    }
+    sessionStorage.removeItem(REF_SESSION_KEY);
+  }
+  // Manual sponsor
+  const sponsorInput = String((document.getElementById('auth-sponsor-username')||{}).value||'').trim();
+  if(sponsorInput && !me.referredByUid){
+    const suid = AUTH.db.usernameToUid[sponsorInput.toLowerCase()];
+    if(!suid){ usernameFeedback('Sponsor not found.'); return; }
+    if(suid===AUTH.currentUser.uid){ usernameFeedback('Cannot sponsor yourself.'); return; }
+    me.referredByUid = suid;
+    const sp = AUTH.db.users[suid];
+    if(sp){ sp.referrals=sp.referrals||[]; if(!sp.referrals.includes(AUTH.currentUser.uid)) sp.referrals.push(AUTH.currentUser.uid); }
+  }
+  me.username = username;
+  AUTH.currentUser.username = username;
+  me.updatedAt = Date.now();
+  saveAuthDb();
+  redirectToApp();
+}
+
+function redirectToApp(){
+  window.location.replace('gamehub/index.html');
+}
+
+// ── KEYBOARD SUBMIT ─────────────────────────────────────────────
+document.getElementById('auth-password').addEventListener('keydown', e=>{ if(e.key==='Enter') submitAuth(); });
+document.getElementById('auth-email').addEventListener('keydown', e=>{ if(e.key==='Enter') submitAuth(); });
+document.getElementById('auth-username').addEventListener('keydown', e=>{ if(e.key==='Enter') saveUsername(); });
+
+// ── NAV SCROLL ──────────────────────────────────────────────────
+window.addEventListener('scroll', ()=>{
+  document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+}, {passive:true});
+
+// ── CLANS GRID ──────────────────────────────────────────────────
+(function renderClans(){
+  const grid = document.getElementById('clans-grid');
+  if(!grid) return;
+  grid.innerHTML = CLANS.map(c=>`
+    <div class="clan-card${c.special?' clan-echo':''}" style="--cc:${c.color}">
+      <div class="clan-color-bar"></div>
+      <div class="clan-name">${c.name}</div>
+      <div class="clan-bonus">${c.bonus}</div>
+      <div class="clan-lore">${c.lore}</div>
+    </div>
+  `).join('');
+})();
+
+// ── CARDS SHOWCASE ──────────────────────────────────────────────
+(function renderPreviewCards(){
+  const container = document.getElementById('cards-showcase');
+  if(!container) return;
+  const rarColor = r => RAR_COLORS[r] || '#6B7280';
+  container.innerHTML = PREVIEW_CARDS.map(c=>{
+    const stars = Array.from({length:5},(_,i)=>`<span class="${i<c.stars?'f':'e'}">★</span>`).join('');
+    return `
+    <div class="showcase-card" style="--cc:${c.color}">
+      <div class="card-art has-img">
+        <img src="${c.img}" alt="${c.name}" onerror="this.parentNode.classList.remove('has-img');this.remove()"/>
+        <div class="card-art-placeholder">⚡</div>
+      </div>
+      <div class="card-vignette"></div>
+      <div class="card-top">
+        <span class="card-name">${c.name}</span>
+        <span class="card-rar rar-${c.rar}">${c.rar}</span>
+      </div>
+      <div class="card-stats">
+        <div class="stat-pill"><span class="stat-pill-num pow">${c.pow}</span><span class="stat-pill-label">POW</span></div>
+        <div class="stat-pill"><span class="stat-pill-num dmg">${c.dmg}</span><span class="stat-pill-label">DMG</span></div>
+      </div>
+      <div class="card-bottom">
+        <div class="card-ability">${c.ability}</div>
+      </div>
+      <div class="card-stars">${stars}</div>
+    </div>`;
+  }).join('');
+})();
+
+// ── SCROLL REVEAL ────────────────────────────────────────────────
+(function initScrollReveal(){
+  const style = document.createElement('style');
+  style.textContent = `
+    .reveal { opacity:0; transform:translateY(28px); transition:opacity 0.55s ease, transform 0.55s ease; }
+    .reveal.in { opacity:1; transform:none; }
+    .reveal-left { opacity:0; transform:translateX(-28px); transition:opacity 0.55s ease, transform 0.55s ease; }
+    .reveal-left.in { opacity:1; transform:none; }
+    .reveal-right { opacity:0; transform:translateX(28px); transition:opacity 0.55s ease, transform 0.55s ease; }
+    .reveal-right.in { opacity:1; transform:none; }
+    .reveal-scale { opacity:0; transform:scale(0.9); transition:opacity 0.45s ease, transform 0.45s ease; }
+    .reveal-scale.in { opacity:1; transform:none; }
+  `;
+  document.head.appendChild(style);
+
+  // Tag elements
+  document.querySelectorAll('.clan-card').forEach((el,i)=>{
+    el.classList.add('reveal');
+    el.style.transitionDelay = (i % 4) * 60 + 'ms';
+  });
+  document.querySelectorAll('.showcase-card').forEach((el,i)=>{
+    el.classList.add('reveal-scale');
+    el.style.transitionDelay = i * 80 + 'ms';
+  });
+  document.querySelectorAll('.comp-tier').forEach((el,i)=>{
+    el.classList.add('reveal');
+    el.style.transitionDelay = i * 100 + 'ms';
+  });
+  document.querySelectorAll('.testi').forEach((el,i)=>{
+    el.classList.add('reveal');
+    el.style.transitionDelay = i * 90 + 'ms';
+  });
+  document.querySelectorAll('.step').forEach((el,i)=>{
+    el.classList.add('reveal');
+    el.style.transitionDelay = i * 80 + 'ms';
+  });
+  document.querySelectorAll('.section-header').forEach(el=>el.classList.add('reveal'));
+  document.querySelectorAll('.stat-cell').forEach((el,i)=>{
+    el.classList.add('reveal');
+    el.style.transitionDelay = i * 80 + 'ms';
+  });
+  document.querySelectorAll('.gameplay-visual').forEach(el=>el.classList.add('reveal-left'));
+  document.querySelectorAll('.gameplay-grid > div:last-child').forEach(el=>el.classList.add('reveal-right'));
+
+  const observer = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('in');
+        observer.unobserve(e.target); // fire once
+      }
+    });
+  },{threshold:0.1, rootMargin:'0px 0px -40px 0px'});
+
+  document.querySelectorAll('.reveal,.reveal-left,.reveal-right,.reveal-scale').forEach(el=>observer.observe(el));
+})();
+
+// ── SMOOTH SCROLL for nav anchors ───────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click', e=>{
+    const target = document.querySelector(a.getAttribute('href'));
+    if(!target) return;
+    e.preventDefault();
+    target.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// ── ANIMATED BATTLE DEMO ─────────────────────────────────────────
+(function initBattleDemo(){
+  const ROUNDS = [
+    {
+      round:'1 / 4', phase:'Reveal',
+      pc:{name:'Nyx', clan:'NEXUS', color:'#6B5CE7', pow:7, dmg:3, pillz:3,
+          img:'Assets/Cards/CLAN NEXUS/22484ba0-a968-4503-b029-030555ac97a7.jpg'},
+      oc:{name:'Krag', clan:'IRONPACT', color:'#E74C3C', pow:6, dmg:5, pillz:2,
+          img:'Assets/Cards/CLAN NEXUS/4c52d2b3-87ab-4991-b9a6-1596013db8fb.jpg'},
+      pAtq:28, oAtq:20, winner:'player', pdmg:3, odm:0,
+      playerLife:12, oppLife:12,
+    },
+    {
+      round:'2 / 4', phase:'Reveal',
+      pc:{name:'Vex', clan:'NEXUS', color:'#6B5CE7', pow:8, dmg:3, pillz:1,
+          img:'Assets/Cards/CLAN NEXUS/381e02e1-df2a-449d-9236-5e4f849614e1.jpg'},
+      oc:{name:'Brak', clan:'IRONPACT', color:'#E74C3C', pow:7, dmg:6, pillz:4,
+          img:'Assets/Cards/CLAN NEXUS/553a3e47-48af-4fc1-a26f-97baf4b385e3.jpg'},
+      pAtq:16, oAtq:35, winner:'opp', pdmg:0, odm:6,
+      playerLife:9, oppLife:9,
+    },
+    {
+      round:'3 / 4', phase:'Reveal',
+      pc:{name:'Glyph', clan:'NEXUS', color:'#6B5CE7', pow:7, dmg:4, pillz:4,
+          img:'Assets/Cards/CLAN NEXUS/255f4a95-8073-485e-bdd1-f5f6ea28e58b.jpg'},
+      oc:{name:'Torva', clan:'IRONPACT', color:'#E74C3C', pow:6, dmg:4, pillz:2,
+          img:'Assets/Cards/CLAN NEXUS/447819e2-952f-4bd9-8d3b-17cf4f625279.jpg'},
+      pAtq:35, oAtq:20, winner:'player', pdmg:4, odm:0,
+      playerLife:9, oppLife:5,
+    },
+    {
+      round:'4 / 4', phase:'Final',
+      pc:{name:'Shiv', clan:'NEXUS', color:'#6B5CE7', pow:8, dmg:5, pillz:2,
+          img:'Assets/Cards/CLAN NEXUS/4c52d2b3-87ab-4991-b9a6-1596013db8fb.jpg'},
+      oc:{name:'Brax', clan:'IRONPACT', color:'#E74C3C', pow:7, dmg:5, pillz:3,
+          img:'Assets/Cards/CLAN NEXUS/05de5ca0-707f-4bb0-9128-046b5078395d.jpg'},
+      pAtq:26, oAtq:28, winner:'opp', pdmg:0, odm:5,
+      playerLife:4, oppLife:5,
+    },
+  ];
+
+  let cur = 0;
+  let phase = 0; // 0=idle, 1=cards active+pillz shown, 2=atq shown, 3=result, 4=pause
+  let pillzLeft = 10;
+  let playerLifeMax = 12, oppLifeMax = 12;
+
+  function byId(id){ return document.getElementById(id); }
+
+  function updatePillzDots(n){
+    const dots = byId('bd-pillz-dots');
+    if(!dots) return;
+    Array.from(dots.children).forEach((d,i)=>{
+      d.classList.toggle('used', i >= n);
+    });
+  }
+
+  function setLife(who, val){
+    const max = 12;
+    const clamped = Math.max(0, val);
+    byId(`bd-${who}-life`).textContent = clamped;
+    byId(`bd-${who}-bar`).style.width = (clamped / max * 100) + '%';
+  }
+
+  function runRound(r){
+    const d = ROUNDS[r];
+    // Phase 0: show round label, reset active states
+    byId('bd-round').textContent  = d.round;
+    byId('bd-phase').textContent  = 'Choose your card';
+    byId('bd-log').textContent    = 'Pulsos allocated...';
+    byId('bd-log').className      = 'battle-log neutral';
+    byId('bd-atq-you').textContent = '—';
+    byId('bd-atq-opp').textContent = '—';
+    byId('bd-atq-you').className   = 'atq-val';
+    byId('bd-atq-opp').className   = 'atq-val';
+    byId('bd-player-card').classList.remove('active');
+    byId('bd-opp-card').classList.remove('active');
+
+    // Update card data
+    byId('bd-pc-header').textContent  = d.pc.clan;
+    byId('bd-pc-header').style.background = d.pc.color;
+    byId('bd-pc-name').textContent    = d.pc.name;
+    byId('bd-pc-pow').textContent     = d.pc.pow;
+    byId('bd-pc-dmg').textContent     = d.pc.dmg;
+    byId('bd-pc-pillz').textContent   = '+'+d.pc.pillz+' Pulsos';
+    byId('bd-pc-img').src             = d.pc.img;
+    byId('bd-oc-header').textContent  = d.oc.clan;
+    byId('bd-oc-header').style.background = d.oc.color;
+    byId('bd-oc-name').textContent    = d.oc.name;
+    byId('bd-oc-pow').textContent     = d.oc.pow;
+    byId('bd-oc-dmg').textContent     = d.oc.dmg;
+    byId('bd-oc-pillz').textContent   = '+'+d.oc.pillz+' Pulsos';
+    byId('bd-oc-img').src             = d.oc.img;
+
+    // Phase 1 (800ms): activate cards + show pillz
+    setTimeout(()=>{
+      byId('bd-phase').textContent = 'Cards revealed';
+      byId('bd-player-card').classList.add('active');
+      byId('bd-opp-card').classList.add('active');
+      byId('bd-player-card').style.setProperty('--slot-color', d.pc.color);
+      byId('bd-opp-card').style.setProperty('--slot-color', d.oc.color);
+    }, 800);
+
+    // Phase 2 (1800ms): show ATQ values
+    setTimeout(()=>{
+      byId('bd-phase').textContent = 'ATQ calculated';
+      byId('bd-atq-you').textContent = d.pAtq;
+      byId('bd-atq-opp').textContent = d.oAtq;
+    }, 1800);
+
+    // Phase 3 (2800ms): show result + update life
+    setTimeout(()=>{
+      const isWin = d.winner === 'player';
+      byId('bd-phase').textContent = isWin ? 'NEXUS WINS · PULSOS DEALT' : 'IRONPACT WINS · PULSOS DEALT';
+      byId('bd-log').textContent = isWin
+        ? `NEXUS wins · −${d.pdmg} HP to rival`
+        : `IRONPACT wins · −${d.odm} HP to you`;
+      byId('bd-log').className = 'battle-log ' + (isWin ? 'win' : 'lose');
+      byId('bd-atq-you').className = 'atq-val ' + (isWin ? 'win' : 'lose');
+      byId('bd-atq-opp').className = 'atq-val ' + (!isWin ? 'win' : 'lose');
+      setLife('player', d.playerLife - (isWin ? 0 : d.odm));
+      setLife('opp', d.oppLife - (isWin ? d.pdmg : 0));
+      setLife('player', d.playerLife);
+      setLife('opp', d.oppLife);
+      pillzLeft = Math.max(0, pillzLeft - d.pc.pillz);
+      updatePillzDots(pillzLeft);
+    }, 2800);
+  }
+
+  function tick(){
+    runRound(cur);
+    cur = (cur + 1) % ROUNDS.length;
+    if(cur === 0){ pillzLeft = 10; setLife('player',12); setLife('opp',12); }
+  }
+
+  // Start after section is in view
+  const arena = document.getElementById('battle-demo');
+  if(!arena) return;
+  const demoObserver = new IntersectionObserver(entries=>{
+    if(entries[0].isIntersecting){
+      demoObserver.disconnect();
+      updatePillzDots(pillzLeft);
+      tick();
+      setInterval(tick, 4500);
+    }
+  },{threshold:0.3});
+  demoObserver.observe(arena);
+})();
+</script>
+</body>
+</html>

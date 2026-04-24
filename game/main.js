@@ -1,0 +1,938 @@
+// SHARDSTATE — MAIN: bootstrap + screen flow + UI bridge
+// ============================================================
+
+function importFromWeb(){
+  try {
+    const raw = localStorage.getItem('shardstate_deck');
+    if(raw){
+      const ids = JSON.parse(raw);
+      if(Array.isArray(ids) && ids.length === 8 && ids.every(id => !!getCard(id))){
+        APP_IMPORT.deck = ids;
+      }
+    }
+    const pRaw = localStorage.getItem('shardstate_player');
+    if(pRaw){
+      const p = JSON.parse(pRaw);
+      if(p && typeof p === 'object') APP_IMPORT.player = p;
+    }
+  } catch(e){ /* fall back to defaults */ }
+}
+const APP_IMPORT = { deck: null, player: null };
+importFromWeb();
+if(APP_IMPORT.player){
+  if(APP_IMPORT.player.name)   PLAYER.name   = APP_IMPORT.player.name;
+  if(APP_IMPORT.player.club)   PLAYER.club   = APP_IMPORT.player.club;
+  if(APP_IMPORT.player.elo    != null) PLAYER.elo    = APP_IMPORT.player.elo;
+  if(APP_IMPORT.player.shards != null) PLAYER.shards = APP_IMPORT.player.shards;
+  if(APP_IMPORT.player.level  != null) PLAYER.level  = APP_IMPORT.player.level;
+}
+
+const APP = {
+  screen: 'loading',
+  deck: APP_IMPORT.deck || randomDeck(),
+  battle: null,
+  selectedCardId: null,
+  pendingPulses: 0,
+  pendingColapso: false,
+  inputLocked: false,
+  logOpen: false,
+};
+
+const MODE_ORDER = ['training','casual','ranked','survivor','academia','free'];
+const MODE_META = {
+  training: { tag:'PRACTICE', desc:'IA suave. Sin riesgo. Ideal para conocer cartas y bonus.' },
+  casual:   { tag:'CORE',     desc:'Modo principal. Sumás shards y XP. ELO estable.' },
+  ranked:   { tag:'PVP',      desc:'Pista competitiva. Mayor recompensa, mayor riesgo.' },
+  survivor: { tag:'EVENT',    desc:'Cadena de combates. Una sola vida. Picos altos.' },
+  academia: { tag:'LESSON',   desc:'Combate guiado. Pistas tácticas por ronda.' },
+  free:     { tag:'CHILL',    desc:'Sin recompensas serias. Solo combate.' },
+};
+
+function bootGame(){
+  initFX();
+  const fill = document.getElementById('loading-fill');
+  if(fill) fill.style.width = '100%';
+  goScreen('menu');
+  renderMenu();
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', bootGame, { once:true });
+} else {
+  bootGame();
+}
+
+function goScreen(name){
+  APP.screen = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const node = document.getElementById('screen-'+name);
+  if(node) node.classList.add('active');
+}
+
+// ─── LOADING ─────────────────────────────────────────────────
+function runLoading(done){
+  const fill = document.getElementById('loading-fill');
+  const sub  = document.getElementById('loading-sub');
+  const steps = [
+    'INITIALIZING NEURAL LINK',
+    'COMPILING CLAN MANIFEST',
+    'CALIBRATING PULSO RESERVES',
+    'SYNCING SHARD LEDGER',
+    'CONNECTING TO PROTOCOL',
+  ];
+  let p = 0, i = 0;
+  sub.textContent = steps[0];
+  const t = setInterval(()=>{
+    p += 5 + Math.random()*7;
+    fill.style.width = Math.min(100, p) + '%';
+    if(p > (i+1) * (100/steps.length) && i < steps.length-1){
+      i++; sub.textContent = steps[i];
+    }
+    if(p >= 100){
+      clearInterval(t);
+      sub.textContent = 'LINK ESTABLISHED';
+      setTimeout(done, 320);
+    }
+  }, 90);
+}
+
+// ─── MENU ────────────────────────────────────────────────────
+function renderMenu(){ renderModes(); }
+
+const MODE_ICONS = {
+  training: { glyph:'◈', title:'Simulación neural', lines:['SANDBOX · IA BAJA','SIN RIESGO · SIN ELO'] },
+  casual:   { glyph:'◇', title:'Nexo casual',       lines:['CORE PvP · ELO LIGERO','RECOMPENSA ESTABLE'] },
+  ranked:   { glyph:'◆', title:'Rango competitivo', lines:['PvP PURO · ELO ACTIVO','RIESGO ALTO'] },
+  survivor: { glyph:'⟡', title:'Survivor',          lines:['CADENA DE COMBATES','UNA SOLA VIDA'] },
+  academia: { glyph:'✦', title:'Academia echo',     lines:['TUTORIAL TÁCTICO','GUÍA POR RONDA'] },
+  free:     { glyph:'◊', title:'Modo libre',        lines:['SIN STAKES','SOLO COMBATE'] },
+};
+
+function renderModes(){
+  const grid = document.getElementById('modes-grid');
+  grid.innerHTML = '';
+  MODE_ORDER.forEach((key, i) => {
+    const cfg  = MODES[key];
+    const meta = MODE_META[key];
+    const ico  = MODE_ICONS[key];
+    const sw = (cfg.shardsW[0] || cfg.shardsW[1])
+      ? `+${cfg.shardsW[0]}-${cfg.shardsW[1]}`
+      : '—';
+    const card = document.createElement('div');
+    card.className = 'mode-card ' + key;
+    card.style.animationDelay = (i * 90) + 'ms';
+    card.onclick = () => startMode(key);
+    card.innerHTML = `
+      <div class="mc-ornament">
+        <div class="mc-glyph">${ico.glyph}</div>
+        <div class="mc-scan"></div>
+        <div class="mc-ring"></div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-tag">${meta.tag}</div>
+        <div class="mc-name">${cfg.label}</div>
+        <div class="mc-sub">${ico.title}</div>
+        <div class="mc-desc">${meta.desc}</div>
+        <div class="mc-lines">
+          ${ico.lines.map(l => `<div class="mc-line">› ${l}</div>`).join('')}
+        </div>
+        <div class="mc-rewards">
+          <div><span class="val">${sw}</span><span class="lbl">SHARDS</span></div>
+          <div><span class="val">+${cfg.xpW}</span><span class="lbl">XP</span></div>
+          <div><span class="val">${cfg.eloW>=0?'+':''}${cfg.eloW}</span><span class="lbl">ELO</span></div>
+        </div>
+        <div class="mc-cta">
+          <span>ENTRAR</span>
+          <span class="mc-arrow">→</span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function rerollDeck(){ APP.deck = randomDeck(); }
+
+// ─── MATCHMAKING ─────────────────────────────────────────────
+function startMode(mode){
+  // Abandon-streak lockout (5 min after 3 abandons in a row).
+  try {
+    const cur = JSON.parse(localStorage.getItem('shs_player') || '{}');
+    if (cur.lockoutUntil && Date.now() < cur.lockoutUntil) {
+      const sec = Math.ceil((cur.lockoutUntil - Date.now())/1000);
+      const mm = Math.floor(sec/60), ss = String(sec%60).padStart(2,'0');
+      alert(`⛔ Penalización por abandonos. Vuelve a jugar en ${mm}:${ss}.`);
+      return;
+    }
+  } catch(_){}
+  goScreen('matchmaking');
+  document.getElementById('mm-tag').textContent   = MODE_META[mode].tag;
+  document.getElementById('mm-title').textContent = MODES[mode].label;
+  document.getElementById('mm-sub').textContent =
+    (mode === 'academia') ? 'LOADING LESSON' : 'SCANNING NETWORK FOR OPPONENT';
+  setTimeout(()=> beginBattle(mode), 1300 + Math.random()*900);
+}
+
+// ─── BATTLE ──────────────────────────────────────────────────
+function beginBattle(mode){
+  APP.battle = newBattle(mode);
+  APP.battle.pDeck = [...APP.deck];
+  APP.battle.oDeck = randomDeck();
+  APP.battle.pHand = dealHand(APP.battle.pDeck);
+  APP.battle.oHand = dealHand(APP.battle.oDeck);
+
+  goScreen('battle');
+
+  // arena background
+  const bg = document.getElementById('arena-bg');
+  bg.style.backgroundImage = `url('${APP.battle.arenaUrl}')`;
+
+  // identities
+  document.getElementById('me-name').textContent  = PLAYER.name;
+  document.getElementById('me-club').textContent  = PLAYER.club;
+  document.getElementById('me-avatar').textContent = PLAYER.name.charAt(0);
+  document.getElementById('opp-name').textContent  = APP.battle.opponent.name;
+  document.getElementById('opp-club').textContent  = APP.battle.opponent.club;
+  document.getElementById('opp-avatar').textContent = APP.battle.opponent.name.charAt(0);
+
+  // Snapshot original 4-card hands so we can persist played cards visually.
+  APP.handSnapshot = {
+    me:  [...APP.battle.pHand],
+    opp: [...APP.battle.oHand],
+  };
+  APP.cardOutcomes = { me:{}, opp:{} }; // {cardId: 'win'|'loss'|'draw'}
+  APP.timeoutStreak = 0;
+  layoutHand('me',  APP.handSnapshot.me,  false);
+  layoutHand('opp', APP.handSnapshot.opp, true);
+  renderHud();
+  hideActionPanel();
+  ensureBattleTopUI();
+  appendLog('Combate iniciado · ' + MODES[mode].label, '');
+  showTurnBanner(()=> startRoundTimer());
+}
+
+function layoutHand(side, ids, faceDown){
+  const row = document.getElementById('hand-' + side);
+  row.innerHTML = '';
+  ids.forEach(id => {
+    const c  = getCard(id);
+    const el = buildCardEl(c, { compact: side === 'opp' });
+    el.dataset.cardId = id;
+    const stillInHand = (side==='me' ? APP.battle.pHand : APP.battle.oHand).includes(id);
+    if(!stillInHand){
+      el.classList.add('played');
+      const outcome = APP.cardOutcomes[side][id];
+      if (outcome === 'win')  el.classList.add('card-victory');
+      if (outcome === 'loss') el.classList.add('card-loser');
+      const tag = document.createElement('div');
+      tag.className = 'card-result-tag ' + (outcome==='win'?'win':outcome==='loss'?'lose':'draw');
+      tag.textContent = outcome === 'win' ? 'VICTORY' : outcome === 'loss' ? 'LOSER' : 'DRAW';
+      el.appendChild(tag);
+    } else if(side === 'me'){
+      el.onclick = () => selectCard(id);
+    }
+    row.appendChild(el);
+  });
+}
+
+// ─── HUD ─────────────────────────────────────────────────────
+function renderHud(){
+  const B = APP.battle;
+  document.getElementById('p-hp-fill').style.width    = (B.pHP / 12 * 100) + '%';
+  document.getElementById('o-hp-fill').style.width    = (B.oHP / 12 * 100) + '%';
+  document.getElementById('p-pulse-fill').style.width = (B.pPulses / 12 * 100) + '%';
+  document.getElementById('o-pulse-fill').style.width = (B.oPulses / 12 * 100) + '%';
+  document.getElementById('p-hp-num').textContent     = B.pHP;
+  document.getElementById('o-hp-num').textContent     = B.oHP;
+  document.getElementById('p-pulse-num').textContent  = B.pPulses;
+  document.getElementById('o-pulse-num').textContent  = B.oPulses;
+  document.getElementById('round-n').textContent      = Math.min(4, B.round + 1);
+
+  const dots = document.querySelectorAll('#round-dots .round-dot');
+  dots.forEach((d, i) => {
+    d.className = 'round-dot';
+    if(i < B.history.length){
+      const r = B.history[i];
+      if(r.winner === 'p') d.classList.add('win');
+      else if(r.winner === 'o') d.classList.add('loss');
+      else d.classList.add('draw');
+    } else if(i === B.round){
+      d.classList.add('curr');
+    }
+  });
+}
+
+function setStatus(text, oppTurn){
+  const s = document.getElementById('center-status');
+  if (!s) return;
+  s.textContent = text;
+  s.className = 'center-status' + (oppTurn ? ' opp-turn' : '');
+}
+
+// ─── ROUND TIMER + TURN BANNER + AUDIO ───────────────────────
+const ROUND_TIME_MS = 120 * 1000;
+function ensureBattleTopUI(){
+  // Stack YOUR TURN above TIMER, between decks (no card overlap).
+  if (!document.getElementById('round-timer')) {
+    const status = document.getElementById('center-status');
+    if (status && !status.parentElement.classList.contains('turn-stack')) {
+      const stack = document.createElement('div');
+      stack.className = 'turn-stack';
+      status.parentNode.insertBefore(stack, status);
+      stack.appendChild(status);
+      const t = document.createElement('div');
+      t.className = 'round-timer';
+      t.id = 'round-timer';
+      t.textContent = '02:00';
+      stack.appendChild(t);
+    }
+  }
+  // Audio controls inline with log + surrender buttons.
+  const tools = document.querySelector('.battle-tools');
+  if (tools && !document.getElementById('bgm-toggle')) {
+    const btn = document.createElement('button');
+    btn.className = 'tool-btn'; btn.id = 'bgm-toggle';
+    btn.title = 'Music on/off';
+    btn.textContent = '🎵';
+    btn.onclick = toggleBgm;
+    const vol = document.createElement('input');
+    vol.className = 'bgm-vol'; vol.id = 'bgm-vol';
+    vol.type = 'range'; vol.min = '0'; vol.max = '100'; vol.value = '35';
+    vol.oninput = (e) => setBgmVol(e.target.value);
+    tools.appendChild(btn);
+    tools.appendChild(vol);
+    initBgm();
+  }
+  // Projectile overlay (above combat-stage, below action-panel).
+  if (!document.getElementById('projectile-layer')) {
+    const layer = document.createElement('div');
+    layer.id = 'projectile-layer';
+    document.getElementById('screen-battle').appendChild(layer);
+  }
+}
+function startRoundTimer(){
+  stopRoundTimer();
+  const el = document.getElementById('round-timer');
+  if (!el) return;
+  APP.roundDeadline = Date.now() + ROUND_TIME_MS;
+  const tick = () => {
+    const ms = Math.max(0, APP.roundDeadline - Date.now());
+    const s = Math.ceil(ms / 1000);
+    const mm = String(Math.floor(s/60)).padStart(2,'0');
+    const ss = String(s%60).padStart(2,'0');
+    el.textContent = `${mm}:${ss}`;
+    el.classList.toggle('warn', ms <= 20000);
+    el.classList.toggle('crit', ms <= 5000);
+    if (ms <= 0) {
+      stopRoundTimer();
+      handleRoundTimeout();
+      return;
+    }
+    APP.roundTimerId = requestAnimationFrame(tick);
+  };
+  tick();
+}
+function stopRoundTimer(){
+  if (APP.roundTimerId) cancelAnimationFrame(APP.roundTimerId);
+  APP.roundTimerId = null;
+}
+function handleRoundTimeout(){
+  if (APP.inputLocked) return;
+  APP.timeoutStreak = (APP.timeoutStreak||0) + 1;
+  appendLog(`⏱ Tiempo agotado · jugada automática (${APP.timeoutStreak}/2)`, 'loss');
+  if (APP.timeoutStreak >= 2) {
+    appendLog('⛔ Doble timeout · rendición forzada', 'loss');
+    return surrenderForced();
+  }
+  // Auto-play: pick first available card, no pulses, no colapso.
+  const id = APP.battle.pHand[0];
+  if (!id) return;
+  APP.selectedCardId = id;
+  APP.pendingPulses = 0;
+  APP.pendingColapso = false;
+  confirmAction();
+}
+function showTurnBanner(done){
+  const b = document.getElementById('round-banner');
+  if (!b) { done && done(); return; }
+  setStatus('', false);
+  b.textContent = `ROUND ${(APP.battle.round||0)+1}`;
+  b.className = 'round-banner show turn-anim';
+  setTimeout(() => {
+    b.className = 'round-banner';
+    setStatus('YOUR TURN', false);
+    done && done();
+  }, 1800);
+}
+
+// Audio (lofi BGM per arena)
+const BGM_TRACKS = {
+  default: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_1718e1c4be.mp3',
+  ashborn: 'https://cdn.pixabay.com/download/audio/2022/10/30/audio_3e63ae3ed1.mp3',
+  tidecall:'https://cdn.pixabay.com/download/audio/2022/11/22/audio_febc56b5c0.mp3',
+  nexus:   'https://cdn.pixabay.com/download/audio/2023/06/13/audio_dd02ddc049.mp3',
+};
+function initBgm(){
+  if (APP.bgmAudio) return;
+  const a = new Audio();
+  a.loop = true;
+  a.volume = (parseInt(localStorage.getItem('shs_bgm_vol')||'35',10))/100;
+  a.src = BGM_TRACKS.default;
+  APP.bgmAudio = a;
+  APP.bgmOn = (localStorage.getItem('shs_bgm_on')||'1') === '1';
+  if (APP.bgmOn) a.play().catch(()=>{});
+  const btn = document.getElementById('bgm-toggle');
+  if (btn) btn.textContent = APP.bgmOn ? '🎵' : '🔇';
+}
+function toggleBgm(){
+  if (!APP.bgmAudio) return;
+  APP.bgmOn = !APP.bgmOn;
+  localStorage.setItem('shs_bgm_on', APP.bgmOn ? '1' : '0');
+  if (APP.bgmOn) APP.bgmAudio.play().catch(()=>{});
+  else APP.bgmAudio.pause();
+  const btn = document.getElementById('bgm-toggle');
+  if (btn) btn.textContent = APP.bgmOn ? '🎵' : '🔇';
+}
+function setBgmVol(v){
+  const f = Math.max(0, Math.min(1, parseInt(v,10)/100));
+  if (APP.bgmAudio) APP.bgmAudio.volume = f;
+  localStorage.setItem('shs_bgm_vol', String(v));
+}
+window.toggleBgm = toggleBgm;
+window.setBgmVol = setBgmVol;
+
+// ─── SELECT / ACTION PANEL ───────────────────────────────────
+function selectCard(cardId){
+  if(APP.inputLocked) return;
+  if(!APP.battle.pHand.includes(cardId)) return;
+  APP.selectedCardId = cardId;
+  APP.pendingPulses  = 0;
+  APP.pendingColapso = false;
+
+  document.querySelectorAll('#hand-me .card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.cardId === cardId);
+  });
+  showActionPanel();
+}
+
+function showActionPanel(){
+  const card = getCard(APP.selectedCardId);
+  document.getElementById('ap-name').textContent = card.name;
+
+  const prev = document.getElementById('ap-preview');
+  prev.innerHTML = '';
+  prev.appendChild(buildCardEl(card, {}));
+
+  buildPulseRow();
+  refreshActionPanel();
+  document.getElementById('action-panel').classList.add('show');
+}
+function hideActionPanel(){
+  document.getElementById('action-panel').classList.remove('show');
+  document.querySelectorAll('#hand-me .card.selected').forEach(c => c.classList.remove('selected'));
+  APP.selectedCardId = null;
+}
+function cancelAction(){ hideActionPanel(); }
+
+function buildPulseRow(){
+  const row = document.getElementById('pulse-row');
+  row.innerHTML = '';
+  for(let i = 0; i < 12; i++){
+    const cap = document.createElement('div');
+    cap.className = 'pulse-cap';
+    row.appendChild(cap);
+  }
+}
+
+function stepPulse(d){
+  const max = APP.battle.pPulses - (APP.pendingColapso ? 3 : 0);
+  APP.pendingPulses = Math.max(0, Math.min(max, APP.pendingPulses + d));
+  refreshActionPanel();
+}
+
+function toggleColapso(){
+  const wantOn = !APP.pendingColapso;
+  if(wantOn && APP.battle.pPulses < 3) return;
+  APP.pendingColapso = wantOn;
+  const max = APP.battle.pPulses - (APP.pendingColapso ? 3 : 0);
+  if(APP.pendingPulses > max) APP.pendingPulses = Math.max(0, max);
+  refreshActionPanel();
+}
+
+function refreshActionPanel(){
+  const card = getCard(APP.selectedCardId);
+  if(!card) return;
+  const pulses  = APP.pendingPulses;
+  const colapso = APP.pendingColapso;
+  const cost    = pulses + (colapso ? 3 : 0);
+
+  const caps = document.querySelectorAll('#pulse-row .pulse-cap');
+  caps.forEach((c, i) => {
+    c.classList.remove('active','fury');
+    if(i < pulses) c.classList.add('active');
+    else if(colapso && i < pulses + 3) c.classList.add('fury');
+  });
+
+  const ct = document.getElementById('colapso-toggle');
+  ct.classList.toggle('on', colapso);
+  ct.querySelectorAll('.cap').forEach(c => c.classList.toggle('lit', colapso));
+
+  const atk = Math.max(0, card.pow * (pulses + 1));
+  document.getElementById('atk-val').textContent = atk;
+
+  const ok = cost <= APP.battle.pPulses;
+  document.getElementById('btn-fight').disabled = !ok;
+}
+
+// ─── CONFIRM / RESOLVE ───────────────────────────────────────
+function confirmAction(){
+  if(APP.inputLocked) return;
+  const cardId  = APP.selectedCardId;
+  if(!cardId) return;
+  const pulses  = APP.pendingPulses;
+  const colapso = APP.pendingColapso;
+  const cost    = pulses + (colapso ? 3 : 0);
+  if(cost > APP.battle.pPulses) return;
+
+  APP.inputLocked = true;
+  stopRoundTimer();
+  APP.battle.pPulses -= cost;
+
+  const ai     = aiPickAction(APP.battle);
+  const aiCost = ai.pulses + (ai.colapso ? 3 : 0);
+  APP.battle.oPulses = Math.max(0, APP.battle.oPulses - aiCost);
+
+  hideActionPanel();
+  renderHud();
+
+  const meEl  = document.querySelector(`#hand-me  .card[data-card-id="${cardId}"]`);
+  const oppEl = document.querySelector(`#hand-opp .card[data-card-id="${ai.cardId}"]`);
+  if(meEl)  meEl.classList.add('played');
+  if(oppEl) oppEl.classList.add('played');
+
+  const result = resolveRound(APP.battle, cardId, pulses, colapso, ai.cardId, ai.pulses, ai.colapso);
+  runCombatPhase(result, ()=> onRoundResolved(result));
+}
+
+// ─── COMBAT FOCUS PHASE ──────────────────────────────────────
+function runCombatPhase(result, done){
+  const stage = document.getElementById('combat-stage');
+  setStatus('CLASH', true);
+
+  const pCard = getCard(result.p.cardId);
+  const oCard = getCard(result.o.cardId);
+
+  // mount cards
+  const meHolder  = document.getElementById('cs-card-me');
+  const oppHolder = document.getElementById('cs-card-opp');
+  meHolder.innerHTML  = '';
+  oppHolder.innerHTML = '';
+  meHolder.appendChild(buildCardEl(pCard, {}));
+  oppHolder.appendChild(buildCardEl(oCard, {}));
+
+  // reset state
+  const sideMe  = document.getElementById('cs-side-me');
+  const sideOpp = document.getElementById('cs-side-opp');
+  sideMe.classList.remove('winner','loser');
+  sideOpp.classList.remove('winner','loser');
+  stage.classList.remove('clash','lunge');
+  const verdict = document.getElementById('cs-verdict');
+  verdict.classList.remove('show','win','loss','draw');
+
+  buildPulseVizBar('cs-pulse-me',  result.p.pulses, result.p.colapso);
+  buildPulseVizBar('cs-pulse-opp', result.o.pulses, result.o.colapso);
+  document.getElementById('cs-pulse-num-me').textContent  = '×' + (result.p.pulses + 1);
+  document.getElementById('cs-pulse-num-opp').textContent = '×' + (result.o.pulses + 1);
+
+  // bonus labels
+  const bmEl = document.getElementById('cs-bonus-me');
+  const boEl = document.getElementById('cs-bonus-opp');
+  bmEl.textContent = result.p.bonus ? (getClan(pCard.clan).name + ' BONUS · +' + result.p.bonus) : '';
+  boEl.textContent = result.o.bonus ? (getClan(oCard.clan).name + ' BONUS · +' + result.o.bonus) : '';
+  bmEl.classList.remove('show');
+  boEl.classList.remove('show');
+
+  // ATK starts at raw pow (before bonus), tick to final atk
+  document.getElementById('cs-atk-me').textContent  = pCard.pow;
+  document.getElementById('cs-atk-opp').textContent = oCard.pow;
+
+  stage.classList.add('show');
+
+  // Phase timeline
+  // 0–550: cards fly in
+  // 600: pulses pop sequentially (≤90 * pulses ms)
+  // 1200: bonus flash + ATK tick
+  // 1900: clash class (rays + VS flash)
+  // 1950: lunge + burst + shake
+  // 2200: winner/loser reveal
+  // 2500: verdict banner
+  // 3800: stage fade, resume
+
+  const totalPulsesMe  = result.p.pulses + (result.p.colapso ? 3 : 0);
+  const totalPulsesOpp = result.o.pulses + (result.o.colapso ? 3 : 0);
+
+  setTimeout(()=> animatePulsePips('cs-pulse-me',  totalPulsesMe),  600);
+  setTimeout(()=> animatePulsePips('cs-pulse-opp', totalPulsesOpp), 640);
+
+  setTimeout(()=>{
+    if(result.p.bonus) bmEl.classList.add('show');
+    if(result.o.bonus) boEl.classList.add('show');
+    tickNumber('cs-atk-me',  pCard.pow, result.p.atk, 600);
+    tickNumber('cs-atk-opp', oCard.pow, result.o.atk, 600);
+  }, 1200);
+
+  setTimeout(()=>{
+    stage.classList.add('clash');
+    stage.classList.add('lunge');
+    shakeScreen(10, 360);
+    spawnBurst(window.innerWidth/2, window.innerHeight/2, '#ffffff', 40, 7);
+    spawnBurst(window.innerWidth/2, window.innerHeight/2,
+      result.winner === 'p' ? '#00FFC6' : (result.winner === 'o' ? '#FF3B3B' : '#f59e0b'),
+      70, 8);
+  }, 1950);
+
+  setTimeout(()=>{
+    if(result.winner === 'p'){
+      sideMe.classList.add('winner');
+      sideOpp.classList.add('loser');
+      // Slight delay (150–300ms) before projectiles launch from winning card.
+      setTimeout(()=>{
+        launchDamageProjectiles('me', result.dmg, pCard.clan);
+        // Shatter loser card after projectiles land.
+        const travel = 600 + Math.max(0, (result.dmg-1)) * 130;
+        setTimeout(()=> shatterCard(oppHolder), travel);
+      }, 220);
+    } else if(result.winner === 'o'){
+      sideOpp.classList.add('winner');
+      sideMe.classList.add('loser');
+      setTimeout(()=>{
+        launchDamageProjectiles('opp', result.dmg, oCard.clan);
+        const travel = 600 + Math.max(0, (result.dmg-1)) * 130;
+        setTimeout(()=> shatterCard(meHolder), travel);
+      }, 220);
+    } else {
+      sideMe.classList.add('winner');
+      sideOpp.classList.add('winner');
+    }
+  }, 2250);
+
+  setTimeout(()=>{
+    const map = { p:{t:'ROUND WON', c:'win'}, o:{t:'ROUND LOST', c:'loss'}, draw:{t:'DRAW', c:'draw'} };
+    const v = map[result.winner] || map.draw;
+    verdict.textContent = v.t + (result.dmg ? ` · −${result.dmg}` : '');
+    verdict.classList.add(v.c, 'show');
+  }, 2500);
+
+  // Extend stage hold so all damage projectiles land before fade.
+  const holdMs = 3800 + Math.max(0, (result.dmg||0) - 1) * 130;
+  setTimeout(()=>{
+    stage.classList.remove('show','clash','lunge');
+    done && done();
+  }, holdMs);
+}
+
+function buildPulseVizBar(elId, pulses, colapso){
+  const bar = document.getElementById(elId);
+  bar.innerHTML = '';
+  const total = pulses + (colapso ? 3 : 0);
+  const slots = Math.max(12, total);
+  for(let i = 0; i < slots; i++){
+    const pip = document.createElement('div');
+    pip.className = 'pip';
+    if(i < pulses) pip.dataset.kind = 'lit';
+    else if(colapso && i < pulses + 3) pip.dataset.kind = 'fury';
+    bar.appendChild(pip);
+  }
+}
+
+function animatePulsePips(elId, total){
+  const bar = document.getElementById(elId);
+  if(!bar) return;
+  const pips = bar.querySelectorAll('.pip');
+  let i = 0;
+  const tick = ()=>{
+    if(i >= total || i >= pips.length) return;
+    const kind = pips[i].dataset.kind;
+    if(kind) pips[i].classList.add(kind);
+    i++;
+    setTimeout(tick, 70);
+  };
+  tick();
+}
+
+function tickNumber(elId, from, to, ms){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const start = performance.now();
+  const step = (now)=>{
+    const k = Math.min(1, (now - start) / ms);
+    const e = 1 - Math.pow(1 - k, 3);
+    const v = Math.round(from + (to - from) * e);
+    el.textContent = v;
+    if(k < 1) requestAnimationFrame(step);
+    else { el.classList.remove('boost'); void el.offsetWidth; el.classList.add('boost'); }
+  };
+  requestAnimationFrame(step);
+}
+
+function onRoundResolved(result){
+  appendLog(
+    `R${result.round+1} · ${getCard(result.p.cardId).name} (${result.p.atk}) vs ${getCard(result.o.cardId).name} (${result.o.atk}) · DMG ${result.dmg}`,
+    result.winner === 'p' ? 'win' : result.winner === 'o' ? 'loss' : ''
+  );
+
+  // Persist visual outcome on the played cards.
+  APP.cardOutcomes = APP.cardOutcomes || { me:{}, opp:{} };
+  const meOutcome  = result.winner==='p'?'win':result.winner==='o'?'loss':'draw';
+  const oppOutcome = result.winner==='o'?'win':result.winner==='p'?'loss':'draw';
+  APP.cardOutcomes.me[result.p.cardId]  = meOutcome;
+  APP.cardOutcomes.opp[result.o.cardId] = oppOutcome;
+
+  // Reset timeout streak after a real play.
+  APP.timeoutStreak = 0;
+
+  renderHud();
+  if(APP.battle.finished){
+    stopRoundTimer();
+    layoutHand('me',  APP.handSnapshot?.me  || APP.battle.pHand, false);
+    layoutHand('opp', APP.handSnapshot?.opp || APP.battle.oHand, true);
+    setTimeout(()=> showEnd(), 600);
+    return;
+  }
+  // Re-layout from snapshot (keeps played cards greyed + tagged).
+  layoutHand('me',  APP.handSnapshot?.me  || APP.battle.pHand, false);
+  layoutHand('opp', APP.handSnapshot?.opp || APP.battle.oHand, true);
+  APP.inputLocked = false;
+  showTurnBanner(()=> startRoundTimer());
+}
+
+// ─── CLAN ATTACK ANIMATIONS + SHATTER ────────────────────────
+const CLAN_FX = {
+  nexus:    { color:'#6B5CE7', emoji:'🤖', kind:'laser'   },
+  tidecall: { color:'#3B82F6', emoji:'🌊', kind:'wave'    },
+  ashborn:  { color:'#FF6B35', emoji:'🔥', kind:'fire'    },
+  errvoid:  { color:'#a855f7', emoji:'👾', kind:'glitch'  },
+  vault:    { color:'#FBBF24', emoji:'👑', kind:'goldsmash' },
+  mycelium: { color:'#10B981', emoji:'🍄', kind:'spores'  },
+  ironpact: { color:'#94A3B8', emoji:'💀', kind:'iron'    },
+  synthos:  { color:'#06B6D4', emoji:'🔬', kind:'beam'    },
+  loopkin:  { color:'#F472B6', emoji:'⏳', kind:'loop'    },
+  phantom:  { color:'#E5E7EB', emoji:'👁', kind:'phase'   },
+  frequenz: { color:'#EF4444', emoji:'🎸', kind:'sonic'   },
+  protocol: { color:'#22D3EE', emoji:'🛡', kind:'shield'  },
+  echo:     { color:'#F5F0E8', emoji:'✨', kind:'titan'   },
+};
+// Real projectile system: winning card → loser HP bar.
+// N projectiles (= damage), arc trajectory, trails, randomness, HP impact feedback.
+function launchDamageProjectiles(winnerSide, dmg, clan){
+  const N  = dmg|0;
+  if (N <= 0) return;
+  const fx = CLAN_FX[clan] || { color:'#fff', emoji:'⚡', kind:'laser' };
+  const sourceEl = winnerSide === 'me'
+    ? document.getElementById('cs-card-me')
+    : document.getElementById('cs-card-opp');
+  const targetBar = winnerSide === 'me'
+    ? document.querySelector('.battle-hud.top .bar.hp')
+    : document.querySelector('.battle-hud.bot .bar.hp');
+  if (!sourceEl || !targetBar) return;
+  const sRect = sourceEl.getBoundingClientRect();
+  const tRect = targetBar.getBoundingClientRect();
+  const sx = sRect.left + sRect.width/2;
+  const sy = sRect.top  + sRect.height/2;
+  const tx = tRect.left + tRect.width/2;
+  const ty = tRect.top  + tRect.height/2;
+  const layer = document.getElementById('projectile-layer');
+  if (!layer) return;
+  for (let i = 0; i < N; i++){
+    setTimeout(()=> spawnProjectile(layer, sx, sy, tx, ty, fx, ()=>{
+      onHpImpact(targetBar, fx.color);
+    }), i * 130);
+  }
+  // Floating total damage near HP bar (after first hit).
+  setTimeout(()=> spawnFloatingDamage(targetBar, dmg, fx.color), 700);
+}
+
+function spawnProjectile(layer, sx, sy, tx, ty, fx, onHit){
+  const el = document.createElement('div');
+  el.className = 'dmg-projectile fx-' + fx.kind;
+  el.style.color = fx.color;
+  el.innerHTML = `<span class="dmg-emoji">${fx.emoji}</span><span class="dmg-trail"></span>`;
+  layer.appendChild(el);
+  // Quadratic bezier arc with slight randomness.
+  const dx = tx - sx, dy = ty - sy;
+  const arcUp = 80 + Math.random()*80;
+  const jitterX = (Math.random()-0.5) * 60;
+  const jitterY = (Math.random()-0.5) * 30;
+  const mx = sx + dx*0.5 + jitterX;
+  const my = sy + dy*0.5 - arcUp + jitterY;
+  // Land near HP bar with small horizontal jitter (60px max).
+  const fx_x = tx + (Math.random()-0.5) * 60;
+  const fy_y = ty + (Math.random()-0.5) * 8;
+  const dur = 580 + Math.random()*160;
+  const start = performance.now();
+  const tick = (now) => {
+    const t = Math.min(1, (now - start) / dur);
+    const u = 1 - t;
+    const x = u*u*sx + 2*u*t*mx + t*t*fx_x;
+    const y = u*u*sy + 2*u*t*my + t*t*fy_y;
+    const scale = 1 - t*0.45;
+    const rot = (t * 540) * (Math.random() < 0.5 ? 1 : -1) * 0.0 + t * 360;
+    el.style.transform = `translate(${x}px, ${y}px) scale(${scale}) rotate(${rot}deg)`;
+    if (t < 1) requestAnimationFrame(tick);
+    else { onHit && onHit(); el.remove(); }
+  };
+  requestAnimationFrame(tick);
+}
+function onHpImpact(barEl, color){
+  if (!barEl) return;
+  // Bar pulse + flash overlay.
+  barEl.classList.remove('hp-hit');
+  void barEl.offsetWidth;
+  barEl.classList.add('hp-hit');
+  setTimeout(()=> barEl.classList.remove('hp-hit'), 360);
+  const flash = document.createElement('div');
+  flash.className = 'hp-impact-flash';
+  flash.style.background = color;
+  barEl.appendChild(flash);
+  setTimeout(()=> flash.remove(), 420);
+  // Brief screen shake per hit.
+  shakeScreen(7, 220);
+}
+
+function spawnFloatingDamage(barEl, dmg, color){
+  if (!barEl) return;
+  const r = barEl.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'dmg-float';
+  el.textContent = '−' + dmg;
+  el.style.color = color || '#FF3B3B';
+  el.style.left = (r.left + r.width/2) + 'px';
+  el.style.top  = (r.top - 6) + 'px';
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(), 1100);
+}
+function shatterCard(holder){
+  if (!holder) return;
+  const card = holder.querySelector('.card');
+  if (!card) return;
+  card.classList.add('shatter');
+  for (let i = 0; i < 14; i++) {
+    const shard = document.createElement('div');
+    shard.className = 'card-shard';
+    shard.style.setProperty('--sx', (Math.random()*200-100).toFixed(0)+'px');
+    shard.style.setProperty('--sy', (Math.random()*200-100).toFixed(0)+'px');
+    shard.style.setProperty('--sr', (Math.random()*360).toFixed(0)+'deg');
+    shard.style.setProperty('--sd', (Math.random()*0.4)+'s');
+    holder.appendChild(shard);
+    setTimeout(()=> shard.remove(), 1400);
+  }
+}
+
+// ─── LOG / TOOLS ─────────────────────────────────────────────
+function appendLog(text, kind){
+  const el = document.getElementById('battle-log');
+  const row = document.createElement('div');
+  row.className = 'row ' + (kind || '');
+  row.textContent = text;
+  el.prepend(row);
+  while(el.children.length > 6) el.removeChild(el.lastChild);
+}
+function toggleLog(){
+  APP.logOpen = !APP.logOpen;
+  document.getElementById('battle-log').classList.toggle('show', APP.logOpen);
+}
+function surrender(){
+  if(confirm('¿Salir del combate? Cuenta como abandono.')) {
+    recordAbandon();
+    backToMenu();
+  }
+}
+function surrenderForced(){
+  recordAbandon();
+  setTimeout(()=> backToMenu(), 800);
+}
+// Abandon penalty: 3 in a row → 5-min lockout + 2× ELO loss multiplier on next match.
+function recordAbandon(){
+  try {
+    const KEY = 'shs_player';
+    const cur = JSON.parse(localStorage.getItem(KEY) || '{}');
+    cur.abandonStreak = (cur.abandonStreak||0) + 1;
+    cur.lastAbandonAt = Date.now();
+    if (cur.abandonStreak >= 3) {
+      cur.lockoutUntil = Date.now() + 5*60*1000;
+      cur.eloPenaltyMult = 2;
+    }
+    localStorage.setItem(KEY, JSON.stringify(cur));
+  } catch(_){}
+}
+function clearAbandonStreak(){
+  try {
+    const KEY = 'shs_player';
+    const cur = JSON.parse(localStorage.getItem(KEY) || '{}');
+    cur.abandonStreak = 0;
+    localStorage.setItem(KEY, JSON.stringify(cur));
+  } catch(_){}
+}
+
+// ─── END ─────────────────────────────────────────────────────
+function showEnd(){
+  const B = APP.battle;
+  // Successful battle clears the abandon streak.
+  clearAbandonStreak();
+  // Queue Battle Pass XP for the gamehub to consume.
+  try {
+    const xp = B.winner === 'p' ? 30 : (B.winner === 'o' ? 15 : 20);
+    const cur = JSON.parse(localStorage.getItem('shs_bp_pending') || '{"xp":0,"battles":0,"wins":0}');
+    cur.xp += xp; cur.battles += 1; if (B.winner==='p') cur.wins += 1;
+    localStorage.setItem('shs_bp_pending', JSON.stringify(cur));
+  } catch(_){}
+  goScreen('end');
+
+  const card = document.getElementById('end-card');
+  const t = document.getElementById('end-title');
+  const s = document.getElementById('end-sub');
+  const tag = document.getElementById('end-tag');
+
+  if(B.winner === 'p'){
+    t.textContent = 'VICTORY'; t.className = 'end-title win';
+    s.textContent = 'SHARDS SECURED · LINK STABLE';
+    tag.textContent = 'WIN';
+    card.className = 'end-card win';
+    spawnConfetti();
+  } else if(B.winner === 'o'){
+    t.textContent = 'DEFEAT'; t.className = 'end-title loss';
+    s.textContent = 'LINK SEVERED · PROTOCOL OBSERVES';
+    tag.textContent = 'LOSS';
+    card.className = 'end-card loss';
+    spawnBurst(window.innerWidth/2, window.innerHeight/2, '#FF3B3B', 70, 6);
+  } else {
+    t.textContent = 'DRAW'; t.className = 'end-title draw';
+    s.textContent = 'IMPASSE · NO ECHO PREVAILS';
+    tag.textContent = 'DRAW';
+    card.className = 'end-card draw';
+    spawnBurst(window.innerWidth/2, window.innerHeight/2, '#f59e0b', 40, 4);
+  }
+
+  document.getElementById('end-player-name').textContent = PLAYER.name;
+  document.getElementById('end-avatar').textContent = PLAYER.name.charAt(0);
+  document.getElementById('end-player-meta').textContent =
+    'VS ' + B.opponent.name + ' · ' + MODES[B.mode].label;
+
+  const rw = B.rewards || { shards:0, xp:0, elo:0 };
+  document.getElementById('rw-shards').textContent = (rw.shards>=0?'+':'') + rw.shards;
+  document.getElementById('rw-xp').textContent     = (rw.xp>=0?'+':'')     + rw.xp;
+  document.getElementById('rw-elo').textContent    = (rw.elo>=0?'+':'')    + rw.elo;
+  document.getElementById('rw-shards-box').className = 'rw ' + (rw.shards>0?'pos':'');
+  document.getElementById('rw-xp-box').className     = 'rw ' + (rw.xp>0?'pos':'');
+  document.getElementById('rw-elo-box').className    = 'rw ' + (rw.elo>0?'pos':(rw.elo<0?'neg':''));
+}
+
+function backToMenu(){
+  APP.inputLocked = false;
+  goScreen('menu');
+  renderMenu();
+}
+function rematch(){
+  const m = APP.battle ? APP.battle.mode : 'casual';
+  APP.inputLocked = false;
+  startMode(m);
+}

@@ -1,0 +1,34 @@
+# Vercel
+.vercel
+.env*.local
+
+# Supabase
+.supabase/
+supabase/.temp/
+supabase/.branches/
+
+# Node / build artifacts
+node_modules/
+dist/
+build/
+.next/
+.cache/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local-only test/scratch files
+scratch/
+*.local.html

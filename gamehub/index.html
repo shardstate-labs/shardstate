@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SHARDSTATE — Platform</title>
+<link rel="icon" href="../icon-192.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+
+<div id="gate" class="gate hidden">
+  <div class="gate-logo">SHARD<span>STATE</span></div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="shell" id="app">
+
+  <!-- ── SIDEBAR ──────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">SHARD<span>STATE</span></div>
+      <div class="sidebar-tagline" data-i18n="sidebar_tagline">FRACTURE NETWORK</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!-- PLAY button -->
+      <button class="nav-play-btn" onclick="launchPWA()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        <span data-i18n="nav_play">PLAY NOW</span>
+      </button>
+
+      <button class="nav-item" data-tab="learn">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_learn">LEARN</span>
+      </button>
+      <button class="nav-item" data-tab="missions">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_missions">MISSIONS</span>
+      </button>
+      <button class="nav-item" data-tab="battlepass">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.39 4.85 5.36.78-3.88 3.78.92 5.34L12 14.27 7.21 16.75l.92-5.34L4.25 7.63l5.36-.78z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_battlepass">BATTLE PASS</span>
+      </button>
+      <button class="nav-item active" data-tab="coleccion">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_coleccion">COLLECTION</span>
+      </button>
+      <button class="nav-item" data-tab="mercado">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_mercado">MARKET</span>
+      </button>
+      <button class="nav-item" data-tab="shop">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S14.93 14 13 14c-1.93 0-3.5-1.57-3.5-3.5S11.07 7 13 7zM7 16v-1c0-1.33 2.67-2 4-2h.5c.28 0 .5.22.5.5v1H7z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_shop">SHOP</span>
+      </button>
+      <button class="nav-item" data-tab="guilds">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_guilds">GUILDS</span>
+      </button>
+      <button class="nav-item" data-tab="community">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_community">COMMUNITY</span>
+      </button>
+      <button class="nav-item" data-tab="perfil">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_perfil">PROFILE</span>
+      </button>
+      <a class="nav-item" href="../admin/index.html" target="_blank" rel="noopener" title="Card editor — admin panel">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17v4h4l11-11-4-4L3 17zm17.7-10.3l-2.4-2.4a1 1 0 0 0-1.4 0l-1.8 1.8 4 4 1.6-1.6c.4-.4.4-1 0-1.8z"/></svg></span>
+        <span class="nav-label">CARD EDITOR</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-currencies">
+      <div class="currency-row" title="SHARDS — off-chain earned currency">
+        <span class="currency-icon shards">◈</span>
+        <span class="currency-label">SHARDS</span>
+        <span class="currency-val" id="sb-shards">—</span>
+      </div>
+      <div class="currency-row" title="FLUX — premium currency">
+        <span class="currency-icon flux">⚡</span>
+        <span class="currency-label">FLUX</span>
+        <span class="currency-val" id="sb-flux">—</span>
+      </div>
+      <div class="currency-row" title="$SHS — on-chain token">
+        <span class="currency-icon shs">◎</span>
+        <span class="currency-label">$SHS</span>
+        <span class="currency-val" id="sb-shs">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="su-avatar" id="topbar-avatar">⚡</div>
+        <div class="su-info">
+          <div class="su-name" id="topbar-username">—</div>
+          <div class="su-elo" id="topbar-elo">—</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logoutWeb()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+        <span data-i18n="logout">Log out</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ──────────────────────────────────────────── -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-section" id="topbar-section">COLLECTION</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-lang" id="lang-toggle" onclick="toggleLang()">ES</button>
+        <button class="btn-wallet" onclick="connectWallet()">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M21 18v1c0 1.1-.9 2-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14c1.1 0 2 .9 2 2v1h-9a2 2 0 00-2 2v8a2 2 0 002 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+          <span data-i18n="topbar_wallet">Connect Wallet</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="panels">
+
+      <!-- ▸ LEARN ──────────────────────────────────────── -->
+      <article class="panel" id="panel-learn">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_learn_title">Learn</h1>
+            <p data-i18n="panel_learn_sub">Game rules, modes, rankings, clans, and card mechanics</p>
+          </div>
+        </div>
+        <div class="learn-tabs">
+          <button class="learn-tab active" data-ltab="rules" data-i18n="learn_tab_rules">Rules</button>
+          <button class="learn-tab" data-ltab="modes" data-i18n="learn_tab_modes">Modes</button>
+          <button class="learn-tab" data-ltab="rankings" data-i18n="learn_tab_rankings">Rankings</button>
+          <button class="learn-tab" data-ltab="clans" data-i18n="learn_tab_clans">Clans</button>
+          <button class="learn-tab" data-ltab="cards" data-i18n="learn_tab_cards">Mechanics</button>
+        </div>
+
+        <div class="learn-content active" id="ltab-rules"><!-- JS --></div>
+        <div class="learn-content" id="ltab-modes"><!-- JS --></div>
+        <div class="learn-content" id="ltab-rankings"><!-- JS --></div>
+        <div class="learn-content" id="ltab-clans"><div class="clans-learn-grid" id="clans-learn-grid"><!-- JS --></div></div>
+        <div class="learn-content" id="ltab-cards"><!-- JS --></div>
+      </article>
+
+      <!-- ▸ MISSIONS ────────────────────────────────────── -->
+      <article class="panel" id="panel-missions">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_missions_title">Missions</h1>
+            <p data-i18n="panel_missions_sub">Complete objectives to earn SHARDS and unlock ECHO cards</p>
+          </div>
+        </div>
+        <div class="missions-grid" id="missions-grid"><!-- JS --></div>
+      </article>
+
+      <!-- ▸ BATTLE PASS ─────────────────────────────────── -->
+      <article class="panel" id="panel-battlepass">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_battlepass_title">Battle Pass</h1>
+            <p data-i18n="panel_battlepass_sub">30 days · 30 levels · Earn SHARDS, FLUX and a random GRAND card</p>
+          </div>
+          <div class="panel-actions">
+            <span id="bp-countdown" class="bp-countdown">—</span>
+          </div>
+        </div>
+        <div id="bp-root"><!-- JS --></div>
+      </article>
+
+      <!-- ▸ COLLECTION ──────────────────────────────────── -->
+      <article class="panel active" id="panel-coleccion">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_coleccion_title">Collection</h1>
+            <p data-i18n="panel_coleccion_sub">Your cards, deck builder, and presets</p>
+          </div>
+          <div class="panel-actions">
+            <input type="text" class="input-dark coll-search" id="coll-search" placeholder="Search cards…" data-i18n-ph="coll_search_ph" oninput="filterCollection()"/>
+            <button class="btn btn-ghost btn-sm" onclick="filterCollection('all')" data-i18n="coll_filter_all">All</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterCollection('owned')" data-i18n="coll_filter_owned">Owned</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterCollection('missing')" data-i18n="coll_filter_missing">Missing</button>
+          </div>
+        </div>
+
+        <div class="coll-layout">
+          <!-- DECK BUILDER -->
+          <div class="card-block deck-builder-panel">
+            <div class="deck-header-row">
+              <span class="deck-title" data-i18n="deck_active">Active Deck</span>
+              <span class="deck-count-label"><span id="deck-count-num">0</span>/8</span>
+            </div>
+            <div id="deck-slots" class="deck-slots"><!-- JS --></div>
+
+            <div class="preset-section">
+              <div class="block-sub">Presets</div>
+              <div class="preset-row">
+                <input id="preset-name" class="input-dark" style="flex:1" maxlength="24" placeholder="Preset name…"/>
+                <button id="save-preset" class="btn btn-secondary btn-sm" data-i18n="preset_save">Save</button>
+              </div>
+              <div class="preset-row">
+                <select id="preset-select" class="select-dark" style="flex:1"></select>
+                <button id="load-preset" class="btn btn-primary btn-sm" data-i18n="preset_load">Load</button>
+              </div>
+              <div style="margin-top:8px">
+                <button id="share-preset" class="btn btn-ghost btn-sm btn-full" data-i18n="preset_share">Share to Community</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- CARDS GRID -->
+          <div>
+            <div id="collection-section-owned" style="margin-bottom:24px">
+              <div class="block-title" style="margin-bottom:12px">
+                <span data-i18n="coll_owned">Owned</span>
+                <span id="owned-count" style="font-family:var(--font-body);font-size:0.75rem;color:var(--text2);font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px"></span>
+              </div>
+              <div id="owned-cards" class="cards-grid"></div>
+            </div>
+            <div id="collection-section-missing">
+              <div class="block-title" style="margin-bottom:12px">
+                <span data-i18n="coll_missing">Not Owned</span>
+                <span id="missing-count" style="font-family:var(--font-body);font-size:0.75rem;color:var(--text2);font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px"></span>
+              </div>
+              <div id="missing-cards" class="cards-grid"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ▸ MARKET ─────────────────────────────────────── -->
+      <article class="panel" id="panel-mercado">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_mercado_title">Market</h1>
+            <p data-i18n="panel_mercado_sub">Trade cards off-chain with SHARDS or on-chain with $SHS</p>
+          </div>
+        </div>
+
+        <div class="market-tabs">
+          <button class="market-tab active" data-mtab="offchain" data-i18n="market_tab_offchain">Off-Chain (SHARDS)</button>
+          <button class="market-tab" data-mtab="onchain" data-i18n="market_tab_onchain">On-Chain ($SHS)</button>
+          <button class="market-tab" data-mtab="history" data-i18n="market_tab_history">History</button>
+        </div>
+
+        <div id="mtab-offchain">
+          <div class="market-layout">
+            <div>
+              <div class="card-block" style="margin-bottom:12px">
+                <div class="block-title" data-i18n="market_list_title">List a Card</div>
+                <div class="market-list-form">
+                  <select id="sell-card-id" class="select-dark"></select>
+                  <div class="market-form-row">
+                    <input id="sell-card-price" class="input-dark" type="number" min="1" value="50" placeholder="Price in SHARDS" style="flex:1"/>
+                    <button id="sell-card-btn" class="btn btn-primary" data-i18n="market_list_btn">List</button>
+                  </div>
+                </div>
+                <div class="block-sub" data-i18n="market_my_sales">My Active Listings</div>
+                <div id="my-sales" class="list-feed"></div>
+              </div>
+            </div>
+            <div>
+              <div class="card-block">
+                <div class="block-title" data-i18n="market_live">Market Listings</div>
+                <div id="market-list" class="market-cards-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="mtab-onchain" style="display:none">
+          <div class="card-block" style="text-align:center;padding:48px 24px">
+            <div style="font-size:2rem;margin-bottom:16px">◎</div>
+            <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:900;margin-bottom:8px" data-i18n="market_onchain_title">ON-CHAIN MARKET</div>
+            <div style="font-size:0.82rem;color:var(--text2);max-width:360px;margin:0 auto 20px" data-i18n="market_onchain_desc">Trade NFT cards with $SHS tokens on Abstract Chain. Connect your wallet to access.</div>
+            <button class="btn btn-primary" onclick="connectWallet()" data-i18n="market_onchain_btn">Connect Wallet to Trade</button>
+          </div>
+        </div>
+
+        <div id="mtab-history" style="display:none">
+          <div class="history-layout two-col">
+            <div class="card-block">
+              <div class="block-title">Purchase History</div>
+              <div id="buy-history" class="list-feed"></div>
+            </div>
+            <div class="card-block">
+              <div class="block-title">Sales History</div>
+              <div id="sell-history" class="list-feed"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ▸ SHOP ───────────────────────────────────────── -->
+      <article class="panel" id="panel-shop">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_shop_title">Pack Shop</h1>
+            <p data-i18n="panel_shop_sub">Open packs to expand your collection</p>
+          </div>
+        </div>
+        <div class="packs-grid" id="packs-grid"><!-- JS rendered --></div>
+        <div class="card-block">
+          <div class="block-title" data-i18n="shop_last_opened">Last Opened</div>
+          <div id="last-pack-open" class="pack-reveal-grid">
+            <div class="feed-empty" data-i18n="shop_empty">Open a pack to see results.</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ▸ GUILDS ─────────────────────────────────────── -->
+      <article class="panel" id="panel-guilds">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_guilds_title">Guilds</h1>
+            <p data-i18n="panel_guilds_sub">Create, join, and manage your guild</p>
+          </div>
+        </div>
+        <div class="guilds-layout">
+          <div>
+            <div class="card-block" style="margin-bottom:12px">
+              <div class="block-title"><span data-i18n="guild_create">Create Guild</span> <span class="cost-tag" data-i18n="guild_create_cost">100 FLUX</span></div>
+              <div class="stack-form">
+                <input id="guild-name" class="input-dark" maxlength="24" placeholder="Guild name" data-i18n-ph="guild_name_ph"/>
+                <div style="display:flex;gap:7px">
+                  <input id="guild-avatar" class="input-dark" style="width:72px" placeholder="Emoji" value="🛡"/>
+                  <textarea id="guild-bio" class="input-dark" style="flex:1" maxlength="200" placeholder="Guild description…" data-i18n-ph="guild_bio_ph"></textarea>
+                </div>
+                <button id="create-guild-btn" class="btn btn-primary btn-full" data-i18n="guild_create_btn">Create Guild</button>
+              </div>
+            </div>
+            <div class="card-block">
+              <div class="block-title" data-i18n="guild_my">My Guild</div>
+              <div id="my-guild" class="list-feed"></div>
+              <div class="block-sub" data-i18n="guild_pending">Pending Requests</div>
+              <div id="guild-requests" class="list-feed"></div>
+            </div>
+          </div>
+          <div>
+            <div class="card-block">
+              <div class="guild-directory-header">
+                <div class="block-title" style="margin-bottom:0" data-i18n="guild_directory">Guild Directory</div>
+                <input id="guild-search" class="input-dark" style="flex:1;max-width:200px" placeholder="Search guilds…" data-i18n-ph="guild_search_ph" oninput="renderGuilds()"/>
+              </div>
+              <div id="guild-directory" class="guilds-directory-grid" style="margin-top:14px"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ▸ COMMUNITY ──────────────────────────────────── -->
+      <article class="panel" id="panel-community">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_community_title">Community</h1>
+            <p data-i18n="panel_community_sub">Forum, Discord, and shared deck presets</p>
+          </div>
+        </div>
+        <div class="community-layout">
+          <div>
+            <div class="card-block" style="margin-bottom:12px">
+              <div class="block-title" data-i18n="community_forum">Forum</div>
+              <div class="forum-list" id="forum-list"><!-- JS --></div>
+            </div>
+          </div>
+          <div>
+            <div class="community-sidebar-card">
+              <div class="block-title" style="margin-bottom:12px" data-i18n="community_join">Join the Community</div>
+              <button class="discord-btn" onclick="openDiscord()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z"/></svg>
+                <span data-i18n="community_discord">Discord Server</span>
+              </button>
+            </div>
+            <div class="community-sidebar-card">
+              <div class="block-title" style="margin-bottom:12px" data-i18n="community_presets">Public Presets</div>
+              <div id="public-presets"><!-- JS --></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- ▸ PROFILE ────────────────────────────────────── -->
+      <article class="panel" id="panel-perfil">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_perfil_title">Profile</h1>
+            <p data-i18n="panel_perfil_sub">Account stats, sponsor and referrals</p>
+          </div>
+        </div>
+        <div class="profile-layout">
+          <div>
+            <div class="profile-main-card">
+              <span class="profile-avatar-xl" id="profile-avatar-big">⚡</span>
+              <div class="profile-name" id="profile-name">—</div>
+              <span class="profile-elo-badge" id="profile-elo-badge">—</span>
+              <div class="xp-bar-track"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+              <div style="font-size:0.7rem;color:var(--text2)" id="xp-label">—</div>
+              <div class="profile-stats-grid" id="profile-stats-grid"></div>
+            </div>
+          </div>
+          <div>
+            <div class="card-block" style="margin-bottom:12px">
+              <div class="block-title" data-i18n="profile_sponsor">Sponsor</div>
+              <div id="profile-sponsor" class="feed-empty" data-i18n="profile_no_sponsor">No sponsor.</div>
+            </div>
+            <div class="card-block" style="margin-bottom:12px">
+              <div class="block-title" data-i18n="profile_friends">Friends</div>
+              <div id="friends-section"><!-- JS --></div>
+            </div>
+            <div class="card-block">
+              <div class="block-title" data-i18n="profile_ref_title">Referral Link</div>
+              <div style="display:flex;gap:8px;margin-bottom:12px">
+                <input id="ref-link" class="input-dark" style="flex:1" readonly placeholder="Generate your link…" data-i18n-ph="profile_ref_ph"/>
+                <button id="copy-ref-link" class="btn btn-primary btn-sm" data-i18n="profile_copy">Copy</button>
+              </div>
+              <div class="block-sub" data-i18n="profile_referrals">Referrals</div>
+              <div id="referrals-list" class="list-feed"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+    </div><!-- /panels -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- Pack Opening Overlay -->
+<div id="pack-opening-overlay" class="pack-overlay" style="display:none">
+  <div class="pack-overlay-bg"></div>
+  <div class="pack-overlay-content">
+    <div class="pack-anim-wrap" id="pack-anim-wrap">
+      <div class="pack-anim-icon" id="pack-anim-icon">📦</div>
+      <div class="pack-anim-name" id="pack-anim-name">Pack</div>
+      <div class="pack-anim-sub" id="pack-anim-sub"></div>
+      <button class="pack-open-trigger" id="pack-open-trigger" onclick="revealPackCards()">¡ABRIR!</button>
+    </div>
+    <div class="pack-cards-reveal" id="pack-cards-reveal" style="display:none">
+      <div class="pack-reveal-row" id="pack-reveal-row"></div>
+      <button class="pack-close-btn" onclick="closePackOverlay()">Continuar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- CARD DETAIL MODAL -->
+<div id="card-detail-modal" class="cdm-overlay" onclick="if(event.target===this)closeCardDetail()">
+  <div class="cdm-panel">
+    <button class="cdm-close" onclick="closeCardDetail()">✕</button>
+    <div class="cdm-body"></div>
+  </div>
+</div>
+
+<script src="../engine/cards.js"></script>
+<script src="../engine/utils.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
