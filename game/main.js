@@ -19,6 +19,27 @@ function importFromWeb(){
 }
 const APP_IMPORT = { deck: null, player: null };
 importFromWeb();
+
+// Hard gate: refuse to start if /gamehub never handed us a valid deck.
+// This is the defense layer behind the gamehub launchPWA modal.
+function showNoDeckOverlay(){
+  const o = document.createElement('div');
+  o.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.94);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:"Space Grotesk",system-ui,sans-serif;padding:24px;backdrop-filter:blur(8px)';
+  o.innerHTML = `
+    <div style="max-width:440px;background:linear-gradient(180deg,#0f1218,#0a0c10);border:1px solid #2a2f3a;border-radius:18px;padding:36px 32px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.6),0 0 0 1px rgba(255,180,0,0.18);">
+      <div style="font-size:48px;line-height:1;margin-bottom:16px;color:#FFB400;text-shadow:0 0 24px rgba(255,180,0,0.5)">⚠</div>
+      <div style="font-family:Orbitron,sans-serif;font-weight:900;font-size:1.05rem;letter-spacing:0.06em;color:#fff;margin-bottom:8px">DECK REQUERIDO</div>
+      <div style="font-size:0.88rem;color:#a8aebb;line-height:1.5;margin-bottom:24px">Necesitás un deck de 8 cartas armado en el GAMEHUB antes de poder jugar. Volvé al hub para configurarlo.</div>
+      <button id="no-deck-back" style="background:linear-gradient(180deg,#00E0FF,#0095B5);color:#001218;border:none;padding:13px 28px;border-radius:10px;font-family:Orbitron,sans-serif;font-weight:900;font-size:0.85rem;letter-spacing:0.08em;cursor:pointer;box-shadow:0 4px 16px rgba(0,224,255,0.3)">VOLVER AL GAMEHUB →</button>
+    </div>`;
+  document.body.appendChild(o);
+  o.querySelector('#no-deck-back').addEventListener('click', () => {
+    // Try to close this tab; if it was opened by gamehub it'll work.
+    // Fallback: navigate back to /gamehub/ in this tab.
+    try { window.close(); } catch(_){}
+    setTimeout(() => { window.location.href = '../gamehub/'; }, 80);
+  });
+}
 if(APP_IMPORT.player){
   if(APP_IMPORT.player.name)   PLAYER.name   = APP_IMPORT.player.name;
   if(APP_IMPORT.player.club)   PLAYER.club   = APP_IMPORT.player.club;
@@ -50,6 +71,11 @@ const MODE_META = {
 
 function bootGame(){
   initFX();
+  // Hard gate: if /gamehub didn't hand us a valid 8-card deck, refuse to start.
+  if(!APP_IMPORT.deck){
+    showNoDeckOverlay();
+    return;
+  }
   const fill = document.getElementById('loading-fill');
   if(fill) fill.style.width = '100%';
   goScreen('menu');

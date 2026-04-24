@@ -873,3 +873,98 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .cdm-btn-sell{background:rgba(245,158,11,.1);color:var(--am);border-color:rgba(245,158,11,.25)}
 .cdm-btn-sell:hover{background:rgba(245,158,11,.2)}
 
+
+/* ── DECK REQUIRED MODAL (gates launchPWA) ────────────────── */
+.drm-overlay{
+  position:fixed;inset:0;z-index:99999;
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  background:rgba(8,10,14,0);
+  backdrop-filter:blur(0px);
+  -webkit-backdrop-filter:blur(0px);
+  pointer-events:none;
+  transition:background .28s ease, backdrop-filter .28s ease;
+}
+.drm-overlay.open{
+  background:rgba(8,10,14,.78);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  pointer-events:auto;
+}
+.drm-card{
+  position:relative;
+  width:min(440px,100%);
+  background:linear-gradient(180deg,#11151c 0%,#0a0c10 100%);
+  border:1px solid #2a2f3a;
+  border-radius:18px;
+  padding:36px 32px 28px;
+  text-align:center;
+  box-shadow:0 32px 80px rgba(0,0,0,.65), 0 0 0 1px rgba(255,180,0,.18) inset;
+  transform:translateY(24px) scale(.94);
+  opacity:0;
+  transition:transform .42s cubic-bezier(.2,.9,.25,1.25), opacity .28s ease;
+  overflow:hidden;
+}
+.drm-overlay.open .drm-card{ transform:translateY(0) scale(1); opacity:1; }
+.drm-glow{
+  position:absolute;inset:-40%;
+  background:radial-gradient(closest-side, rgba(255,180,0,.22), transparent 70%);
+  pointer-events:none;
+  animation:drmGlow 3s ease-in-out infinite;
+}
+@keyframes drmGlow{
+  0%,100%{ opacity:.6; transform:translateY(0); }
+  50%   { opacity:1;  transform:translateY(-6px); }
+}
+.drm-icon{
+  position:relative;
+  font-size:48px;line-height:1;
+  margin-bottom:14px;
+  color:#FFB400;
+  text-shadow:0 0 28px rgba(255,180,0,.65), 0 0 4px rgba(255,180,0,.9);
+  animation:drmPulse 1.6s ease-in-out infinite;
+}
+@keyframes drmPulse{
+  0%,100%{ transform:scale(1);    text-shadow:0 0 24px rgba(255,180,0,.55); }
+  50%   { transform:scale(1.08); text-shadow:0 0 36px rgba(255,180,0,.95); }
+}
+.drm-title{
+  position:relative;
+  font-family:Orbitron,sans-serif;font-weight:900;
+  font-size:1.1rem;letter-spacing:.08em;
+  color:#fff;margin-bottom:8px;
+}
+.drm-sub{
+  position:relative;
+  font-size:.86rem;color:#a8aebb;line-height:1.5;
+  margin-bottom:20px;
+}
+.drm-progress{
+  position:relative;
+  margin-bottom:24px;
+}
+.drm-progress-bar{
+  height:8px;width:100%;
+  background:#1a1f28;
+  border-radius:99px;
+  overflow:hidden;
+  border:1px solid #2a2f3a;
+}
+.drm-progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,#FFB400,#FF7A00);
+  border-radius:99px;
+  box-shadow:0 0 12px rgba(255,180,0,.5);
+  transition:width .6s cubic-bezier(.2,.9,.25,1);
+}
+.drm-progress-text{
+  margin-top:8px;
+  font-family:Orbitron,sans-serif;font-weight:700;
+  font-size:.72rem;letter-spacing:.08em;
+  color:#FFB400;
+}
+.drm-actions{
+  position:relative;
+  display:flex;gap:10px;justify-content:center;
+}
+.drm-actions .btn{ flex:1; max-width:180px; }

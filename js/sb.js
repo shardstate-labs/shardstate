@@ -121,6 +121,24 @@
       return { data, error };
     },
 
+    /** Load all of the user's saved decks (active + presets). */
+    async loadDecks(uid){
+      const sb = await ensureClient();
+      const { data, error } = await sb.from('decks').select('*').eq('user_id', uid);
+      if (error) return [];
+      return data || [];
+    },
+
+    /** Load the user's owned collection as a {cardId: qty} map. */
+    async loadCollection(uid){
+      const sb = await ensureClient();
+      const { data, error } = await sb.from('cards_owned').select('card_id,qty').eq('user_id', uid);
+      if (error) return {};
+      const out = {};
+      (data || []).forEach(r => { out[r.card_id] = r.qty | 0; });
+      return out;
+    },
+
     /** Username uniqueness check. Returns true if available. */
     async usernameAvailable(username, exceptUid){
       const sb = await ensureClient();

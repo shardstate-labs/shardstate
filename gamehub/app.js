@@ -1715,18 +1715,67 @@ function openPack(costType) { // legacy shim
 
 // ── LAUNCH PWA ─────────────────────────────────────────────────
 function launchPWA() {
+  const deck = Array.isArray(view?.state?.deck) ? view.state.deck.slice(0, 8) : [];
+  // Block launch if the active deck isn't a complete, valid 8-card build.
+  const valid = deck.length === 8 && deck.every(id => typeof getCard === 'function' ? !!getCard(id) : !!id);
+  if (!valid) { showDeckRequiredModal(deck.length); return; }
   try {
-    const deck = Array.isArray(view?.state?.deck) ? view.state.deck.slice(0, 8) : [];
     localStorage.setItem('shardstate_deck', JSON.stringify(deck));
     localStorage.setItem('shardstate_player', JSON.stringify({
+      uid:    view?.user?.uid       || null,
       name:   view?.user?.username  || 'PLAYER',
       club:   view?.user?.guildName || 'SIN CLUB',
-      elo:    view?.state?.elo      ?? 0,
+      elo:    view?.user?.elo       ?? 0,
       shards: view?.state?.shards   ?? 0,
-      level:  view?.state?.level    ?? 1,
+      level:  view?.user?.accountLevel ?? 1,
     }));
   } catch (e) { /* localStorage unavailable — continue anyway */ }
   window.open('../game/index.html', '_blank');
+}
+
+// ── DECK-REQUIRED MODAL (gates launchPWA) ──────────────────────
+function showDeckRequiredModal(currentCount){
+  const L = currentLang === 'es';
+  let m = byId('deck-required-modal');
+  if (!m){
+    m = document.createElement('div');
+    m.id = 'deck-required-modal';
+    m.className = 'drm-overlay';
+    m.innerHTML = `
+      <div class="drm-card">
+        <div class="drm-glow"></div>
+        <div class="drm-icon">⚠</div>
+        <div class="drm-title"></div>
+        <div class="drm-sub"></div>
+        <div class="drm-progress">
+          <div class="drm-progress-bar"><div class="drm-progress-fill" id="drm-fill"></div></div>
+          <div class="drm-progress-text" id="drm-text"></div>
+        </div>
+        <div class="drm-actions">
+          <button class="btn btn-ghost" id="drm-cancel"></button>
+          <button class="btn btn-primary" id="drm-go"></button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) closeDeckRequiredModal(); });
+    byId('drm-cancel').onclick = closeDeckRequiredModal;
+    byId('drm-go').onclick = () => { closeDeckRequiredModal(); setTab('coleccion'); };
+  }
+  m.querySelector('.drm-title').textContent = L ? 'DECK INCOMPLETO' : 'DECK INCOMPLETE';
+  m.querySelector('.drm-sub').textContent   = L
+    ? 'Necesitás un deck de 8 cartas para entrar a combate. Armá tu mazo en COLLECTION antes de jugar.'
+    : 'You need a complete 8-card deck to enter combat. Build your deck in COLLECTION before playing.';
+  byId('drm-cancel').textContent = L ? 'Cancelar'      : 'Cancel';
+  byId('drm-go').textContent     = L ? 'ARMAR DECK →'  : 'BUILD DECK →';
+  byId('drm-fill').style.width   = Math.round((currentCount/8)*100) + '%';
+  byId('drm-text').textContent   = `${currentCount}/8 ${L ? 'cartas' : 'cards'}`;
+  // Force reflow then add 'open' to trigger entry animation.
+  void m.offsetWidth;
+  m.classList.add('open');
+}
+function closeDeckRequiredModal(){
+  const m = byId('deck-required-modal');
+  if (m) m.classList.remove('open');
 }
 
 // ── LANG TOGGLE ────────────────────────────────────────────────
@@ -2055,11 +2104,13 @@ function applyCustomCardsToCollection() {
 /** Hydrate view.db.users[uid] from Supabase profile + game_state. */
 async function hydrateFromSupabase(authUser){
   const uid = authUser.id;
-  let profile = null, gs = null;
+  let profile = null, gs = null, decks = [], collection = null;
   try {
     const r = await SB.loadProfile(uid);
     profile = r.profile; gs = r.gameState;
   } catch(_){}
+  try { decks      = await SB.loadDecks(uid); }      catch(_){}
+  try { collection = await SB.loadCollection(uid); } catch(_){}
   const existing = view.db.users[uid] || {};
   const u = Object.assign({
     uid,
@@ -2074,16 +2125,49 @@ async function hydrateFromSupabase(authUser){
     u.username = profile.username || u.username;
   }
   if (gs) {
-    u.shardsBalance = gs.shards ?? u.shardsBalance ?? 0;
-    u.fluxBalance   = gs.flux   ?? u.fluxBalance   ?? 0;
-    u.shsBalance    = Number(gs.shs ?? u.shsBalance ?? 0);
-    u.elo           = gs.elo    ?? u.elo ?? 0;
+    u.shardsBalance  = gs.shards ?? u.shardsBalance ?? 0;
+    u.fluxBalance    = gs.flux   ?? u.fluxBalance   ?? 0;
+    u.shsBalance     = Number(gs.shs ?? u.shsBalance ?? 0);
+    u.elo            = gs.elo    ?? u.elo ?? 0;
+    u.accountXp      = gs.xp    ?? u.accountXp ?? 0;
+    u.accountLevel   = gs.level ?? u.accountLevel ?? 1;
     u.gameState.welcomePackClaimed = !!gs.welcome_pack_claimed;
+  }
+  // Server is source of truth for collection — only override if we got data back.
+  if (collection && Object.keys(collection).length){
+    u.gameState.collection = collection;
+  }
+  // Decks: pick the active row for the deck slot, presets from the rest.
+  if (Array.isArray(decks) && decks.length){
+    const active = decks.find(d => d.is_active) || decks[0];
+    if (active && Array.isArray(active.card_ids) && active.card_ids.length === 8){
+      u.gameState.deck = active.card_ids.slice(0, 8);
+    }
+    u.gameState.deckPresets = decks
+      .filter(d => d !== active && Array.isArray(d.card_ids) && d.card_ids.length === 8)
+      .map(d => ({ name: d.name, cards: d.card_ids.slice(0, 8) }));
   }
   view.db.users[uid] = u;
   saveDb();
   localStorage.setItem(AUTH_SESSION_KEY, uid);
   return u;
+}
+
+/** Re-pull from Supabase (stats only) and refresh UI.
+ *  Triggered when the gamehub tab regains focus — picks up changes
+ *  made in the /game tab (rewards from finalize_battle). */
+async function refreshFromSupabase(){
+  if (!window.SB || !view.user) return;
+  try {
+    const sess = await SB.getSession();
+    if (!sess || !sess.user) return;
+    const fresh = await hydrateFromSupabase(sess.user);
+    view.user = fresh;
+    syncFromUser();
+    syncTopbar();
+    if (typeof renderPerfil === 'function') renderPerfil();
+    if (typeof renderBattlePass === 'function') renderBattlePass();
+  } catch(_){}
 }
 
 async function start() {
@@ -2114,6 +2198,13 @@ async function start() {
   setLang(currentLang);
   renderPacks();
   setTab('coleccion');
+
+  // Re-pull from Supabase whenever the gamehub tab regains focus,
+  // so rewards earned in /game (other tab) appear right away.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refreshFromSupabase();
+  });
+  window.addEventListener('focus', refreshFromSupabase);
 }
 
 start();
