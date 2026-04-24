@@ -869,12 +869,21 @@ function toggleLog(){
 function surrender(){
   if(confirm('¿Salir del combate? Cuenta como abandono.')) {
     recordAbandon();
-    backToMenu();
+    // Mark the battle as a player loss so showEnd() renders the proper screen
+    // (defeat banner + ELO/penalty info), then route through the normal
+    // end-of-battle flow instead of dumping the user back to the menu.
+    try {
+      if (APP && APP.battle) { APP.battle.winner = 'o'; APP.battle.abandoned = true; }
+    } catch(_){}
+    showEnd();
   }
 }
 function surrenderForced(){
   recordAbandon();
-  setTimeout(()=> backToMenu(), 800);
+  try {
+    if (APP && APP.battle) { APP.battle.winner = 'o'; APP.battle.abandoned = true; }
+  } catch(_){}
+  setTimeout(()=> showEnd(), 600);
 }
 // Abandon penalty: 3 in a row → 5-min lockout + 2× ELO loss multiplier on next match.
 function recordAbandon(){
@@ -964,7 +973,8 @@ function showEnd(){
   // ── Server-authoritative finalization (Phase 2A) ────────────
   // Calls finalize_battle RPC. Server recomputes rewards atomically
   // and the on-screen numbers are reconciled from its response.
-  if (window.SHS_SYNC) {
+  // Skip when the battle was abandoned — recordAbandon() already finalized it.
+  if (window.SHS_SYNC && !B.abandoned) {
     const result = B.winner === 'p' ? 'win' : (B.winner === 'o' ? 'loss' : 'draw');
     SHS_SYNC.finalizeBattle({
       mode: B.mode || 'casual',

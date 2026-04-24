@@ -148,6 +148,106 @@
       if (error) return false;
       return (count || 0) === 0;
     },
+
+    // ── Market ──────────────────────────────────────────────────
+    /** Active listings from OTHER players (RLS exposes status='active' to all). */
+    async loadMarketActive(excludeUid){
+      const sb = await ensureClient();
+      let q = sb.from('market_listings').select('id,seller_uid,card_id,price,currency,listed_at')
+        .eq('status','active').order('listed_at', { ascending:false }).limit(200);
+      if (excludeUid) q = q.neq('seller_uid', excludeUid);
+      const { data, error } = await q;
+      if (error) return [];
+      return data || [];
+    },
+    async loadMyListings(uid){
+      const sb = await ensureClient();
+      const { data, error } = await sb.from('market_listings').select('*')
+        .eq('seller_uid', uid).order('listed_at', { ascending:false }).limit(200);
+      if (error) return [];
+      return data || [];
+    },
+    async listCardForSale(cardId, price){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('list_card_for_sale', { p_card_id:cardId, p_price:price|0 });
+      if (error) return { error };
+      return data || { error:'unknown' };
+    },
+    async delistMarketCard(listingId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('delist_card', { p_listing_id:listingId });
+      if (error) return { error };
+      return data || { error:'unknown' };
+    },
+    async buyMarketListing(listingId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('buy_listing', { p_listing_id:listingId });
+      if (error) return { error };
+      return data || { error:'unknown' };
+    },
+
+    // ── Battle pass ─────────────────────────────────────────────
+    async loadBattlePass(uid){
+      const sb = await ensureClient();
+      const { data } = await sb.from('battle_pass').select('*').eq('user_id', uid).maybeSingle();
+      return data || null;
+    },
+    async claimBattlePass(tier, track){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('claim_battle_pass', { p_tier:tier|0, p_track:String(track) });
+      if (error) return { error };
+      return data || { error:'unknown' };
+    },
+
+    // ── Pack history ────────────────────────────────────────────
+    async loadPackHistory(uid, limit){
+      const sb = await ensureClient();
+      const { data, error } = await sb.from('pack_openings').select('id,pack_id,paid_with,cost,card_ids,opened_at')
+        .eq('user_id', uid).order('opened_at', { ascending:false }).limit(limit||20);
+      if (error) return [];
+      return data || [];
+    },
+    async recordPackOpening(uid, packId, paidWith, cost, cardIds){
+      if (!uid || !packId) return null;
+      try {
+        const sb = await ensureClient();
+        const { data, error } = await sb.from('pack_openings').insert({
+          user_id: uid,
+          pack_id: String(packId),
+          paid_with: String(paidWith||'free'),
+          cost: Number(cost||0),
+          card_ids: Array.isArray(cardIds) ? cardIds : [],
+        }).select().maybeSingle();
+        if (error) { console.warn('recordPackOpening error:', error); return null; }
+        return data || null;
+      } catch(e){ console.warn('recordPackOpening failed:', e); return null; }
+    },
+
+    // ── Profile mutations ───────────────────────────────────────
+    async updateUsername(uid, username){
+      const sb = await ensureClient();
+      const u = String(username||'').trim().slice(0,24);
+      if (!u) return { error:'invalid_username' };
+      const free = await SB.usernameAvailable(u, uid);
+      if (!free) return { error:'username_taken' };
+      const { data, error } = await sb.from('profiles')
+        .upsert({ user_id:uid, username:u, updated_at:new Date().toISOString() }, { onConflict:'user_id' })
+        .select().maybeSingle();
+      if (error) return { error };
+      return { data };
+    },
+    async updateEmail(newEmail){
+      const sb = await ensureClient();
+      const { data, error } = await sb.auth.updateUser({ email: String(newEmail||'').trim() });
+      if (error) return { error };
+      return { user: data?.user || null };
+    },
+    async updatePassword(newPassword){
+      const sb = await ensureClient();
+      const { data, error } = await sb.auth.updateUser({ password: String(newPassword||'') });
+      if (error) return { error };
+      return { user: data?.user || null };
+    },
   };
 
   window.SB = SB;

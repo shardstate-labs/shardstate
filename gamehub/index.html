@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=9"/>
+<link rel="stylesheet" href="./styles.css?v=10"/>
 </head>
 <body>
 
@@ -185,6 +185,7 @@
             <input type="text" class="input-dark coll-search" id="coll-search" placeholder="Search cards…" data-i18n-ph="coll_search_ph" oninput="filterCollection()"/>
             <button class="btn btn-ghost btn-sm" onclick="filterCollection('all')" data-i18n="coll_filter_all">All</button>
             <button class="btn btn-ghost btn-sm" onclick="filterCollection('owned')" data-i18n="coll_filter_owned">Owned</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterCollection('duplicates')" data-i18n="coll_filter_dupes">Duplicates</button>
             <button class="btn btn-ghost btn-sm" onclick="filterCollection('missing')" data-i18n="coll_filter_missing">Missing</button>
           </div>
         </div>
@@ -406,6 +407,26 @@
           </div>
           <div>
             <div class="card-block" style="margin-bottom:12px">
+              <div class="block-title" data-i18n="profile_account">Account</div>
+              <div class="account-edit">
+                <label class="block-sub" data-i18n="profile_username">Username</label>
+                <div style="display:flex;gap:6px;margin-bottom:10px">
+                  <input id="acct-username" class="input-dark" style="flex:1" maxlength="24" placeholder="username"/>
+                  <button class="btn btn-primary btn-sm" onclick="saveUsername()" data-i18n="profile_save">Save</button>
+                </div>
+                <label class="block-sub" data-i18n="profile_email">Email</label>
+                <div style="display:flex;gap:6px;margin-bottom:10px">
+                  <input id="acct-email" class="input-dark" style="flex:1" type="email" placeholder="email"/>
+                  <button class="btn btn-primary btn-sm" onclick="saveEmail()" data-i18n="profile_save">Save</button>
+                </div>
+                <label class="block-sub" data-i18n="profile_password">New password</label>
+                <div style="display:flex;gap:6px">
+                  <input id="acct-password" class="input-dark" style="flex:1" type="password" placeholder="••••••" autocomplete="new-password"/>
+                  <button class="btn btn-primary btn-sm" onclick="savePassword()" data-i18n="profile_save">Save</button>
+                </div>
+              </div>
+            </div>
+            <div class="card-block" style="margin-bottom:12px">
               <div class="block-title" data-i18n="profile_sponsor">Sponsor</div>
               <div id="profile-sponsor" class="feed-empty" data-i18n="profile_no_sponsor">No sponsor.</div>
             </div>
@@ -455,12 +476,12 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=9"></script>
-<script src="../engine/utils.js?v=9"></script>
-<script src="../js/config.js?v=9"></script>
-<script src="../js/sb.js?v=9"></script>
-<script src="../js/sync.js?v=9"></script>
-<script src="../js/pvp.js?v=9"></script>
-<script src="./app.js?v=9"></script>
+<script src="../engine/cards.js?v=10"></script>
+<script src="../engine/utils.js?v=10"></script>
+<script src="../js/config.js?v=10"></script>
+<script src="../js/sb.js?v=10"></script>
+<script src="../js/sync.js?v=10"></script>
+<script src="../js/pvp.js?v=10"></script>
+<script src="./app.js?v=10"></script>
 </body>
 </html>

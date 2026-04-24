@@ -390,15 +390,38 @@ function persistToUser() {
       xp:     u.accountXp|0,
       welcome_pack_claimed: !!view.state.welcomePackClaimed,
     });
-    SHS_SYNC.queueCollection(u.uid, view.state.collection || {});
+    // Normalize collection to {cardId: qty} for the server (legacy entries
+    // may still be {lv,xp} objects from old localStorage profiles).
+    const colMap = {};
+    Object.keys(view.state.collection || {}).forEach(id => {
+      const v = view.state.collection[id];
+      if (typeof v === 'number') colMap[id] = v;
+      else if (v && typeof v === 'object') colMap[id] = (v.qty | 0) || 1;
+    });
+    SHS_SYNC.queueCollection(u.uid, colMap);
     if (Array.isArray(view.state.deck) && view.state.deck.length === 8) {
       SHS_SYNC.queueDeck(u.uid, 'Active', view.state.deck, true);
+    } else if (SHS_SYNC.deleteDeck) {
+      // Incomplete active deck → drop the server row so refresh doesn't resurrect old cards.
+      SHS_SYNC.deleteDeck(u.uid, 'Active').catch(()=>{});
     }
+    const validPresetNames = new Set();
     (view.state.deckPresets || []).forEach((preset, i) => {
       const ids = Array.isArray(preset?.cards) ? preset.cards : (Array.isArray(preset) ? preset : null);
       const name = preset?.name || ('Preset '+(i+1));
-      if (ids && ids.length === 8) SHS_SYNC.queueDeck(u.uid, name, ids, false);
+      if (ids && ids.length === 8) {
+        SHS_SYNC.queueDeck(u.uid, name, ids, false);
+        validPresetNames.add(name);
+      }
     });
+    // Hard-delete any preset rows the user removed locally (if we know them).
+    const knownPresets = view._knownServerPresets || [];
+    knownPresets.forEach(name => {
+      if (name !== 'Active' && !validPresetNames.has(name) && SHS_SYNC.deleteDeck) {
+        SHS_SYNC.deleteDeck(u.uid, name).catch(()=>{});
+      }
+    });
+    view._knownServerPresets = Array.from(validPresetNames);
   }
 }
 
@@ -596,7 +619,7 @@ function openCardDetail(id) {
   if (!card) return;
   _cdModalId = id;
   const owned = !!view.state?.collection?.[id];
-  _cdModalLv = owned ? (view.state.collection[id].lv || 1) : 1;
+  _cdModalLv = 1;
   _renderCardDetailModal(card, owned);
   byId('card-detail-modal').classList.add('show');
 }
@@ -784,8 +807,55 @@ function renderPerfil() {
   refs.forEach(r => refEl.insertAdjacentHTML('beforeend',
     `<div class="feed-row"><span class="feed-label">${r.avatar||'⚡'} ${r.username}</span></div>`));
 
+  // Pre-fill account-edit inputs
+  const un = byId('acct-username');
+  const em = byId('acct-email');
+  if (un && document.activeElement !== un) un.value = u.username || '';
+  if (em && document.activeElement !== em) em.value = u.email || '';
+
   renderFriends();
 }
+
+// ── ACCOUNT EDIT ──────────────────────────────────────────────
+async function saveUsername(){
+  const newName = String(byId('acct-username')?.value || '').trim().slice(0,24);
+  if (!newName) return toast('Ingresa un username válido.');
+  if (!window.SB || !SB.updateUsername) return toast('Sin conexión al servidor.');
+  if (!view.user || !view.user.uid) return toast('Iniciá sesión.');
+  const r = await SB.updateUsername(view.user.uid, newName);
+  if (r.error) {
+    const msg = ({
+      invalid_username: 'Username inválido.',
+      username_taken:   'Ese username ya existe.',
+    })[r.error] || ('Error: ' + (r.error.message || r.error));
+    return toast(msg);
+  }
+  view.user.username = newName;
+  saveDb(); syncTopbar(); renderPerfil();
+  toast('✓ Username actualizado.');
+}
+window.saveUsername = saveUsername;
+
+async function saveEmail(){
+  const newEmail = String(byId('acct-email')?.value || '').trim();
+  if (!newEmail || !/.+@.+\..+/.test(newEmail)) return toast('Email inválido.');
+  if (!window.SB || !SB.updateEmail) return toast('Sin conexión al servidor.');
+  const r = await SB.updateEmail(newEmail);
+  if (r.error) return toast('Error: ' + (r.error.message || r.error));
+  toast('✉ Revisá tu nuevo email para confirmar el cambio.');
+}
+window.saveEmail = saveEmail;
+
+async function savePassword(){
+  const pw = String(byId('acct-password')?.value || '');
+  if (pw.length < 6) return toast('Mínimo 6 caracteres.');
+  if (!window.SB || !SB.updatePassword) return toast('Sin conexión al servidor.');
+  const r = await SB.updatePassword(pw);
+  if (r.error) return toast('Error: ' + (r.error.message || r.error));
+  byId('acct-password').value = '';
+  toast('🔐 Contraseña actualizada.');
+}
+window.savePassword = savePassword;
 
 // ── FRIENDS SYSTEM ────────────────────────────────────────────
 function getFriendSection() { return byId('friends-section'); }
@@ -903,7 +973,18 @@ function renderColeccion() {
   if (!owned.length) {
     ownedEl.innerHTML = `<div class="feed-muted full-span">${t('no_cards')}</div>`;
   } else {
-    owned.forEach(id => ownedEl.insertAdjacentHTML('beforeend', renderCard(id, { size: 'sm' })));
+    owned.forEach(id => {
+      const entry = view.state.collection[id];
+      const qty   = (typeof entry === 'number') ? entry : (entry?.qty | 0) || 1;
+      let html    = renderCard(id, { size: 'sm' });
+      // Inject data-qty so filterCollection can hide non-duplicates,
+      // and a x[N] badge in the corner when the player owns more than one.
+      html = html.replace('class="tcg-card', `data-qty="${qty}" class="tcg-card`);
+      if (qty > 1) {
+        html = html.replace('</div>', `<div class="shs-dup-badge">×${qty}</div></div>`);
+      }
+      ownedEl.insertAdjacentHTML('beforeend', html);
+    });
   }
   missing.forEach(id => missingEl.insertAdjacentHTML('beforeend', renderCard(id, { missing: true, size: 'sm' })));
   // Re-apply active search/filter if any
@@ -911,66 +992,94 @@ function renderColeccion() {
   if (q) filterCollection();
 }
 
-// ── RENDER: MERCADO ────────────────────────────────────────────
-function renderMercado() {
+// ── RENDER: MERCADO — server-authoritative ─────────────────────
+async function renderMercado() {
   const u = view.user;
   const sellSel = byId('sell-card-id');
+  // Sell selector is filtered: cannot sell cards locked in the active deck (server enforces too).
   sellSel.innerHTML = '';
-  Object.keys(view.state.collection || {}).forEach(id => {
-    sellSel.insertAdjacentHTML('beforeend', `<option value="${id}">${cardName(id)}</option>`);
+  const owned = view.state.collection || {};
+  const activeDeck = new Set((view.state.deck || []));
+  const sellable = Object.keys(owned).filter(id => {
+    const qty = (typeof owned[id] === 'number') ? owned[id] : 1;
+    // Allow if you have >1 copy OR the card isn't in your active deck.
+    return qty > 1 || !activeDeck.has(id);
   });
-  if (!Object.keys(view.state.collection || {}).length)
-    sellSel.innerHTML = `<option value="">Sin cartas</option>`;
+  if (!sellable.length){
+    sellSel.innerHTML = `<option value="">Sin cartas vendibles</option>`;
+  } else {
+    sellable.forEach(id => {
+      const qty = (typeof owned[id] === 'number') ? owned[id] : 1;
+      const lbl = qty > 1 ? `${cardName(id)} (×${qty})` : cardName(id);
+      sellSel.insertAdjacentHTML('beforeend', `<option value="${id}">${lbl}</option>`);
+    });
+  }
 
-  // Market live — visual card grid
-  const active = (view.db.marketListings || []).filter(l => l.active && l.sellerUid !== u.uid);
   const mList  = byId('market-list');
-  mList.innerHTML = active.length ? '' : `<div class="feed-muted">${t('no_market')}</div>`;
-  active.forEach(l => {
-    const card = (typeof getCard === 'function') ? getCard(l.cardId) : null;
-    const cc = card ? clanColor(card.clan) : '#6B5CE7';
-    const ce = card ? clanEmoji(card.clan) : '⚡';
-    const pow = card && card.pow ? card.pow[1] : '?';
-    const dmg = card && card.dmg ? card.dmg[1] : '?';
-    const name = card ? card.name : l.cardId;
-    const imgSrc = card?.visual?.image || `/assets/cards/${l.cardId}.png`;
-    mList.insertAdjacentHTML('beforeend', `
-      <div class="market-card-item" style="--cc:${cc}">
-        <div class="mcard-art-wrap">
-          <div class="mcard-clan-bar" style="background:${cc}">${ce} ${card?.clan?.toUpperCase() || ''}</div>
-          <img src="${imgSrc}" alt="${name}" class="mcard-img" onerror="this.parentNode.classList.add('no-img')"/>
-          <div class="mcard-art-fallback">${ce}</div>
-        </div>
-        <div class="mcard-info">
-          <div class="mcard-name">${name}</div>
-          <div class="mcard-stats">${pow} / ${dmg}</div>
-          <div class="mcard-price">${l.price} SHARDS</div>
-          <button class="btn-primary full" data-buy="${l.id}">${t('market_buy_btn')}</button>
-        </div>
-      </div>`);
-  });
+  const msEl   = byId('my-sales');
+  if (mList) mList.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Cargando…':'Loading…'}</div>`;
+  if (msEl)  msEl.innerHTML  = `<div class="feed-muted">${currentLang==='es'?'Cargando…':'Loading…'}</div>`;
 
-  // My sales
-  const mySales = (view.db.marketListings || []).filter(l => l.active && l.sellerUid === u.uid);
-  const msEl    = byId('my-sales');
-  msEl.innerHTML = mySales.length ? '' : `<div class="feed-muted">${t('no_sales')}</div>`;
-  mySales.forEach(l => msEl.insertAdjacentHTML('beforeend', `
-    <div class="feed-row">
-      <span class="feed-label">${cardName(l.cardId)}</span>
-      <span class="feed-price">${l.price} SHARDS</span>
-    </div>`));
+  if (!window.SB || !view.user || !view.user.uid) {
+    if (mList) mList.innerHTML = `<div class="feed-muted">${t('no_market')}</div>`;
+    if (msEl)  msEl.innerHTML  = `<div class="feed-muted">${t('no_sales')}</div>`;
+    return;
+  }
 
-  // History
-  const bh = u.buyHistory  || [];
-  const sh = u.sellHistory || [];
+  // Live listings from other players
+  const active = await SB.loadMarketActive(view.user.uid);
+  if (mList) {
+    mList.innerHTML = active.length ? '' : `<div class="feed-muted">${t('no_market')}</div>`;
+    active.forEach(l => {
+      const card = (typeof getCard === 'function') ? getCard(l.card_id) : null;
+      const cc = card ? clanColor(card.clan) : '#6B5CE7';
+      const ce = card ? clanEmoji(card.clan) : '⚡';
+      const pow = card && card.pow ? card.pow[1] : '?';
+      const dmg = card && card.dmg ? card.dmg[1] : '?';
+      const name = card ? card.name : l.card_id;
+      const imgSrc = card?.visual?.image || `/assets/cards/${l.card_id}.png`;
+      mList.insertAdjacentHTML('beforeend', `
+        <div class="market-card-item" style="--cc:${cc}">
+          <div class="mcard-art-wrap">
+            <div class="mcard-clan-bar" style="background:${cc}">${ce} ${card?.clan?.toUpperCase() || ''}</div>
+            <img src="${imgSrc}" alt="${name}" class="mcard-img" onerror="this.parentNode.classList.add('no-img')"/>
+            <div class="mcard-art-fallback">${ce}</div>
+          </div>
+          <div class="mcard-info">
+            <div class="mcard-name">${name}</div>
+            <div class="mcard-stats">${pow} / ${dmg}</div>
+            <div class="mcard-price">${l.price} SHARDS</div>
+            <button class="btn-primary full" data-buy="${l.id}">${t('market_buy_btn')}</button>
+          </div>
+        </div>`);
+    });
+  }
+
+  // My listings (active + recently closed) — with delist button on active ones
+  const mine = await SB.loadMyListings(view.user.uid);
+  const myActive = mine.filter(l => l.status === 'active');
+  if (msEl){
+    msEl.innerHTML = myActive.length ? '' : `<div class="feed-muted">${t('no_sales')}</div>`;
+    myActive.forEach(l => msEl.insertAdjacentHTML('beforeend', `
+      <div class="feed-row">
+        <span class="feed-label">${cardName(l.card_id)}</span>
+        <span class="feed-price">${l.price} SHARDS</span>
+        <button class="btn-danger btn-sm" onclick="delistMarketCard('${l.id}')">✕ ${currentLang==='es'?'Retirar':'Delist'}</button>
+      </div>`));
+  }
+
+  // History from closed listings (bought + sold).
   const bhEl = byId('buy-history');
   const shEl = byId('sell-history');
-  bhEl.innerHTML = bh.length ? '' : `<div class="feed-muted">${t('no_buy_hist')}</div>`;
-  shEl.innerHTML = sh.length ? '' : `<div class="feed-muted">${t('no_sell_hist')}</div>`;
-  bh.slice().reverse().forEach(x => bhEl.insertAdjacentHTML('beforeend',
-    `<div class="feed-row"><span class="feed-label">${cardName(x.cardId)}</span><span class="feed-price">${x.price} SHARDS</span></div>`));
-  sh.slice().reverse().forEach(x => shEl.insertAdjacentHTML('beforeend',
-    `<div class="feed-row"><span class="feed-label">${cardName(x.cardId)}</span><span class="feed-price">${x.price} SHARDS</span></div>`));
+  const sold = mine.filter(l => l.status === 'sold');
+  if (shEl){
+    shEl.innerHTML = sold.length ? '' : `<div class="feed-muted">${t('no_sell_hist')}</div>`;
+    sold.forEach(l => shEl.insertAdjacentHTML('beforeend',
+      `<div class="feed-row"><span class="feed-label">${cardName(l.card_id)}</span><span class="feed-price">+${l.price} SHARDS</span></div>`));
+  }
+  // Buy history requires a query for listings where buyer_uid = me. RLS blocks generic select on closed
+  // rows, so we skip for now — comment for followup.
+  if (bhEl) bhEl.innerHTML = `<div class="feed-muted">${t('no_buy_hist')}</div>`;
 }
 
 // ── RENDER: GUILDS ─────────────────────────────────────────────
@@ -1138,7 +1247,7 @@ function claimMission(id){
     const pick = pool[Math.floor(Math.random()*pool.length)] || _allCards().find(c=>c.type==='titan');
     if (pick) {
       view.state.collection = view.state.collection || {};
-      view.state.collection[pick.id] = { lv:1, xp:0 };
+      addCardToCollection(pick.id);
       toast(`🗿 ${pick.name} desbloqueada`);
     }
   }
@@ -1237,31 +1346,34 @@ function buyBattlePass(currency){
   toast('⭐ Battle Pass Premium activado');
 }
 window.buyBattlePass = buyBattlePass;
-function claimBpLevel(level){
-  const bp = ensureBpState(); if (!bp) return;
-  if (level > bpLevel(bp)) return;
-  if (bp.claimedLevels.includes(level)) return;
-  if (!bp.premium && level !== 1) return toast('Requiere Pase Premium.');
-  const r = bpRewardFor(level);
-  if (r.kind === 'shards') {
-    view.state.shards = (view.state.shards||0) + r.amount;
-    toast(`+${r.amount} SHARDS`);
-  } else if (r.kind === 'flux') {
-    view.state.flux = (view.state.flux||0) + r.amount;
-    toast(`+${r.amount} FLUX`);
-  } else if (r.kind === 'grand_card') {
-    const excl = new Set([...(bp.grandClaimedIds||[]), ...Object.keys(view.state.collection||{})]);
-    const pool = _allCards().filter(c => c.type === 'grand' && !excl.has(c.id));
-    const pick = pool[Math.floor(Math.random()*pool.length)] || _allCards().find(c=>c.type==='grand' && !bp.grandClaimedIds.includes(c.id));
-    if (pick) {
-      view.state.collection = view.state.collection || {};
-      view.state.collection[pick.id] = { lv:1, xp:0 };
-      bp.grandClaimedIds.push(pick.id);
-      toast(`👑 ${pick.name}`);
-    }
+async function claimBpLevel(level, track){
+  // Default the track if the caller didn't pass one (older buttons).
+  if (!track) track = (level === 1 || level % 5 === 0) ? 'free' : 'premium';
+  if (!window.SB || !SB.claimBattlePass) return toast('Sin conexión al servidor.');
+  if (!view.user || !view.user.uid) return toast('Iniciá sesión.');
+  const r = await SB.claimBattlePass(level|0, String(track));
+  if (r && r.error){
+    const msg = ({
+      not_authenticated:    'Iniciá sesión.',
+      invalid_track:        'Pista inválida.',
+      level_locked:         'Aún no alcanzaste ese nivel.',
+      already_claimed:      'Ya lo reclamaste.',
+      premium_required:     'Requiere Pase Premium.',
+    })[r.error] || ('Error: ' + r.error);
+    return toast(msg);
   }
-  bp.claimedLevels = Array.from(new Set([...bp.claimedLevels, level]));
-  persistToUser(); syncTopbar(); renderBattlePass();
+  if (r && r.reward){
+    const k = r.reward.kind;
+    if (k === 'shards') toast(`+${r.reward.amount} SHARDS`);
+    else if (k === 'flux') toast(`+${r.reward.amount} FLUX`);
+    else if (k === 'grand_card') toast(`👑 ${r.reward.card_id || 'Grand'}`);
+    else toast('Reclamado.');
+  } else {
+    toast('Reclamado.');
+  }
+  await refreshFromSupabase();
+  renderBattlePass();
+  syncTopbar();
 }
 window.claimBpLevel = claimBpLevel;
 function renderBattlePass(){
@@ -1307,8 +1419,11 @@ function renderBattlePass(){
   const tier = (level, isPremium) => {
     const r = bpRewardFor(level);
     const reached = level <= lvl;
-    const claimed = bp.claimedLevels.includes(level + (isPremium?0:0)); // unified by level number
-    const isFreeLevel = (level === 1);
+    const track = isPremium ? 'premium' : 'free';
+    const claimedKey = `${level}:${track}`;
+    const claimedSet = new Set((bp.claimedLevels || []).map(x => typeof x === 'string' ? x : `${x}:${level === 1 || level % 5 === 0 ? 'free' : 'premium'}`));
+    const claimed = claimedSet.has(claimedKey);
+    const isFreeLevel = (level === 1 || level % 5 === 0);
     const lockedByTier = isPremium ? !bp.premium : false;
     const visibleRow = isPremium ? !isFreeLevel : isFreeLevel;
     if (!visibleRow) return `<div class="bp-cell bp-cell-empty" style="width:${segWidth}px"></div>`;
@@ -1324,7 +1439,7 @@ function renderBattlePass(){
           ${claimed
             ? `<div class="bp-rew-state">✓</div>`
             : canClaim
-              ? `<button class="bp-claim-btn" onclick="claimBpLevel(${level})">${L==='es'?'Reclamar':'Claim'}</button>`
+              ? `<button class="bp-claim-btn" onclick="claimBpLevel(${level}, '${track}')">${L==='es'?'Reclamar':'Claim'}</button>`
               : lockedByTier
                 ? `<div class="bp-rew-state">🔒</div>`
                 : `<div class="bp-rew-state">${level*BP_XP_PER_LEVEL}xp</div>`}
@@ -1590,11 +1705,27 @@ function randomCards(n, opts={}) {
   return pool.slice(0, Math.max(0, n));
 }
 function addCardToCollection(cardId) {
-  if (!view.state.collection[cardId]) view.state.collection[cardId] = { lv:1, xp:0 };
+  const cur = view.state.collection[cardId];
+  if (cur == null) {
+    view.state.collection[cardId] = 1;
+  } else if (typeof cur === 'number') {
+    view.state.collection[cardId] = cur + 1;
+  } else {
+    // legacy {lv,xp} entry — promote to qty
+    view.state.collection[cardId] = ((cur.qty | 0) || 1) + 1;
+  }
+}
+function collectionQty(cardId){
+  const c = view.state.collection?.[cardId];
+  if (c == null) return 0;
+  if (typeof c === 'number') return c;
+  return (c.qty | 0) || 1;
 }
 function openPackById(packId, payWith) {
   const p = PACKS_DATA.find(x => x.id === packId);
   if (!p) return;
+  let paidWith = 'free';
+  let cost = 0;
   // Welcome pack — one-time free claim per account
   if (p.costType === 'welcome') {
     const u = view.user;
@@ -1602,14 +1733,17 @@ function openPackById(packId, payWith) {
       return toast(currentLang==='es'?'Ya reclamaste tu pack de bienvenida (1 vez por cuenta).':'Welcome pack already claimed (once per account).');
     }
     view.state.welcomePackClaimed = true;
+    paidWith = 'welcome';
   } else if (p.costType === 'oracle') {
     const q = oracleQuote(p.usd);
     if (payWith === 'flux') {
       if ((view.state.flux||0) < q.flux) return toast(`⚡ Necesitas ${q.flux} FLUX.`);
       view.state.flux -= q.flux;
+      paidWith = 'flux'; cost = q.flux;
     } else if (payWith === 'shs') {
       if ((view.state.shs||0) < q.shs) return toast(`◎ Necesitas ${q.shs} $SHS.`);
       view.state.shs -= q.shs;
+      paidWith = 'shs'; cost = q.shs;
     } else {
       return toast(currentLang==='es'?'Elige FLUX o $SHS.':'Pick FLUX or $SHS.');
     }
@@ -1654,6 +1788,12 @@ function openPackById(packId, payWith) {
   renderShop();
   renderColeccion();
   renderPacks();
+  // Persist the opening server-side so it survives refresh.
+  try {
+    if (window.SB && SB.recordPackOpening && view.user?.uid) {
+      SB.recordPackOpening(view.user.uid, p.id, paidWith, cost, cards.map(c=>c.id));
+    }
+  } catch(_){}
   // Show pack opening overlay
   showPackOverlay(p, cards);
 }
@@ -1791,17 +1931,25 @@ function filterCollection(filter) {
   if (!filter) filter = 'all';
   if (filter === 'owned')   { owned && (owned.style.display=''); missing && (missing.style.display='none'); }
   else if (filter === 'missing') { owned && (owned.style.display='none'); missing && (missing.style.display=''); }
-  else { owned && (owned.style.display=''); missing && (missing.style.display=''); }
-  // Filter by search query
-  if (query) {
-    document.querySelectorAll('#owned-cards .tcg-card, #missing-cards .tcg-card').forEach(el => {
-      const name = (el.getAttribute('title') || '').toLowerCase();
-      el.style.display = name.includes(query) ? '' : 'none';
-    });
-  } else {
-    document.querySelectorAll('#owned-cards .tcg-card, #missing-cards .tcg-card').forEach(el => el.style.display = '');
+  else if (filter === 'duplicates') {
+    owned && (owned.style.display=''); missing && (missing.style.display='none');
   }
+  else { owned && (owned.style.display=''); missing && (missing.style.display=''); }
+  // Filter by search query and duplicates flag
+  const dupOnly = (filter === 'duplicates');
+  document.querySelectorAll('#owned-cards .tcg-card').forEach(el => {
+    const name = (el.getAttribute('title') || '').toLowerCase();
+    const qty  = parseInt(el.getAttribute('data-qty') || '1', 10);
+    const passQuery = !query || name.includes(query);
+    const passDup   = !dupOnly || qty > 1;
+    el.style.display = (passQuery && passDup) ? '' : 'none';
+  });
+  document.querySelectorAll('#missing-cards .tcg-card').forEach(el => {
+    const name = (el.getAttribute('title') || '').toLowerCase();
+    el.style.display = (!query || name.includes(query)) ? '' : 'none';
+  });
 }
+window.filterCollection = filterCollection;
 
 // ── OPEN DISCORD ───────────────────────────────────────────────
 function openDiscord() {
@@ -1820,31 +1968,51 @@ async function logoutWeb() {
   window.location.replace('../index.html');
 }
 
-// ── QUICK SELL ─────────────────────────────────────────────────
-function quickSell(id, price) {
+// ── QUICK SELL — server-authoritative via list_card_for_sale RPC ──
+async function quickSell(id, price) {
+  if (!view.user || !view.user.uid) return toast('Iniciá sesión para listar.');
+  if (!view.state.collection[id]) return toast('No posees esa carta.');
   if (!price) {
     const raw = prompt(`Precio en SHARDS para vender "${cardName(id)}":`);
     if (!raw) return;
     price = Math.max(1, parseInt(raw, 10) || 0);
     if (!price) return toast('Precio inválido.');
   }
-  if (!view.state.collection[id]) return toast('No posees esa carta.');
-  delete view.state.collection[id];
-  view.state.deck = view.state.deck.filter(x => x !== id);
-  view.db.marketListings.push({
-    id:        `lst_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-    cardId:    id,
-    price,
-    sellerUid: view.user.uid,
-    createdAt: Date.now(),
-    active:    true,
-  });
-  persistToUser();
+  if (!window.SB || !window.SB.listCardForSale) return toast('Sin conexión al servidor.');
+  const r = await SB.listCardForSale(id, price);
+  if (r && r.error) return toast(marketError(r.error, id));
+  toast(`📤 ${cardName(id)} listada por ${price} SHARDS.`);
+  await refreshFromSupabase();
   renderMercado();
   renderColeccion();
   reloadPwaFrame();
-  toast(`📤 ${cardName(id)} listada por ${price} SHARDS.`);
 }
+function marketError(code, cardId){
+  const msg = {
+    not_authenticated:        'Iniciá sesión.',
+    invalid_price:            'Precio inválido.',
+    not_owned:                'No posees esa carta.',
+    in_active_deck:           'No podés listar la única copia que está en tu deck activo.',
+    minimum_collection_required:'Tenés que conservar al menos 8 cartas en tu colección.',
+    listing_not_found:        'Esa oferta ya no existe.',
+    not_owner:                'No es tu listing.',
+    not_active:               'Esa oferta ya cerró.',
+    cannot_buy_own:           'No podés comprar tu propio listing.',
+    insufficient_shards:      'Te faltan SHARDS.',
+    not_available:            'Ya no está disponible.',
+  }[code] || ('Error: ' + code);
+  return cardId ? msg : msg;
+}
+async function delistMarketCard(listingId){
+  if (!window.SB || !window.SB.delistMarketCard) return toast('Sin conexión al servidor.');
+  const r = await SB.delistMarketCard(listingId);
+  if (r && r.error) return toast(marketError(r.error));
+  toast('🗑 Listing retirado · carta devuelta.');
+  await refreshFromSupabase();
+  renderMercado();
+  renderColeccion();
+}
+window.delistMarketCard = delistMarketCard;
 
 // ── EVENT BINDINGS ─────────────────────────────────────────────
 function bindEvents() {
@@ -1954,33 +2122,37 @@ function bindEvents() {
     quickSell(id, price);
   });
 
-  // Market buy
-  byId('panel-mercado').addEventListener('click', e => {
-    const b = e.target.closest('[data-buy]');
-    if (!b) return;
-    const lid = b.getAttribute('data-buy');
-    const listing = (view.db.marketListings || []).find(l => l.id === lid && l.active);
-    if (!listing) return toast('Esta oferta ya no está disponible.');
-    if (view.state.shards < listing.price) return toast(`Necesitas ${listing.price} SHARDS.`);
-    const seller = view.db.users[listing.sellerUid];
-    if (!seller) return;
-    ensureUserDefaults(seller);
-    view.state.shards         -= listing.price;
-    seller.shardsBalance       = (seller.shardsBalance || 0) + listing.price;
-    addCardToCollection(listing.cardId);
-    listing.active             = false;
-    view.user.buyHistory       = view.user.buyHistory || [];
-    seller.sellHistory         = seller.sellHistory   || [];
-    const tx = { cardId:listing.cardId, price:listing.price, at:Date.now() };
-    view.user.buyHistory.push(tx);
-    seller.sellHistory.push(tx);
-    persistToUser();
-    saveDb();
-    syncTopbar();
+  // Market buy / delist (server RPC)
+  byId('panel-mercado').addEventListener('click', async e => {
+    const buyBtn    = e.target.closest('[data-buy]');
+    const delistBtn = e.target.closest('[data-delist]');
+    if (delistBtn) {
+      const lid = delistBtn.getAttribute('data-delist');
+      if (!window.SB || !window.SB.delistMarketCard) return toast('Sin conexión al servidor.');
+      delistBtn.disabled = true;
+      const r = await SB.delistMarketCard(lid);
+      if (r && r.error) { delistBtn.disabled = false; return toast(marketError(r.error)); }
+      toast('🗑 Listing retirado.');
+      await refreshFromSupabase();
+      renderMercado();
+      renderColeccion();
+      reloadPwaFrame();
+      return;
+    }
+    if (!buyBtn) return;
+    const lid = buyBtn.getAttribute('data-buy');
+    if (!view.user || !view.user.uid) return toast('Iniciá sesión para comprar.');
+    if (!window.SB || !window.SB.buyMarketListing) return toast('Sin conexión al servidor.');
+    buyBtn.disabled = true;
+    const r = await SB.buyMarketListing(lid);
+    if (r && r.error) { buyBtn.disabled = false; return toast(marketError(r.error)); }
+    toast(`✅ Compra completada (${(r && r.price) || ''} SHARDS).`);
+    await refreshFromSupabase();
     renderMercado();
     renderColeccion();
     renderPerfil();
-    toast(`✅ Compraste ${cardName(listing.cardId)} por ${listing.price} SHARDS.`);
+    syncTopbar();
+    reloadPwaFrame();
   });
 
   // Create guild
@@ -2085,29 +2257,19 @@ function loadCustomCards() {
 }
 
 function applyCustomCardsToCollection() {
-  try {
-    const raw = localStorage.getItem('shs_custom_cards');
-    if (!raw || !view.user) return;
-    const cards = JSON.parse(raw);
-    if (!Array.isArray(cards)) return;
-    let changed = false;
-    cards.forEach(c => {
-      if (c.id && !view.state.collection[c.id]) {
-        view.state.collection[c.id] = { lv: 2, xp: 100 };
-        changed = true;
-      }
-    });
-    if (changed) persistToUser();
-  } catch(_){}
+  // NOTE: previously this function gifted every custom-edited card to the
+  // current user (and started them at level 2). Custom cards are catalog-only:
+  // they extend ALL_CARDS via loadCustomCards() but must be obtained through
+  // packs / market like everything else. This is now intentionally a no-op.
 }
 
 /** Hydrate view.db.users[uid] from Supabase profile + game_state. */
 async function hydrateFromSupabase(authUser){
   const uid = authUser.id;
-  let profile = null, gs = null, decks = [], collection = null;
+  let profile = null, gs = null, decks = [], collection = null, battlePass = null;
   try {
     const r = await SB.loadProfile(uid);
-    profile = r.profile; gs = r.gameState;
+    profile = r.profile; gs = r.gameState; battlePass = r.battlePass;
   } catch(_){}
   try { decks      = await SB.loadDecks(uid); }      catch(_){}
   try { collection = await SB.loadCollection(uid); } catch(_){}
@@ -2137,19 +2299,53 @@ async function hydrateFromSupabase(authUser){
   if (collection && Object.keys(collection).length){
     u.gameState.collection = collection;
   }
+  // Battle pass: server is authoritative.
+  if (battlePass) {
+    const claimedFree    = Array.isArray(battlePass.claimed_free)    ? battlePass.claimed_free    : [];
+    const claimedPremium = Array.isArray(battlePass.claimed_premium) ? battlePass.claimed_premium : [];
+    u.gameState.battlePass = {
+      season:         battlePass.season|0,
+      startedAt:      battlePass.started_at ? new Date(battlePass.started_at).getTime() : Date.now(),
+      xp:             battlePass.xp|0,
+      premium:        !!battlePass.is_premium,
+      claimedLevels:  [
+        ...claimedFree.map(l => `${l}:free`),
+        ...claimedPremium.map(l => `${l}:premium`),
+      ],
+      grandClaimedIds: u.gameState.battlePass?.grandClaimedIds || [],
+    };
+  }
   // Decks: pick the active row for the deck slot, presets from the rest.
   if (Array.isArray(decks) && decks.length){
     const active = decks.find(d => d.is_active) || decks[0];
     if (active && Array.isArray(active.card_ids) && active.card_ids.length === 8){
       u.gameState.deck = active.card_ids.slice(0, 8);
+    } else {
+      u.gameState.deck = [];
     }
     u.gameState.deckPresets = decks
       .filter(d => d !== active && Array.isArray(d.card_ids) && d.card_ids.length === 8)
       .map(d => ({ name: d.name, cards: d.card_ids.slice(0, 8) }));
+    // Track server-known preset names so persistToUser can hard-delete removed ones.
+    view._knownServerPresets = decks.map(d => d.name).filter(Boolean);
+  } else {
+    u.gameState.deck = [];
+    u.gameState.deckPresets = [];
+    view._knownServerPresets = [];
   }
   view.db.users[uid] = u;
   saveDb();
   localStorage.setItem(AUTH_SESSION_KEY, uid);
+  // Hydrate the most recent pack so the SHOP "last pack opened" panel survives refresh.
+  try {
+    const hist = await SB.loadPackHistory(uid, 1);
+    if (Array.isArray(hist) && hist.length){
+      const last = hist[0];
+      const ids = Array.isArray(last.card_ids) ? last.card_ids : [];
+      const cards = ids.map(id => getCard(id)).filter(Boolean);
+      if (cards.length) view.lastPack = cards;
+    }
+  } catch(_){}
   return u;
 }
 

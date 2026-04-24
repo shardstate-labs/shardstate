@@ -146,6 +146,22 @@
       b.decks[name] = { name, cardIds: cardIds.slice(0, 8), isActive: !!isActive };
       saveQueue(q); schedule();
     },
+    /** Hard-delete a deck row by name (server-side). Removes from queue too. */
+    async deleteDeck(uid, name){
+      if (!window.SB || !uid || !name) return;
+      try {
+        const sb = await SB.client();
+        await sb.from('decks').delete().eq('user_id', uid).eq('name', name);
+        const q = loadQueue();
+        const b = q[uid];
+        if (b && b.decks && b.decks[name]) { delete b.decks[name]; saveQueue(q); }
+      } catch(e){ console.warn('deleteDeck failed:', e); }
+    },
+    /** Force a fresh push of the entire collection (treats DB as empty). */
+    forceCollectionResync(uid){
+      if (!uid) return;
+      try { localStorage.removeItem(COL_SNAP_KEY+':'+uid); } catch(_){}
+    },
     queueCollection(uid, collectionMap){
       if (!uid || !collectionMap) return;
       const q = loadQueue();
