@@ -7,6 +7,6 @@ window.SHS_CONFIG = {
   // Where to land after Google OAuth. Auto-detects env (localhost vs prod).
   REDIRECT_TO: (function(){
     const p = location.pathname.replace(/[^/]+$/, '');
-    return location.origin + p + 'gamehub/index.html';
+    return location.origin + p + 'gamehub/';
   })(),
 };
