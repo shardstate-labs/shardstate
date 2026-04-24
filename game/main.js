@@ -863,6 +863,16 @@ function recordAbandon(){
     }
     localStorage.setItem(KEY, JSON.stringify(cur));
   } catch(_){}
+  // Server-authoritative abandon (RPC mirrors lockout + multiplier).
+  try {
+    if (window.SHS_SYNC && APP && APP.battle) {
+      SHS_SYNC.finalizeBattle({
+        mode: APP.battle.mode || 'casual',
+        result: 'abandon',
+        opponent_name: APP.battle.opponent && APP.battle.opponent.name,
+      });
+    }
+  } catch(_){}
 }
 function clearAbandonStreak(){
   try {
@@ -924,6 +934,33 @@ function showEnd(){
   document.getElementById('rw-shards-box').className = 'rw ' + (rw.shards>0?'pos':'');
   document.getElementById('rw-xp-box').className     = 'rw ' + (rw.xp>0?'pos':'');
   document.getElementById('rw-elo-box').className    = 'rw ' + (rw.elo>0?'pos':(rw.elo<0?'neg':''));
+
+  // ── Server-authoritative finalization (Phase 2A) ────────────
+  // Calls finalize_battle RPC. Server recomputes rewards atomically
+  // and the on-screen numbers are reconciled from its response.
+  if (window.SHS_SYNC) {
+    const result = B.winner === 'p' ? 'win' : (B.winner === 'o' ? 'loss' : 'draw');
+    SHS_SYNC.finalizeBattle({
+      mode: B.mode || 'casual',
+      result,
+      opponent_name: B.opponent && B.opponent.name,
+      rounds: B.roundLog || [],
+    }).then(rsp => {
+      if (!rsp) return;
+      try {
+        const sd = rsp.shards_delta|0, xd = rsp.xp_delta|0, ed = rsp.elo_delta|0;
+        const elS = document.getElementById('rw-shards');
+        const elX = document.getElementById('rw-xp');
+        const elE = document.getElementById('rw-elo');
+        if (elS) elS.textContent = (sd>=0?'+':'') + sd;
+        if (elX) elX.textContent = (xd>=0?'+':'') + xd;
+        if (elE) elE.textContent = (ed>=0?'+':'') + ed;
+        document.getElementById('rw-shards-box').className = 'rw ' + (sd>0?'pos':'');
+        document.getElementById('rw-xp-box').className     = 'rw ' + (xd>0?'pos':'');
+        document.getElementById('rw-elo-box').className    = 'rw ' + (ed>0?'pos':(ed<0?'neg':''));
+      } catch(_){}
+    });
+  }
 }
 
 function backToMenu(){

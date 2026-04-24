@@ -160,6 +160,27 @@
         await sb.from('battles').insert(Object.assign({ user_id: uid }, battle));
       } catch(e){ console.warn('reportBattle failed:', e); }
     },
+    /** Server-authoritative battle finalization.
+     *  Calls public.finalize_battle RPC: server computes rewards
+     *  (shards/xp/elo) atomically + writes to battles + missions
+     *  + battle_pass.
+     *  payload: { mode, result, opponent_name?, rounds? }
+     *  Returns the rewards object on success, or null on failure.
+     */
+    async finalizeBattle(payload){
+      if (!window.SB || !payload) return null;
+      try {
+        const sb = await SB.client();
+        const { data, error } = await sb.rpc('finalize_battle', {
+          p_mode:          payload.mode,
+          p_result:        payload.result,
+          p_opponent_name: payload.opponent_name || null,
+          p_rounds:        payload.rounds || [],
+        });
+        if (error) { console.warn('finalize_battle RPC error:', error); return null; }
+        return data;
+      } catch(e){ console.warn('finalizeBattle failed:', e); return null; }
+    },
     flush: () => flushAll(),
   };
 
