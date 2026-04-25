@@ -91,15 +91,23 @@
       if (bucket.collection){
         const desired = bucket.collection;
         const snap = loadColSnap(uid);
+        const desiredIds = Object.keys(desired);
+        const snapIds = Object.keys(snap);
+        // Safety rail: collection sync is the only path that can delete
+        // ownership rows. A stale localStorage snapshot plus an empty in-memory
+        // collection can otherwise wipe cards_owned after unrelated deck edits.
+        // Selling/listing enforces keeping at least 8 cards, so a client state
+        // below that threshold is treated as non-authoritative for deletes.
+        const allowDeletes = desiredIds.length >= 8 || snapIds.length === 0;
         const upserts = [];
         const deletes = [];
-        const allIds = new Set([...Object.keys(desired), ...Object.keys(snap)]);
+        const allIds = new Set([...desiredIds, ...snapIds]);
         for (const cid of allIds){
           const want = desired[cid] || 0;
           const have = snap[cid]    || 0;
           if (want > 0 && want !== have){
             upserts.push({ user_id: uid, card_id: cid, qty: want });
-          } else if (want === 0 && have > 0){
+          } else if (allowDeletes && want === 0 && have > 0){
             deletes.push(cid);
           }
         }
