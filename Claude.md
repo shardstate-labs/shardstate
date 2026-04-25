@@ -7,7 +7,7 @@ Last updated: 2026-04-25
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=23`.
+- Current asset cache version: `v=30`.
 
 ## Live URLs
 
@@ -50,6 +50,13 @@ Future modes are intentionally not enabled yet:
 ### Plan B - Admin + Custom Cards + Clan Migration
 
 - Admin editor supports clan-filtered ability dropdown.
+- Admin has a `Control users` tab for `faxie.contact@gmail.com`-only RPCs:
+  - Search users by email or username.
+  - Reset game values to zero and reopen welcome pack eligibility.
+  - Pause/block/reactivate game access.
+  - Delete game records and mark the account as deleted for game access.
+  - Grant SHARDS/FLUX with user-facing notification.
+  - Every action writes to `admin_audit_log`.
 - Clan bonus is auto-derived and read-only.
 - Card types: `normal`, `grand`, `eco`.
 - TITANS migrated from legacy ECHO.
@@ -93,6 +100,9 @@ Future modes are intentionally not enabled yet:
 - HP/PULSOS labels have dedicated space to avoid overlap.
 - Landing page has SEO + OG metadata.
 - Empty DB collection fallback exists: if Supabase collection is empty, Gamehub can force a full local collection resync instead of leaving a brand-new account empty.
+- Collection sync has a delete safety rail and DB trigger guard to prevent reload/stale-state bugs from wiping owned cards.
+- Active deck persistence preserves local decks during pending Supabase sync and no longer deletes the server deck unless the player intentionally empties the deck.
+- Collection duplicate filter is localized as `Duplicadas` / `Duplicates` and filters cards with quantity greater than 1.
 
 ### Phase 4 - Payments Scaffold
 

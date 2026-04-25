@@ -10,6 +10,8 @@ let blobArt1 = null, blobArt2 = null, blobLogo = null;
 let previewLv = 2;
 let selectedCardId = null;
 let adminFilter = '';
+let selectedUser = null;
+let userSearchTimer = null;
 
 function $(id){ return document.getElementById(id); }
 
@@ -370,5 +372,100 @@ function showMsg(text, type){
 }
 
 // ── INIT ──────────────────────────────────────────────────
+function setAdminMode(mode){
+  const isUsers = mode === 'users';
+  document.body.classList.toggle('admin-mode-users', isUsers);
+  $('tab-cards')?.classList.toggle('active', !isUsers);
+  $('tab-users')?.classList.toggle('active', isUsers);
+}
+function userMsg(text, type='ok'){
+  const el = $('user-action-msg');
+  if (!el) return;
+  el.textContent = text;
+  el.className = `msg ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'msg'; }, 7000);
+}
+function statusPill(status){
+  const s = status || 'active';
+  return `<span class="status-pill status-${s}">${s}</span>`;
+}
+function searchAdminUsersDebounced(){
+  clearTimeout(userSearchTimer);
+  userSearchTimer = setTimeout(searchAdminUsers, 250);
+}
+async function searchAdminUsers(){
+  const q = String($('user-search')?.value || '').trim();
+  const host = $('user-results');
+  if (!host) return;
+  if (q.length < 2) { host.innerHTML = '<div class="admin-empty">Type at least 2 characters.</div>'; return; }
+  host.innerHTML = '<div class="admin-empty">Searching...</div>';
+  const r = await SB.adminSearchUsers(q);
+  if (r.error) { host.innerHTML = `<div class="admin-empty">${r.error.message || 'Search failed'}</div>`; return; }
+  const rows = r.data || [];
+  host.innerHTML = rows.length ? rows.map(u => `
+    <div class="user-row" onclick="selectAdminUser('${u.user_id}')">
+      <div class="user-row-main"><div class="user-row-email">${u.email || u.user_id}</div>
+      <div class="user-row-meta">${u.username || 'no username'} · cards ${u.cards_count || 0} · deck rows ${u.deck_count || 0}</div></div>
+      ${statusPill(u.status)}
+    </div>`).join('') : '<div class="admin-empty">No users found.</div>';
+}
+async function selectAdminUser(userId){
+  const r = await SB.adminGetUserDetail(userId);
+  if (r.error) return userMsg(r.error.message || 'Could not load user.', 'err');
+  selectedUser = { user_id:userId, detail:r.data || {} };
+  renderSelectedUser();
+}
+function renderSelectedUser(){
+  const box = $('user-detail'), panel = $('user-log-panel');
+  if (!box || !panel || !selectedUser) return;
+  const d = selectedUser.detail || {}, p = d.profile || {}, gs = d.game_state || {}, flag = d.flag || { status:'active' };
+  const cards = Array.isArray(d.cards) ? d.cards : [];
+  const decks = Array.isArray(d.decks) ? d.decks : [];
+  box.classList.remove('empty');
+  box.innerHTML = `<div class="user-detail-title">${p.username || 'No username'} ${statusPill(flag.status || 'active')}</div>
+    <div class="user-detail-meta">${selectedUser.user_id}</div>
+    <div class="user-kv"><div><span>SHARDS</span>${gs.shards || 0}</div><div><span>FLUX</span>${gs.flux || 0}</div>
+    <div><span>ELO</span>${gs.elo || 0}</div><div><span>Cards</span>${cards.length}</div>
+    <div><span>Deck rows</span>${decks.length}</div><div><span>Welcome</span>${gs.welcome_pack_claimed ? 'claimed' : 'available'}</div></div>`;
+  const actions = Array.isArray(d.recent_actions) ? d.recent_actions : [];
+  panel.innerHTML = `<div class="user-log-title">${p.username || 'Selected user'}</div>
+    <div class="user-detail-meta">Cards: ${cards.map(c => `${c.card_id} x${c.qty}`).join(', ') || 'none'}</div>
+    <div class="user-detail-meta">Decks: ${decks.map(x => `${x.name}: ${(x.card_ids || []).join(', ')}`).join(' · ') || 'none'}</div>
+    ${actions.length ? actions.map(a => `<div class="user-log-entry"><strong>${a.action}</strong><div>${new Date(a.created_at).toLocaleString()}</div><code>${JSON.stringify(a.details || {}, null, 2)}</code></div>`).join('') : '<div class="admin-empty">No recent admin actions.</div>'}`;
+}
+async function refreshSelectedUser(){ if (selectedUser) await selectAdminUser(selectedUser.user_id); }
+function requireSelectedUser(){ if (!selectedUser?.user_id) { userMsg('Select a user first.', 'warn'); return null; } return selectedUser.user_id; }
+async function setSelectedStatus(status){
+  const uid = requireSelectedUser(); if (!uid) return;
+  const reason = status === 'active' ? '' : prompt(`Reason for ${status}:`, 'Admin action') || '';
+  const r = await SB.adminSetAccountStatus(uid, status, reason);
+  if (r.error) return userMsg(r.error.message || 'Status update failed.', 'err');
+  userMsg(`Status set to ${status}.`, 'ok'); await refreshSelectedUser();
+}
+async function resetSelectedUser(){
+  const uid = requireSelectedUser(); if (!uid) return;
+  if (!confirm('Reset this account to zero?')) return;
+  const r = await SB.adminResetUser(uid);
+  if (r.error) return userMsg(r.error.message || 'Reset failed.', 'err');
+  userMsg('Account reset to zero.', 'warn'); await refreshSelectedUser();
+}
+async function deleteSelectedUserGameData(){
+  const uid = requireSelectedUser(); if (!uid) return;
+  if (!confirm('Delete all game records and mark this account deleted/blocked from game access?')) return;
+  const r = await SB.adminDeleteUserGameData(uid);
+  if (r.error) return userMsg(r.error.message || 'Delete failed.', 'err');
+  userMsg('Game records deleted and account marked deleted.', 'warn'); await refreshSelectedUser();
+}
+async function grantSelectedCurrency(currency){
+  const uid = requireSelectedUser(); if (!uid) return;
+  const id = currency === 'flux' ? 'grant-flux' : 'grant-shards';
+  const amount = parseInt($(id)?.value || '0', 10);
+  if (!amount || amount <= 0) return userMsg('Enter a positive amount.', 'warn');
+  const r = await SB.adminGrantCurrency(uid, currency, amount, $('grant-note')?.value || '');
+  if (r.error) return userMsg(r.error.message || 'Grant failed.', 'err');
+  userMsg(`Granted +${amount} ${currency.toUpperCase()}.`, 'ok'); $(id).value = ''; await refreshSelectedUser();
+}
+
 renderAdminList();
 newCard();

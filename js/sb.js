@@ -107,6 +107,28 @@
       return { profile: profile || null, gameState: gameState || null, battlePass: bp || null };
     },
 
+    async getMyAccountStatus(){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('get_my_account_status');
+      if (error) return { status:'active' };
+      return data || { status:'active' };
+    },
+
+    async loadMyNotifications(){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('load_my_notifications');
+      if (error) return [];
+      return data || [];
+    },
+
+    async acknowledgeNotification(id){
+      const sb = await ensureClient();
+      const { error } = await sb.from('user_notifications')
+        .update({ acknowledged_at:new Date().toISOString() })
+        .eq('id', id);
+      return { ok:!error, error };
+    },
+
     async upsertProfile(uid, patch){
       const sb = await ensureClient();
       const row = Object.assign({ user_id: uid, updated_at: new Date().toISOString() }, patch);
@@ -269,6 +291,53 @@
         if (error) { console.warn('recordPackOpening error:', error); return null; }
         return data || null;
       } catch(e){ console.warn('recordPackOpening failed:', e); return null; }
+    },
+
+    // ── Admin user control ───────────────────────────────────────
+    async adminSearchUsers(query){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('admin_search_users', { p_query:String(query||'') });
+      if (error) return { error };
+      return { data:data || [] };
+    },
+    async adminGetUserDetail(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('admin_get_user_detail', { p_user_id:userId });
+      if (error) return { error };
+      return { data:data || {} };
+    },
+    async adminResetUser(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('admin_reset_user', { p_user_id:userId });
+      if (error) return { error };
+      return { data };
+    },
+    async adminSetAccountStatus(userId, status, reason){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('admin_set_account_status', {
+        p_user_id:userId,
+        p_status:String(status||'active'),
+        p_reason:String(reason||''),
+      });
+      if (error) return { error };
+      return { data };
+    },
+    async adminDeleteUserGameData(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('admin_delete_user_game_data', { p_user_id:userId });
+      if (error) return { error };
+      return { data };
+    },
+    async adminGrantCurrency(userId, currency, amount, note){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('admin_grant_currency', {
+        p_user_id:userId,
+        p_currency:String(currency||'shards'),
+        p_amount:amount|0,
+        p_note:String(note||''),
+      });
+      if (error) return { error };
+      return { data };
     },
 
     // ── Profile mutations ───────────────────────────────────────

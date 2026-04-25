@@ -5,22 +5,26 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SHARDSTATE — CARD EDITOR</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./style.css?v=29"/>
+<link rel="stylesheet" href="./style.css?v=30"/>
 </head>
 <body>
 
-<script src="../engine/cards.js?v=29"></script>
-<script src="../engine/ability_catalog.js?v=29"></script>
-<script src="../js/config.js?v=29"></script>
-<script src="../js/sb.js?v=29"></script>
+<script src="../engine/cards.js?v=30"></script>
+<script src="../engine/ability_catalog.js?v=30"></script>
+<script src="../js/config.js?v=30"></script>
+<script src="../js/sb.js?v=30"></script>
 
 <aside class="editor">
   <div class="editor-header">
     <a href="../gamehub/index.html" class="back-link">← BACK TO GAMEHUB</a>
     <div class="editor-title">⚡ Card Admin Studio</div>
     <div class="editor-sub">Create · Edit · Inject</div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" id="tab-cards" onclick="setAdminMode('cards')">Cards</button>
+      <button class="admin-tab" id="tab-users" onclick="setAdminMode('users')">Control users</button>
+    </div>
   </div>
-  <div class="editor-body">
+  <div class="editor-body" id="card-editor-body">
 
     <div class="sep">Load Existing Card</div>
     <div class="admin-picker">
@@ -126,10 +130,45 @@
     <button class="btn btn-danger" style="margin-top:8px" onclick="clearCustomCards()">🗑 Clear all custom overrides</button>
     <p class="hint" style="margin-top:4px">Custom edits live in localStorage and load automatically in gamehub + game. To make them permanent, paste the JS snippet into engine/cards.js.</p>
   </div>
+
+  <div class="editor-body user-control-body" id="user-control-body">
+    <div class="sep">Control users</div>
+    <p class="hint">Search Supabase users by email or username. All actions are logged in admin_audit_log.</p>
+    <div class="admin-picker">
+      <div class="admin-picker-title">Search account</div>
+      <input class="admin-search" id="user-search" placeholder="email or username..." oninput="searchAdminUsersDebounced()"/>
+      <div class="admin-list user-results" id="user-results"><div class="admin-empty">Type at least 2 characters.</div></div>
+    </div>
+
+    <div id="user-detail" class="user-detail empty">
+      <div class="admin-empty">Select a user to inspect controls.</div>
+    </div>
+
+    <div class="sep">Currency grant</div>
+    <div class="field-row">
+      <div class="field"><label>SHARDS</label><input id="grant-shards" type="number" min="1" placeholder="Amount"/></div>
+      <div class="field"><label>FLUX</label><input id="grant-flux" type="number" min="1" placeholder="Amount"/></div>
+    </div>
+    <div class="field"><label>Note</label><input id="grant-note" placeholder="Reason / ticket / compensation"/></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="grantSelectedCurrency('shards')">Grant SHARDS</button>
+      <button class="btn btn-export" onclick="grantSelectedCurrency('flux')">Grant FLUX</button>
+    </div>
+
+    <div class="sep">Account actions</div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="setSelectedStatus('active')">Enable account</button>
+      <button class="btn btn-warn" onclick="setSelectedStatus('paused')">Pause account</button>
+      <button class="btn btn-danger" onclick="setSelectedStatus('blocked')">Block account</button>
+      <button class="btn btn-danger" onclick="resetSelectedUser()">Reset to zero</button>
+      <button class="btn btn-danger" onclick="deleteSelectedUserGameData()">Delete game records</button>
+    </div>
+    <div id="user-action-msg" class="msg"></div>
+  </div>
 </aside>
 
 <main class="main">
-  <div class="preview-group">
+  <div class="preview-group" id="card-preview-main">
     <div class="preview-label">Live preview</div>
     <div class="level-toggle"></div>
     <div id="preview-front" class="card" style="--cc:#6B5CE7">
@@ -159,8 +198,14 @@
       <div class="card-stars" id="p-stars"></div>
     </div>
   </div>
+  <div class="admin-users-main" id="user-control-main">
+    <div class="preview-label">Control users</div>
+    <div class="user-log-panel" id="user-log-panel">
+      <div class="admin-empty">User detail and recent admin actions will appear here.</div>
+    </div>
+  </div>
 </main>
 
-<script src="./app.js?v=29"></script>
+<script src="./app.js?v=30"></script>
 </body>
 </html>

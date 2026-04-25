@@ -696,6 +696,15 @@ textarea.input-dark{resize:vertical;min-height:68px}
 }
 .pack-close-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
 
+.account-block-screen,.admin-reward-modal{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:rgba(2,5,10,.92);backdrop-filter:grayscale(1) blur(10px);padding:20px}
+.account-block-panel,.admin-reward-panel{width:min(520px,100%);background:linear-gradient(180deg,rgba(16,18,24,.98),rgba(8,10,14,.98));border:1px solid rgba(255,255,255,.14);border-top:3px solid var(--red);border-radius:8px;padding:30px;text-align:center;box-shadow:0 24px 80px rgba(0,0,0,.65)}
+.admin-reward-panel{border-top-color:var(--acc)}
+.account-block-kicker,.admin-reward-kicker{display:inline-flex;border:1px solid currentColor;border-radius:3px;padding:4px 12px;font-family:var(--font-head);font-size:.68rem;letter-spacing:.14em;color:var(--red);margin-bottom:16px}
+.admin-reward-kicker{color:var(--acc)}
+.account-block-title,.admin-reward-title{font-family:var(--font-head);font-size:1.55rem;font-weight:900;letter-spacing:.08em;color:var(--text);margin-bottom:12px}
+.account-block-body,.admin-reward-body{color:var(--text2);font-size:.9rem;line-height:1.55;margin-bottom:22px}
+.account-block-btn,.admin-reward-btn{width:100%;padding:13px;border:1px solid rgba(255,255,255,.14);border-radius:4px;background:var(--acc);color:#00110d;font-family:var(--font-head);font-weight:900;letter-spacing:.1em;cursor:pointer}
+
 /* ══════════════════════════════════════════════════════════
    PANEL: GUILDS
 ══════════════════════════════════════════════════════════ */

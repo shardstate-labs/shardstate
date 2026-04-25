@@ -170,6 +170,13 @@
       if (!uid) return;
       try { localStorage.removeItem(COL_SNAP_KEY+':'+uid); } catch(_){}
     },
+    pendingDeck(uid, name){
+      if (!uid || !name) return null;
+      const q = loadQueue();
+      const d = q?.[uid]?.decks?.[name];
+      if (!d || !Array.isArray(d.cardIds) || d.cardIds.length !== 8) return null;
+      return d.cardIds.slice(0, 8);
+    },
     queueCollection(uid, collectionMap){
       if (!uid || !collectionMap) return;
       const q = loadQueue();

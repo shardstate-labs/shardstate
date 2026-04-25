@@ -56,7 +56,7 @@ const I18N = {
     preset_name_ph:'Nombre del preset…',
     preset_share:'Compartir a Comunidad',
     coll_owned:'Obtenidas', coll_missing:'No Obtenidas',
-    coll_filter_all:'Todas', coll_filter_owned:'Obtenidas', coll_filter_missing:'Faltantes',
+    coll_filter_all:'Todas', coll_filter_owned:'Obtenidas', coll_filter_dupes:'Duplicadas', coll_filter_missing:'Faltantes',
     market_list_title:'Listar carta', market_my_sales:'Mis ventas activas',
     market_live:'Market Listings', market_buy_history:'Historial de compras',
     market_sell_history:'Historial de ventas',
@@ -150,7 +150,7 @@ const I18N = {
     preset_name_ph:'Preset name…',
     preset_share:'Share to Community',
     coll_owned:'Owned', coll_missing:'Not Owned',
-    coll_filter_all:'All', coll_filter_owned:'Owned', coll_filter_missing:'Missing',
+    coll_filter_all:'All', coll_filter_owned:'Owned', coll_filter_dupes:'Duplicates', coll_filter_missing:'Missing',
     market_list_title:'List a Card', market_my_sales:'My Active Listings',
     market_live:'Market Listings', market_buy_history:'Purchase History',
     market_sell_history:'Sales History',
@@ -406,8 +406,10 @@ function persistToUser() {
     SHS_SYNC.queueCollection(u.uid, colMap);
     if (Array.isArray(view.state.deck) && view.state.deck.length === 8) {
       SHS_SYNC.queueDeck(u.uid, 'Active', view.state.deck, true);
-    } else if (SHS_SYNC.deleteDeck) {
-      // Incomplete active deck → drop the server row so refresh doesn't resurrect old cards.
+      if (SHS_SYNC.flush) SHS_SYNC.flush().catch(()=>{});
+    } else if (Array.isArray(view.state.deck) && view.state.deck.length === 0 && SHS_SYNC.deleteDeck) {
+      // Only an intentionally empty deck deletes the server row. Partial decks
+      // are kept local while the user is building, so a reload cannot wipe them.
       SHS_SYNC.deleteDeck(u.uid, 'Active').catch(()=>{});
     }
     const validPresetNames = new Set();
@@ -435,6 +437,53 @@ function reloadPwaFrame() {
   if (f && f.contentWindow) {
     try { f.contentWindow.location.reload(); } catch(_){}
   }
+}
+
+async function enforceAccountStatus(){
+  if (!window.SB || !view.user?.uid) return true;
+  const s = await SB.getMyAccountStatus().catch(() => ({ status:'active' }));
+  const status = s?.status || 'active';
+  if (status === 'active') return true;
+  const isPaused = status === 'paused';
+  const title = isPaused
+    ? (currentLang === 'es' ? 'USUARIO BAJO INVESTIGACION TEMPORAL' : 'USER TEMPORARILY UNDER INVESTIGATION')
+    : (currentLang === 'es' ? 'USUARIO BLOQUEADO' : 'USER BLOCKED');
+  const body = isPaused
+    ? (currentLang === 'es' ? 'Tu cuenta esta pausada temporalmente. PROTOCOL VIGILA.' : 'Your account is temporarily paused. PROTOCOL WATCHES.')
+    : (currentLang === 'es' ? 'Cuenta bloqueada por infringir las normas del juego. PROTOCOL VIGILA.' : 'Account blocked for violating game rules. PROTOCOL WATCHES.');
+  document.body.innerHTML = `
+    <div class="account-block-screen">
+      <div class="account-block-panel">
+        <div class="account-block-kicker">${status.toUpperCase()}</div>
+        <div class="account-block-title">${title}</div>
+        <div class="account-block-body">${body}</div>
+        <button class="account-block-btn" onclick="SB.signOut().then(()=>location.href='../index.html')">${currentLang === 'es' ? 'SALIR' : 'LOG OUT'}</button>
+      </div>
+    </div>`;
+  return false;
+}
+
+async function showPendingAdminNotifications(){
+  if (!window.SB || !view.user?.uid) return;
+  const list = await SB.loadMyNotifications().catch(() => []);
+  if (!Array.isArray(list) || !list.length) return;
+  const note = list[0];
+  const modal = document.createElement('div');
+  modal.className = 'admin-reward-modal';
+  modal.innerHTML = `
+    <div class="admin-reward-panel">
+      <div class="admin-reward-kicker">PROTOCOL</div>
+      <div class="admin-reward-title">${note.title || 'Recompensa de Admin'}</div>
+      <div class="admin-reward-body">${note.body || 'El Admin te concedio una recompensa.'}</div>
+      <button class="admin-reward-btn">${currentLang === 'es' ? 'ACEPTAR' : 'ACCEPT'}</button>
+    </div>`;
+  modal.querySelector('button').onclick = async () => {
+    await SB.acknowledgeNotification(note.id).catch(()=>{});
+    modal.remove();
+    await refreshFromSupabase();
+    showPendingAdminNotifications();
+  };
+  document.body.appendChild(modal);
 }
 
 // ── TOPBAR / SIDEBAR SYNC ──────────────────────────────────────
@@ -2418,10 +2467,11 @@ async function hydrateFromSupabase(authUser){
   // Decks: pick the active row for the deck slot, presets from the rest.
   if (Array.isArray(decks) && decks.length){
     const active = decks.find(d => d.is_active) || decks[0];
-    if (active && Array.isArray(active.card_ids) && active.card_ids.length === 8){
+    const pendingActive = window.SHS_SYNC && SHS_SYNC.pendingDeck ? SHS_SYNC.pendingDeck(uid, 'Active') : null;
+    if (pendingActive) {
+      u.gameState.deck = pendingActive;
+    } else if (active && Array.isArray(active.card_ids) && active.card_ids.length === 8){
       u.gameState.deck = active.card_ids.slice(0, 8);
-    } else {
-      u.gameState.deck = [];
     }
     u.gameState.deckPresets = decks
       .filter(d => d !== active && Array.isArray(d.card_ids) && d.card_ids.length === 8)
@@ -2429,7 +2479,9 @@ async function hydrateFromSupabase(authUser){
     // Track server-known preset names so persistToUser can hard-delete removed ones.
     view._knownServerPresets = decks.map(d => d.name).filter(Boolean);
   } else {
-    u.gameState.deck = [];
+    // No server deck row yet. Preserve the locally saved deck instead of
+    // clobbering it during reloads before the debounced deck sync completes.
+    u.gameState.deck = Array.isArray(u.gameState.deck) ? u.gameState.deck.slice(0, 8) : [];
     u.gameState.deckPresets = [];
     view._knownServerPresets = [];
   }
@@ -2457,12 +2509,14 @@ async function refreshFromSupabase(){
   try {
     const sess = await SB.getSession();
     if (!sess || !sess.user) return;
+    if (!(await enforceAccountStatus())) return;
     const fresh = await hydrateFromSupabase(sess.user);
     view.user = fresh;
     syncFromUser();
     syncTopbar();
     if (typeof renderPerfil === 'function') renderPerfil();
     if (typeof renderBattlePass === 'function') renderBattlePass();
+    showPendingAdminNotifications();
   } catch(_){}
 }
 
@@ -2488,6 +2542,8 @@ async function start() {
     return;
   }
 
+  if (!(await enforceAccountStatus())) return;
+
   ensureUserDefaults(view.user);
   syncFromUser();
   applyCustomCardsToCollection();
@@ -2496,6 +2552,7 @@ async function start() {
   setLang(currentLang);
   renderPacks();
   setTab('coleccion');
+  showPendingAdminNotifications();
 
   // Re-pull from Supabase whenever the gamehub tab regains focus,
   // so rewards earned in /game (other tab) appear right away.
