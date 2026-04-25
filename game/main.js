@@ -352,7 +352,7 @@ function layoutHand(side, ids, faceDown){
   row.innerHTML = '';
   ids.forEach(id => {
     const c  = getCard(id);
-    const el = buildCardEl(c, { compact: side === 'opp' });
+    const el = buildCardEl(c, {});
     el.dataset.cardId = id;
     const stillInHand = (side==='me' ? APP.battle.pHand : APP.battle.oHand).includes(id);
     if(!stillInHand){
@@ -366,6 +366,8 @@ function layoutHand(side, ids, faceDown){
       el.appendChild(tag);
     } else if(side === 'me'){
       el.onclick = () => selectCard(id);
+    } else if(side === 'opp'){
+      el.onclick = () => openBattleCardDetail(id);
     }
     row.appendChild(el);
   });

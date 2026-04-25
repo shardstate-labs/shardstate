@@ -147,6 +147,101 @@ function buildCardEl(card, opts){
   return el;
 }
 
+function ensureBattleCardModal(){
+  let modal = document.getElementById('battle-card-modal');
+  if(modal) return modal;
+  modal = document.createElement('div');
+  modal.id = 'battle-card-modal';
+  modal.className = 'bcd-overlay';
+  modal.innerHTML = `
+    <div class="bcd-panel">
+      <button class="bcd-close" type="button" onclick="closeBattleCardDetail()">×</button>
+      <div class="bcd-body"></div>
+    </div>`;
+  modal.addEventListener('click', e => {
+    if(e.target === modal) closeBattleCardDetail();
+  });
+  document.body.appendChild(modal);
+  if(!window.__bcdEscBound){
+    window.__bcdEscBound = true;
+    document.addEventListener('keydown', e => {
+      if(e.key === 'Escape') closeBattleCardDetail();
+    });
+  }
+  return modal;
+}
+
+function battleCardStars(stars){
+  stars = stars || 1;
+  return '<span class="star-filled">★</span>'.repeat(stars) +
+    '<span class="star-empty">★</span>'.repeat(Math.max(0, 5 - stars));
+}
+
+function openBattleCardDetail(cardId){
+  const card = getCard(cardId);
+  if(!card) return;
+  const clan = getClan(card.clan) || {};
+  const v = card.visual || {};
+  const cc = clan.color || '#00ffc6';
+  const imgSrc = v.image || v.imageLv1 || '';
+  const logo = v.logo || '';
+  const rar = card.rar || card.rarity || 'C';
+  const rarNames = {C:'Common',U:'Uncommon',R:'Rare',M:'Mythic'};
+  const type = card.type || 'normal';
+  const ability = typeof card.ability === 'object' ? card.ability.text : (card.ability || '—');
+  const bonus = typeof card.bonus === 'object'
+    ? card.bonus.text
+    : (card.bonus || clan.bonus || '—');
+  const cond = card.abilityData?.condition || '';
+  const typeBadge = (type === 'grand' || type === 'eco')
+    ? `<span class="bcd-type type-${type}">${type.toUpperCase()}</span>`
+    : '';
+  const modal = ensureBattleCardModal();
+  modal.querySelector('.bcd-body').innerHTML = `
+    <div class="bcd-art-wrap" style="--cc:${cc}">
+      <div class="bcd-art${imgSrc ? ' has-img' : ''}">
+        ${imgSrc ? `<img src="${imgSrc}" alt="${card.name}" onerror="this.parentNode.classList.remove('has-img');this.remove()"/>` : ''}
+        <div class="bcd-art-ph">${logo ? `<img src="${logo}" alt=""/>` : (clan.glyph || '◆')}</div>
+      </div>
+      <div class="bcd-art-vignette"></div>
+    </div>
+    <div class="bcd-info">
+      <div class="bcd-header">
+        <div class="bcd-name">${card.name}</div>
+        <div class="bcd-rar">${rarNames[rar] || rar}</div>
+      </div>
+      <div class="bcd-clan-row">
+        <span class="bcd-clan-dot" style="background:${cc}"></span>
+        <span class="bcd-clan-name" style="color:${cc}">${clan.glyph || ''} ${(clan.name || card.clan || '').toUpperCase()}</span>
+        ${typeBadge}
+      </div>
+      <div class="bcd-stars-row">${battleCardStars(card.stars)}</div>
+      <div class="bcd-stats-row">
+        <div class="bcd-stat-box">
+          <div class="bcd-stat-num pow">${card.pow}</div>
+          <div class="bcd-stat-lbl">PODER</div>
+        </div>
+        <div class="bcd-stat-divider"></div>
+        <div class="bcd-stat-box">
+          <div class="bcd-stat-num dmg">${card.dmg}</div>
+          <div class="bcd-stat-lbl">DAÑO</div>
+        </div>
+      </div>
+      <div class="bcd-section-lbl">HABILIDAD</div>
+      <div class="bcd-ability-box">${cond ? `<span class="bcd-cond">${cond}:</span> ` : ''}${ability}</div>
+      <div class="bcd-section-lbl">BONUS DE CLAN</div>
+      <div class="bcd-bonus-box">${bonus}</div>
+    </div>`;
+  modal.classList.add('show');
+}
+
+function closeBattleCardDetail(){
+  const modal = document.getElementById('battle-card-modal');
+  if(modal) modal.classList.remove('show');
+}
+window.openBattleCardDetail = openBattleCardDetail;
+window.closeBattleCardDetail = closeBattleCardDetail;
+
 function showRoundBanner(text, kind){
   const b = document.getElementById('round-banner');
   if(!b) return;
