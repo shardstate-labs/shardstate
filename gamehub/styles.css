@@ -989,11 +989,16 @@ input,select,textarea{ max-width:100%; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 
-/* Allow long descriptions to wrap, never overflow */
+/* Allow long descriptions to wrap at word boundaries; only break mid-word
+ * when a word genuinely overflows. (overflow-wrap:anywhere was too eager
+ * and produced letter-by-letter wrap on narrow grids — fixed.) */
 .card-ability, .card-bonus, .ability-condition,
-.bonus-text, .pack-desc, .mission-desc, .market-card-meta,
+.bonus-text, .pack-desc, .market-card-meta,
 .coll-card-meta, .rule-text, .forum-comment-text{
-  overflow-wrap:anywhere; word-break:break-word; white-space:normal;
+  overflow-wrap:break-word; word-break:normal; white-space:normal;
+}
+.mission-desc{
+  overflow-wrap:break-word; word-break:normal; white-space:normal;
 }
 
 /* Prevent toast/modal overflow on tiny viewports */
@@ -1007,9 +1012,10 @@ input,select,textarea{ max-width:100%; }
   flex-wrap:wrap;
 }
 
-/* Card grids must collapse cleanly */
-.coll-grid, .pack-grid, .market-grid, .deck-grid,
-.history-grid, .missions-grid{
+/* Card grids must collapse cleanly. Note: missions-grid keeps its
+ * original 2-col layout from line ~262 — auto-fill produced too-narrow
+ * cards that broke text mid-word. */
+.coll-grid, .pack-grid, .market-grid, .deck-grid, .history-grid{
   display:grid;
   grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
   gap:10px;
