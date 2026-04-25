@@ -1,36 +1,68 @@
-# Skills
+# SHARDSTATE - Engineering Skills
+
+Use this file as local project guidance for future agents and contributors.
 
 ## Safe Refactoring
-- Extract logic from large HTML files
-- Preserve full behavior (no regression)
-- Maintain existing structures
--create web platform architecture for embedding the PWA game in the web platform
 
-## Game Architecture
-- Separate engine from UI
-- Modularize clans/cards/abilities/clan bonuses
-- Isolate state management
+- Read the relevant files before editing.
+- Prefer small targeted patches over full rewrites.
+- Preserve current behavior unless the task explicitly changes behavior.
+- Keep dirty user work unless the user explicitly asks to remove it.
+- Verify with at least static file checks or live smoke checks before calling work done.
 
-## TCG Systems
-- Handle multi-clan systems (13 factions)
-- Support fixed card sets (12 per clan, 10 special)
-- Maintain ability resolution integrity
-- Maintain 8 card limit per deck choosing 4 cards randomly from the deck when starting a battle
+## Architecture
 
-## Frontend Separation
-- Remove DOM from logic
-- Build render layer on top of engine
-- Prepare PWA embedding
+- Keep engine logic separate from UI logic.
+- Core engine files:
+  - `engine/cards.js`
+  - `engine/ability_catalog.js`
+  - `engine/round_engine.js`
+  - `game/engine.js`
+- UI/gameplay files:
+  - `game/main.js`
+  - `game/render.js`
+  - `game/style.css`
+  - `gamehub/app.js`
+- Shared backend/client files:
+  - `js/sb.js`
+  - `js/sync.js`
+  - `js/pvp.js`
+  - `js/payments.js`
 
-## Data Integrity
-- Do not modify card stats
-- Do not rename clans or cards
-- Keep all definitions identical
+## TCG Rules
+
+- Do not modify card stats unless explicitly instructed.
+- Do not rename clans or cards unless explicitly instructed.
+- Maintain the 8-card deck limit.
+- Game combat hand is 4 cards selected from the player's 8-card Gamehub deck.
+- The Game deck must match the deck built by the player in Gamehub.
+- Ability resolution integrity is more important than UI convenience.
+
+## PvP Rules
+
+- Supabase is authoritative for matchmaking and finalization.
+- Realtime is used for live actions, but the client must tolerate missed events through polling fallback.
+- Matchmaking must never leave a player stuck indefinitely.
+- Surrender counts as abandon and must finalize through the normal PvP path.
+
+## Payments Rules
+
+- Keep purchases server-authoritative.
+- Frontend opens checkout only; rewards are granted by webhook/RPC.
+- Do not trust client-side product amounts.
+- Store every payment provider event in `purchases.raw` for auditability.
+- Use `entitlements` for granted perks.
 
 ## Web3 Preparation
-- Add abstraction layers only
-- Keep game fully off-chain for now to scale the game in the future
 
-## Constraints
-- No simplification
-- No logic changes
+- The game remains off-chain for now.
+- Do not block current off-chain UX on future on-chain assumptions.
+- Design data flows so ownership, tournaments, and ranked modes can later move on-chain cleanly.
+
+## UX Rules
+
+- Combat readability comes first.
+- No hidden mechanics.
+- Every PvP waiting state must explain what is happening.
+- Spanish and English should remain supported in game-facing UI.
+- Avoid browser-native alerts for important game flows; use in-app modals.

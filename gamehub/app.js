@@ -2321,6 +2321,11 @@ async function hydrateFromSupabase(authUser){
   // Server is source of truth for collection — only override if we got data back.
   if (collection && Object.keys(collection).length){
     u.gameState.collection = collection;
+  } else if (window.SHS_SYNC && SHS_SYNC.forceCollectionResync) {
+    // DB collection empty: clear the stale snapshot so the next persistToUser
+    // push diffs against {} and uploads the full local starter set. Fixes
+    // brand-new accounts whose welcome-pack write never reached Supabase.
+    SHS_SYNC.forceCollectionResync(uid);
   }
   // Battle pass: server is authoritative.
   if (battlePass) {
@@ -2426,6 +2431,17 @@ async function start() {
     if (document.visibilityState === 'visible') refreshFromSupabase();
   });
   window.addEventListener('focus', refreshFromSupabase);
+
+  // Post-checkout return from Polar: webhook already credited the user
+  // server-side; refreshFromSupabase pulls the new FLUX/premium into UI.
+  if (window.SHS_PAY && SHS_PAY.consumeReturn) {
+    const r = SHS_PAY.consumeReturn();
+    if (r.paid) {
+      refreshFromSupabase().then(() => {
+        toast(currentLang === 'es' ? '✓ Compra acreditada' : '✓ Purchase credited');
+      });
+    }
+  }
 }
 
 start();
