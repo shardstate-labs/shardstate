@@ -1651,10 +1651,10 @@ function submitComment(threadId) {
 
 // ── RENDER: PACKS ──────────────────────────────────────────────
 const FLUX_BUNDLES = [
-  { product:'FLUX_5',  flux:5,  usd:5,  art:'./assets/shop/flux-5.png' },
-  { product:'FLUX_10', flux:10, usd:10, art:'./assets/shop/flux-10.png' },
-  { product:'FLUX_30', flux:30, usd:30, art:'./assets/shop/flux-30.png' },
-  { product:'FLUX_50', flux:50, usd:50, art:'./assets/shop/flux-50.png' },
+  { product:'FLUX_5',  flux:5,  usd:5,  art:'./assets/shop/flux-badge-5.png' },
+  { product:'FLUX_10', flux:10, usd:10, art:'./assets/shop/flux-badge-10.png' },
+  { product:'FLUX_30', flux:30, usd:30, art:'./assets/shop/flux-badge-30.png' },
+  { product:'FLUX_50', flux:50, usd:50, art:'./assets/shop/flux-badge-50.png' },
 ];
 const PACKS_DATA = [
   { id:'welcome', name:{es:'Pack Bienvenida',en:'Welcome Pack'}, desc:{es:'8 cartas de regalo · Una sola vez · Gratuito',en:'8 free cards · One-time only · Free'}, costType:'welcome', cost:0,  color:'#00FFC6', icon:'🎁', cards:8,  art:'./assets/shop/pack-welcome.png' },
