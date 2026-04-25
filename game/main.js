@@ -52,12 +52,15 @@ const APP = {
   screen: 'loading',
   deck: APP_IMPORT.deck || randomDeck(),
   battle: null,
+  pvp: null,
   selectedCardId: null,
   pendingPulses: 0,
   pendingColapso: false,
   inputLocked: false,
   logOpen: false,
 };
+
+const PVP_MODES = new Set(['casual','ranked']);
 
 const MODE_ORDER = ['training','casual','ranked','survivor','academia','free'];
 const MODE_META = {
@@ -178,6 +181,26 @@ function renderModes(){
 
 function rerollDeck(){ APP.deck = randomDeck(); }
 
+function seededHand(deckIds, seed){
+  let h = 2166136261;
+  String(seed || '').split('').forEach(ch => {
+    h ^= ch.charCodeAt(0);
+    h = Math.imul(h, 16777619) >>> 0;
+  });
+  const rand = () => {
+    h += 0x6D2B79F5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return [...deckIds]
+    .map(id => ({ id, r: rand() }))
+    .sort((a,b) => a.r - b.r)
+    .slice(0,4)
+    .map(x => x.id);
+}
+
 // ─── MATCHMAKING ─────────────────────────────────────────────
 function startMode(mode){
   // Abandon-streak lockout (5 min after 3 abandons in a row).
@@ -195,16 +218,109 @@ function startMode(mode){
   document.getElementById('mm-title').textContent = MODES[mode].label;
   document.getElementById('mm-sub').textContent =
     (mode === 'academia') ? 'LOADING LESSON' : 'SCANNING NETWORK FOR OPPONENT';
+  if(PVP_MODES.has(mode)){
+    startPvpMode(mode);
+    return;
+  }
   setTimeout(()=> beginBattle(mode), 1300 + Math.random()*900);
 }
 
+async function startPvpMode(mode){
+  try {
+    if(!window.SHS_PVP || !window.SB) throw new Error('PvP offline');
+    const user = await SB.getUser();
+    const uid = user?.id || APP_IMPORT.player?.uid;
+    if(!uid) throw new Error('Inicia sesion para jugar PvP.');
+    APP.pvp = { mode, uid, localMove:null, remoteMove:null, resolving:false, matched:false };
+    const watcher = await SHS_PVP.watchForMatch(uid, row => {
+      if(APP.pvp?.matched) return;
+      APP.pvp.matched = true;
+      beginPvpBattle(mode, row, uid).catch(err => {
+        console.warn('beginPvpBattle failed', err);
+        alert('No se pudo abrir la partida PvP.');
+        backToMenu();
+      });
+    });
+    APP.pvp.watcher = watcher;
+    const rsp = await SHS_PVP.findMatch(mode, APP.deck);
+    if(rsp && !rsp.queued){
+      APP.pvp.matched = true;
+      if(watcher?.unsubscribe) await watcher.unsubscribe();
+      await beginPvpBattle(mode, rsp, uid);
+    } else {
+      document.getElementById('mm-sub').textContent = 'WAITING FOR RIVAL LINK';
+    }
+  } catch(err) {
+    console.warn('PvP queue failed', err);
+    alert(err?.message || 'PvP no disponible.');
+    backToMenu();
+  }
+}
+
+function pickMatchValue(row, keys, fallback){
+  for(const k of keys){
+    if(row && row[k] != null) return row[k];
+  }
+  return fallback;
+}
+
+function normalizePvpMatch(row, uid){
+  const p1 = pickMatchValue(row, ['p1_user_id','p1','player1_user_id','player1_id'], null);
+  const p2 = pickMatchValue(row, ['p2_user_id','p2','player2_user_id','player2_id'], null);
+  const side = (row.side || (uid && p2 === uid ? 'p2' : 'p1'));
+  const isP1 = side === 'p1';
+  return {
+    id: pickMatchValue(row, ['match_id','id'], null),
+    side,
+    opponentId: pickMatchValue(row, ['opponent_id'], isP1 ? p2 : p1),
+    opponentDeck: pickMatchValue(row, isP1
+      ? ['p2_deck','player2_deck','opponent_deck','deck_p2']
+      : ['p1_deck','player1_deck','opponent_deck','deck_p1'], []),
+  };
+}
+
+async function beginPvpBattle(mode, row, uid){
+  const match = normalizePvpMatch(row, uid);
+  if(!match.id) throw new Error('Match id missing');
+  if(APP.pvp?.watcher?.unsubscribe) await APP.pvp.watcher.unsubscribe();
+  const channel = await SHS_PVP.openMatch(match.id, match.side);
+  APP.pvp = Object.assign(APP.pvp || {}, {
+    mode, uid, matchId:match.id, side:match.side, opponentId:match.opponentId,
+    channel, localMove:null, remoteMove:null, resolving:false, finalized:false,
+  });
+  channel.onMove(payload => handlePvpMove(payload));
+  beginBattle(mode, {
+    id: match.id,
+    side: match.side,
+    opponentId: match.opponentId,
+    opponentDeck: match.opponentDeck,
+  });
+}
+
 // ─── BATTLE ──────────────────────────────────────────────────
-function beginBattle(mode){
+function beginBattle(mode, pvpMatch){
   APP.battle = newBattle(mode);
+  APP.battle.pvp = !!pvpMatch;
+  APP.battle.matchId = pvpMatch?.id || null;
   APP.battle.pDeck = [...APP.deck];
-  APP.battle.oDeck = randomDeck();
-  APP.battle.pHand = dealHand(APP.battle.pDeck);
-  APP.battle.oHand = dealHand(APP.battle.oDeck);
+  APP.battle.oDeck = Array.isArray(pvpMatch?.opponentDeck) && pvpMatch.opponentDeck.length
+    ? pvpMatch.opponentDeck.slice(0, 8)
+    : randomDeck();
+  if(pvpMatch){
+    const mySide = pvpMatch.side || 'p1';
+    const opSide = mySide === 'p1' ? 'p2' : 'p1';
+    APP.battle.pHand = seededHand(APP.battle.pDeck, pvpMatch.id + ':' + mySide);
+    APP.battle.oHand = seededHand(APP.battle.oDeck, pvpMatch.id + ':' + opSide);
+  } else {
+    APP.battle.pHand = dealHand(APP.battle.pDeck);
+    APP.battle.oHand = dealHand(APP.battle.oDeck);
+  }
+  if(pvpMatch){
+    APP.battle.opponent = {
+      name: pvpMatch.opponentId ? ('RIVAL ' + String(pvpMatch.opponentId).slice(0, 6).toUpperCase()) : 'RIVAL',
+      club: pvpMatch.side === 'p1' ? 'P2 LINK' : 'P1 LINK',
+    };
+  }
 
   goScreen('battle');
 
@@ -233,6 +349,7 @@ function beginBattle(mode){
   hideActionPanel();
   ensureBattleTopUI();
   appendLog('Combate iniciado · ' + MODES[mode].label, '');
+  if(pvpMatch) appendLog('PvP link activo · broadcast ready', '');
   showTurnBanner(()=> startRoundTimer());
 }
 
@@ -522,13 +639,27 @@ function confirmAction(){
   APP.inputLocked = true;
   stopRoundTimer();
   APP.battle.pPulses -= cost;
+  hideActionPanel();
+  renderHud();
+
+  if(APP.battle.pvp){
+    const move = { round:APP.battle.round, cardId, pulses, colapso };
+    APP.pvp.localMove = move;
+    const meEl  = document.querySelector(`#hand-me  .card[data-card-id="${cardId}"]`);
+    if(meEl) meEl.classList.add('played');
+    setStatus('WAITING RIVAL', true);
+    APP.pvp.channel?.send(move).catch(err => {
+      console.warn('PvP move send failed', err);
+      appendLog('PvP send failed · retry with next action', 'loss');
+      APP.inputLocked = false;
+    });
+    maybeResolvePvpRound();
+    return;
+  }
 
   const ai     = aiPickAction(APP.battle);
   const aiCost = ai.pulses + (ai.colapso ? 3 : 0);
   APP.battle.oPulses = Math.max(0, APP.battle.oPulses - aiCost);
-
-  hideActionPanel();
-  renderHud();
 
   const meEl  = document.querySelector(`#hand-me  .card[data-card-id="${cardId}"]`);
   const oppEl = document.querySelector(`#hand-opp .card[data-card-id="${ai.cardId}"]`);
@@ -537,6 +668,41 @@ function confirmAction(){
 
   const result = resolveRound(APP.battle, cardId, pulses, colapso, ai.cardId, ai.pulses, ai.colapso);
   runCombatPhase(result, ()=> onRoundResolved(result));
+}
+
+function handlePvpMove(payload){
+  if(!APP.battle?.pvp || !payload || payload.side === APP.pvp?.side) return;
+  const action = payload.action || payload;
+  if(action.round !== APP.battle.round) return;
+  APP.pvp.remoteMove = action;
+  appendLog('Rival action locked', '');
+  maybeResolvePvpRound();
+}
+
+function maybeResolvePvpRound(){
+  if(!APP.battle?.pvp || !APP.pvp?.localMove || !APP.pvp?.remoteMove || APP.pvp.resolving) return;
+  APP.pvp.resolving = true;
+  const local = APP.pvp.localMove;
+  const remote = APP.pvp.remoteMove;
+  const remoteCost = (remote.pulses|0) + (remote.colapso ? 3 : 0);
+  APP.battle.oPulses = Math.max(0, APP.battle.oPulses - remoteCost);
+  const oppEl = document.querySelector(`#hand-opp .card[data-card-id="${remote.cardId}"]`);
+  if(oppEl) oppEl.classList.add('played');
+  renderHud();
+  if(APP.pvp?.side && !APP.battle._starter){
+    APP.battle._starter = APP.pvp.side === 'p1' ? 'p' : 'o';
+  }
+  const result = resolveRound(
+    APP.battle,
+    local.cardId, local.pulses|0, !!local.colapso,
+    remote.cardId, remote.pulses|0, !!remote.colapso
+  );
+  APP.pvp.localMove = null;
+  APP.pvp.remoteMove = null;
+  runCombatPhase(result, ()=> {
+    APP.pvp.resolving = false;
+    onRoundResolved(result);
+  });
 }
 
 // ─── COMBAT FOCUS PHASE ──────────────────────────────────────
@@ -898,6 +1064,10 @@ function recordAbandon(){
     }
     localStorage.setItem(KEY, JSON.stringify(cur));
   } catch(_){}
+  if (APP?.battle?.pvp) {
+    finalizePvpBattle('abandon');
+    return;
+  }
   // Server-authoritative abandon (RPC mirrors lockout + multiplier).
   try {
     if (window.SHS_SYNC && APP && APP.battle) {
@@ -974,7 +1144,9 @@ function showEnd(){
   // Calls finalize_battle RPC. Server recomputes rewards atomically
   // and the on-screen numbers are reconciled from its response.
   // Skip when the battle was abandoned — recordAbandon() already finalized it.
-  if (window.SHS_SYNC && !B.abandoned) {
+  if (B.pvp) {
+    finalizePvpBattle('end');
+  } else if (window.SHS_SYNC && !B.abandoned) {
     const result = B.winner === 'p' ? 'win' : (B.winner === 'o' ? 'loss' : 'draw');
     SHS_SYNC.finalizeBattle({
       mode: B.mode || 'casual',
@@ -999,8 +1171,39 @@ function showEnd(){
   }
 }
 
+function finalizePvpBattle(reason){
+  const B = APP.battle;
+  if(!B?.pvp || !window.SHS_PVP || !APP.pvp || APP.pvp.finalized) return;
+  APP.pvp.finalized = true;
+  const winnerUid = B.winner === 'p'
+    ? APP.pvp.uid
+    : (B.winner === 'o' ? APP.pvp.opponentId : null);
+  SHS_PVP.finalize(APP.pvp.matchId || B.matchId, winnerUid, B.roundLog || B.history || [])
+    .then(rsp => {
+      if(!rsp) return;
+      try {
+        const sd = rsp.shards_delta|0, xd = rsp.xp_delta|0, ed = rsp.elo_delta|0;
+        const elS = document.getElementById('rw-shards');
+        const elX = document.getElementById('rw-xp');
+        const elE = document.getElementById('rw-elo');
+        if (elS) elS.textContent = (sd>=0?'+':'') + sd;
+        if (elX) elX.textContent = (xd>=0?'+':'') + xd;
+        if (elE) elE.textContent = (ed>=0?'+':'') + ed;
+      } catch(_){}
+    })
+    .catch(err => {
+      console.warn('finalize_pvp_match failed', reason, err);
+      APP.pvp.finalized = false;
+    });
+}
+
 function backToMenu(){
   APP.inputLocked = false;
+  stopRoundTimer();
+  try { if(APP.pvp?.watcher?.unsubscribe) APP.pvp.watcher.unsubscribe(); } catch(_){}
+  try { if(APP.pvp?.channel?.close) APP.pvp.channel.close(); } catch(_){}
+  try { if(APP.screen === 'matchmaking' && window.SHS_PVP) SHS_PVP.cancelQueue(); } catch(_){}
+  APP.pvp = null;
   goScreen('menu');
   renderMenu();
 }
