@@ -6,13 +6,13 @@
 const MODE_CONFIG = {
   casual: {
     label: 'CASUAL',
-    pvp: false,
-    queueText: 'Buscando IA casual...',
-    matchText: 'Partida casual encontrada.',
-    shardsWin:[18,28], shardsLoss:[3,8], shardsDraw:[8,12],
-    xpWin:18, xpLoss:8, xpDraw:12,
-    eloWin:6, eloLoss:4, drawElo:0,
-    eloKey:'elo',
+    pvp: true,
+    queueText: 'Buscando rival casual...',
+    matchText: 'Rival casual enlazado.',
+    shardsWin:[18,30], shardsLoss:[3,8], shardsDraw:[8,12],
+    xpWin:22, xpLoss:8, xpDraw:12,
+    eloWin:0, eloLoss:0, drawElo:0,
+    eloKey:null,
     useTrainingDeck:false,
     academy:false
   },
@@ -21,36 +21,24 @@ const MODE_CONFIG = {
     pvp: false,
     queueText: 'Configurando sparring de entrenamiento...',
     matchText: 'Entrenamiento listo.',
-    shardsWin:[0,0], shardsLoss:[0,0], shardsDraw:[0,0],
-    xpWin:4, xpLoss:2, xpDraw:3,
+    shardsWin:[3,8], shardsLoss:[1,3], shardsDraw:[2,4],
+    xpWin:6, xpLoss:2, xpDraw:3,
     eloWin:0, eloLoss:0, drawElo:0,
     eloKey:null,
     useTrainingDeck:true,
     academy:false
   },
   ranked: {
-    label: 'RANKED NFT',
+    label: 'RANKED',
     pvp: true,
-    queueText: 'Buscando rival Ranked (NFT)...',
+    queueText: 'Buscando rival Ranked...',
     matchText: 'Rival Ranked enlazado.',
-    shardsWin:[45,70], shardsLoss:[8,16], shardsDraw:[20,30],
-    xpWin:55, xpLoss:20, xpDraw:30,
+    shardsWin:[35,60], shardsLoss:[8,14], shardsDraw:[16,24],
+    xpWin:40, xpLoss:14, xpDraw:20,
     eloWin:12, eloLoss:10, drawElo:2,
-    eloKey:'onchainElo',
+    eloKey:'elo',
     useTrainingDeck:false,
     academy:false
-  },
-  academia: {
-    label: 'ACADEMIA',
-    pvp: false,
-    queueText: 'Cargando modulo Academia...',
-    matchText: 'Leccion activa: combate guiado.',
-    shardsWin:[6,14], shardsLoss:[2,5], shardsDraw:[4,8],
-    xpWin:28, xpLoss:16, xpDraw:20,
-    eloWin:0, eloLoss:0, drawElo:0,
-    eloKey:null,
-    useTrainingDeck:false,
-    academy:true
   }
 };
 

@@ -358,9 +358,6 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 .mode-card.training { --mc:#a464ff; --mc-glow:rgba(164,100,255,.18); }
 .mode-card.casual   { --mc:var(--acc); --mc-glow:rgba(0,255,198,.18); }
 .mode-card.ranked   { --mc:var(--gold); --mc-glow:rgba(245,158,11,.18); }
-.mode-card.survivor { --mc:var(--red); --mc-glow:rgba(255,59,59,.18); }
-.mode-card.academia { --mc:var(--bio); --mc-glow:rgba(155,255,0,.18); }
-.mode-card.free     { --mc:#7280f5; --mc-glow:rgba(114,128,245,.18); }
 
 .btn{
   display:inline-flex; align-items:center; gap:8px;
@@ -1644,4 +1641,3 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   0%{transform:translate(-50%,-50%) rotate(0); opacity:1}
   100%{transform:translate(calc(-50% + var(--sx,0)), calc(-50% + var(--sy,0))) rotate(var(--sr,0)); opacity:0}
 }
-

@@ -12,12 +12,9 @@ const OPPONENTS = [
   {name:'LOOP-Δ',       club:'TEMPO BREAK'},
 ];
 const MODES = {
-  training:{ label:'TRAINING', shardsW:[0,0],   xpW:8,  eloW:0,  ai:'easy'   },
-  casual:  { label:'CASUAL',   shardsW:[20,40], xpW:25, eloW:6,  ai:'medium' },
-  ranked:  { label:'RANKED',   shardsW:[50,90], xpW:60, eloW:14, ai:'hard'   },
-  academia:{ label:'ACADEMIA', shardsW:[10,20], xpW:35, eloW:0,  ai:'easy'   },
-  survivor:{ label:'SURVIVOR', shardsW:[30,60], xpW:40, eloW:8,  ai:'hard'   },
-  free:    { label:'FREE FIGHT', shardsW:[5,10], xpW:10, eloW:0, ai:'medium' },
+  training:{ label:'TRAINING', shardsW:[3,8],   xpW:6,  eloW:0,  ai:'easy'   },
+  casual:  { label:'CASUAL',   shardsW:[18,30], xpW:22, eloW:0,  ai:'medium' },
+  ranked:  { label:'RANKED',   shardsW:[35,60], xpW:40, eloW:12, ai:'hard'   },
 };
 
 function newBattle(mode){

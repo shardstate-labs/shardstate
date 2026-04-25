@@ -62,14 +62,11 @@ const APP = {
 
 const PVP_MODES = new Set(['casual','ranked']);
 
-const MODE_ORDER = ['training','casual','ranked','survivor','academia','free'];
+const MODE_ORDER = ['training','casual','ranked'];
 const MODE_META = {
-  training: { tag:'PRACTICE', desc:'IA suave. Sin riesgo. Ideal para conocer cartas y bonus.' },
-  casual:   { tag:'CORE',     desc:'Modo principal. Sumás shards y XP. ELO estable.' },
-  ranked:   { tag:'PVP',      desc:'Pista competitiva. Mayor recompensa, mayor riesgo.' },
-  survivor: { tag:'EVENT',    desc:'Cadena de combates. Una sola vida. Picos altos.' },
-  academia: { tag:'LESSON',   desc:'Combate guiado. Pistas tácticas por ronda.' },
-  free:     { tag:'CHILL',    desc:'Sin recompensas serias. Solo combate.' },
+  training: { tag:'PRACTICE', desc:'Player deck vs IA. Muy pocas recompensas, cero ELO.' },
+  casual:   { tag:'PVP',      desc:'Player vs Player off-chain. SHARDS y XP normal-bajo, sin ELO.' },
+  ranked:   { tag:'RANKED',   desc:'PvP off-chain con ELO para leaderboard semanal.' },
 };
 
 function bootGame(){
@@ -128,12 +125,9 @@ function runLoading(done){
 function renderMenu(){ renderModes(); }
 
 const MODE_ICONS = {
-  training: { glyph:'◈', title:'Simulación neural', lines:['SANDBOX · IA BAJA','SIN RIESGO · SIN ELO'] },
-  casual:   { glyph:'◇', title:'Nexo casual',       lines:['CORE PvP · ELO LIGERO','RECOMPENSA ESTABLE'] },
-  ranked:   { glyph:'◆', title:'Rango competitivo', lines:['PvP PURO · ELO ACTIVO','RIESGO ALTO'] },
-  survivor: { glyph:'⟡', title:'Survivor',          lines:['CADENA DE COMBATES','UNA SOLA VIDA'] },
-  academia: { glyph:'✦', title:'Academia echo',     lines:['TUTORIAL TÁCTICO','GUÍA POR RONDA'] },
-  free:     { glyph:'◊', title:'Modo libre',        lines:['SIN STAKES','SOLO COMBATE'] },
+  training: { glyph:'◈', title:'Entrenamiento',     lines:['TU DECK · IA RANDOM','SHARDS + XP BAJO'] },
+  casual:   { glyph:'◇', title:'Casual PvP',        lines:['PLAYER VS PLAYER','SIN ELO · REWARD BAJO'] },
+  ranked:   { glyph:'◆', title:'Ranked off-chain',  lines:['ELO SEMANAL','REWARD NORMAL'] },
 };
 
 function renderModes(){
@@ -217,7 +211,7 @@ function startMode(mode){
   document.getElementById('mm-tag').textContent   = MODE_META[mode].tag;
   document.getElementById('mm-title').textContent = MODES[mode].label;
   document.getElementById('mm-sub').textContent =
-    (mode === 'academia') ? 'LOADING LESSON' : 'SCANNING NETWORK FOR OPPONENT';
+    (mode === 'training') ? 'BOOTING AI SPARRING' : 'SCANNING NETWORK FOR OPPONENT';
   if(PVP_MODES.has(mode)){
     startPvpMode(mode);
     return;

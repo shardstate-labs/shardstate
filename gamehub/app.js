@@ -86,9 +86,9 @@ const I18N = {
     pack_flux_name:'Pack FLUX', pack_flux_desc:'4 cartas aleatorias · Común → Rara',
     pack_shs_name:'Pack $SHS', pack_shs_desc:'4 cartas aleatorias · Inusual garantizada',
     pack_open_btn:'Abrir Pack', pack_last:'Última apertura',
-    mode_classic:'CLÁSICO', mode_classic_sub:'PvP · Gana SHARDS',
-    mode_ranked:'RANGO FRACTAL', mode_ranked_sub:'ELO · Gana $SHS',
-    mode_training:'ENTRENAMIENTO', mode_training_sub:'Sin riesgo · XP reducida',
+    mode_classic:'CASUAL', mode_classic_sub:'PvP off-chain · Sin ELO',
+    mode_ranked:'RANKED', mode_ranked_sub:'ELO semanal off-chain',
+    mode_training:'ENTRENAMIENTO', mode_training_sub:'Jugador vs IA · XP baja',
     gate_sub:'FRACTURE NETWORK · TCG ON-CHAIN',
     gate_msg:'Inicia sesión desde la app para acceder al portal.',
     gate_btn:'⚡ ENTRAR AL JUEGO',
@@ -175,9 +175,9 @@ const I18N = {
     pack_flux_name:'FLUX Pack', pack_flux_desc:'4 random cards · Common → Rare',
     pack_shs_name:'$SHS Pack', pack_shs_desc:'4 random cards · Uncommon guaranteed',
     pack_open_btn:'Open Pack', pack_last:'Last opened',
-    mode_classic:'CLASSIC', mode_classic_sub:'PvP · Earn SHARDS',
-    mode_ranked:'FRACTAL RANKED', mode_ranked_sub:'ELO · Earn $SHS',
-    mode_training:'TRAINING', mode_training_sub:'No risk · Reduced XP',
+    mode_classic:'CASUAL', mode_classic_sub:'Off-chain PvP · No ELO',
+    mode_ranked:'RANKED', mode_ranked_sub:'Weekly off-chain ELO',
+    mode_training:'TRAINING', mode_training_sub:'Player vs AI · Low XP',
     gate_sub:'FRACTURE NETWORK · ON-CHAIN TCG',
     gate_msg:'Log in from the app to access the portal.',
     gate_btn:'⚡ ENTER THE GAME',
@@ -249,10 +249,9 @@ function renderLearnContent() {
   // ── MODES ──
   const modesEl = document.getElementById('ltab-modes');
   if (modesEl) modesEl.innerHTML = `<div class="rules-grid">
-    <div class="rule-card" style="--mc-color:#9BFF00"><div class="rule-card-num" style="color:#9BFF00">TRAINING</div><h3>${L?'Learn Without Risk':'Aprende Sin Riesgo'}</h3><p>${L?'Battle the AI. No Pulso/Shard stakes. <strong>Reduced XP</strong>. Perfect for testing decks and learning matchups.':'Batalla contra la IA. Sin apuestas de Pulsos/SHARDS. <strong>XP reducida</strong>. Perfecto para probar mazos y aprender matchups.'}</p></div>
-    <div class="rule-card" style="--mc-color:var(--acc)"><div class="rule-card-num">CASUAL</div><h3>${L?'PvP · Earn SHARDS':'PvP · Gana SHARDS'}</h3><p>${L?'Play against real opponents. Win to earn <strong>SHARDS</strong> and XP. No ELO impact.':'Juega contra jugadores reales. Gana para obtener <strong>SHARDS</strong> y XP. Sin impacto en ELO.'}</p></div>
-    <div class="rule-card" style="--mc-color:var(--am)"><div class="rule-card-num" style="color:var(--am)">FRACTAL RANKED</div><h3>${L?'Off-Chain ELO':'ELO Off-Chain'}</h3><p>${L?'Your ELO bracket determines rewards. Climb from <strong>Astilla → Singularidad</strong>.':'Tu bracket de ELO determina las recompensas. Sube desde <strong>Astilla → Singularidad</strong>.'}</p></div>
-    <div class="rule-card" style="--mc-color:#f59e0b"><div class="rule-card-num" style="color:#f59e0b">ON-CHAIN RANKED</div><h3>${L?'$SHS Stakes':'Apuestas $SHS'}</h3><p>${L?'Wager <strong>$SHS tokens</strong> on match outcomes. Cards are NFTs with real on-chain ownership.':'Apuesta <strong>tokens $SHS</strong> en resultados de partidas. Las cartas son NFTs con propiedad real on-chain.'}</p></div>
+    <div class="rule-card" style="--mc-color:#9BFF00"><div class="rule-card-num" style="color:#9BFF00">TRAINING</div><h3>${L?'Player vs AI':'Jugador vs IA'}</h3><p>${L?'Use your Gamehub deck against a random AI deck. Very low SHARDS, account XP, and card XP. No ELO.':'Usa tu deck del Gamehub contra un deck random de IA. Muy pocos SHARDS, XP de cuenta y XP de cartas. Sin ELO.'}</p></div>
+    <div class="rule-card" style="--mc-color:var(--acc)"><div class="rule-card-num">CASUAL</div><h3>${L?'PvP · No ELO':'PvP · Sin ELO'}</h3><p>${L?'Player vs Player off-chain. Normal-low SHARDS, account XP, and card XP rewards.':'Player vs Player off-chain. Rewards normal-bajos de SHARDS, XP de cuenta y XP de cartas.'}</p></div>
+    <div class="rule-card" style="--mc-color:var(--am)"><div class="rule-card-num" style="color:var(--am)">RANKED</div><h3>${L?'Weekly Off-Chain ELO':'ELO semanal off-chain'}</h3><p>${L?'Player vs Player off-chain with ELO for the weekly leaderboard. Normal SHARDS, account XP, and card XP rewards.':'Player vs Player off-chain con ELO para el leaderboard semanal. Rewards normales de SHARDS, XP de cuenta y XP de cartas.'}</p></div>
   </div>`;
 
   // ── RANKINGS ──
