@@ -52,6 +52,9 @@ Use this file as local project guidance for future agents and contributors.
 - Do not trust client-side product amounts.
 - Store every payment provider event in `purchases.raw` for auditability.
 - Use `entitlements` for granted perks.
+- FLUX is priced 1:1 with USD.
+- Premium Battle Pass costs 20 FLUX and must be activated server-side.
+- Packs are paid with FLUX only until on-chain tournament/token flows are ready.
 
 ## Web3 Preparation
 

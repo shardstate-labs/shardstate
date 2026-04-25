@@ -198,6 +198,12 @@
       if (error) return { error };
       return data || { error:'unknown' };
     },
+    async buyBattlePassWithFlux(){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('buy_battle_pass_with_flux');
+      if (error) return { error };
+      return data || { error:'unknown' };
+    },
 
     // ── Custom cards (admin-authored) ───────────────────────────
     async loadCustomCards(){

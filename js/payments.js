@@ -5,11 +5,11 @@
  *
  * Setup checklist (do this in the Polar dashboard before flipping the UI):
  *   1) Create products with these EXACT names:
- *        BP_PREMIUM   ($9.99)
- *        FLUX_PACK_S  ($1.99)   →  +200 FLUX
- *        FLUX_PACK_M  ($4.99)   →  +650 FLUX
- *        FLUX_PACK_L  ($9.99)   →  +1700 FLUX
- *        FLUX_PACK_XL ($19.99)  →  +4800 FLUX
+ *        BP_PREMIUM ($20.00) → Premium Battle Pass
+ *        FLUX_5     ($5.00)  → +5 FLUX
+ *        FLUX_10    ($10.00) → +10 FLUX
+ *        FLUX_30    ($30.00) → +30 FLUX
+ *        FLUX_50    ($50.00) → +50 FLUX
  *   2) Copy each product's `Buy Link` (https://buy.polar.sh/<org>/<product_slug>)
  *      into POLAR_LINKS below, OR set window.SHS_CONFIG.POLAR_BUY_LINKS to the same map.
  *   3) Configure webhook → URL =
@@ -30,11 +30,11 @@
   // Per-product buy-link map. Populate after creating products in Polar.
   // Override at runtime via window.SHS_CONFIG.POLAR_BUY_LINKS = { ... }.
   const POLAR_LINKS = {
-    BP_PREMIUM:   '',
-    FLUX_PACK_S:  '',
-    FLUX_PACK_M:  '',
-    FLUX_PACK_L:  '',
-    FLUX_PACK_XL: '',
+    BP_PREMIUM: '',
+    FLUX_5:     '',
+    FLUX_10:    '',
+    FLUX_30:    '',
+    FLUX_50:    '',
   };
 
   function buyLink(product){
@@ -53,7 +53,7 @@
   const SHS_PAY = {
     /** Open a Polar checkout for the given product. Resolves once the new
      *  tab is opened (does NOT wait for payment).
-     *  @param {string} product  e.g. 'BP_PREMIUM' | 'FLUX_PACK_M'
+     *  @param {string} product  e.g. 'BP_PREMIUM' | 'FLUX_30'
      *  @return {Promise<{ok:boolean, error?:string}>}
      */
     async checkout(product){

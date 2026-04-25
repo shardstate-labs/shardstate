@@ -7,7 +7,7 @@ Last updated: 2026-04-25
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=22`.
+- Current asset cache version: `v=23`.
 
 ## Live URLs
 
@@ -74,6 +74,17 @@ Future modes are intentionally not enabled yet:
 - PvP end screen parses server rewards from `finalize_pvp_match`.
 - Surrender uses an in-game modal with 10s timeout, not browser `confirm()`.
 
+### Battle Pass Economy
+
+- Free track: small SHARDS rewards every 3 levels.
+- Premium price: `20 FLUX` (`1 FLUX = 1 USD`).
+- Premium rewards:
+  - `1 FLUX` every 5 levels.
+  - Random common/uncommon non-TITANS, non-GRAND card every 9 levels.
+  - Random GRAND card at level 30.
+- Premium purchase is server-authoritative through `buy_battle_pass_with_flux()`.
+- Battle Pass claims are server-authoritative through `claim_battle_pass()`.
+
 ### UX / Polish
 
 - Game supports Spanish and English toggle in combat.
@@ -93,6 +104,12 @@ Future modes are intentionally not enabled yet:
 - Frontend helper: `js/payments.js`.
 - Provider currently scaffolded as Polar.sh Merchant of Record, not Stripe.
 - Product buy links and `POLAR_WEBHOOK_SECRET` still need real production configuration before enabling checkout UX fully.
+- FLUX purchase products prepared: `FLUX_5`, `FLUX_10`, `FLUX_30`, `FLUX_50`.
+- Pack shop products:
+  - 4-card pack: `5 FLUX`.
+  - 8-card pack: `10 FLUX`.
+  - 20-card pack: `20 FLUX`.
+- Paid packs share the same weighted rarity rates and exclude TITANS and GRAND cards.
 
 ## Pending Priorities
 

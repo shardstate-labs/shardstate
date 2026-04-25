@@ -14,11 +14,11 @@
 //   - Enable signing → copy the secret into POLAR_WEBHOOK_SECRET
 //
 // Product mapping (set in Polar dashboard, name MUST match exactly):
-//   - "BP_PREMIUM"   → grants Battle Pass Premium ($9.99 one-shot)
-//   - "FLUX_PACK_S"  → +200  FLUX
-//   - "FLUX_PACK_M"  → +650  FLUX (incl. +50 bonus)
-//   - "FLUX_PACK_L"  → +1700 FLUX (incl. +200 bonus)
-//   - "FLUX_PACK_XL" → +4800 FLUX (incl. +800 bonus)
+//   - "BP_PREMIUM" → grants Battle Pass Premium ($20 one-shot)
+//   - "FLUX_5"     → +5  FLUX
+//   - "FLUX_10"    → +10 FLUX
+//   - "FLUX_30"    → +30 FLUX
+//   - "FLUX_50"    → +50 FLUX
 //
 // At checkout time the frontend (js/payments.js) MUST attach `metadata.shs_uid`
 // equal to the Supabase user.id so this handler can resolve the recipient.
@@ -33,10 +33,10 @@ const SECRET  = Deno.env.get('POLAR_WEBHOOK_SECRET') || '';
 const sb = createClient(SB_URL, SB_SVC, { auth: { persistSession: false } });
 
 const FLUX_GRANTS: Record<string, number> = {
-  FLUX_PACK_S:  200,
-  FLUX_PACK_M:  650,
-  FLUX_PACK_L:  1700,
-  FLUX_PACK_XL: 4800,
+  FLUX_5:  5,
+  FLUX_10: 10,
+  FLUX_30: 30,
+  FLUX_50: 50,
 };
 
 // ── HMAC-SHA256 signature verification ──────────────────────────────

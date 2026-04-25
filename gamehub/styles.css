@@ -337,6 +337,7 @@ textarea.input-dark{resize:vertical;min-height:68px}
 @keyframes bp-icon-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 .bp-rew-grand .bp-rew-label{color:#fbbf24;text-shadow:0 0 6px rgba(251,191,36,.4)}
 .bp-rew-flux .bp-rew-label{color:#9b59b6}
+.bp-rew-card .bp-rew-label{color:#60a5fa}
 .bp-rew-shards .bp-rew-label{color:#00FFC6}
 .bp-progress-track{position:relative;height:34px;display:flex;flex-direction:row;background:rgba(0,0,0,.4);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .bp-progress-rail{position:absolute;top:50%;left:0;right:0;height:6px;transform:translateY(-50%);background:rgba(255,255,255,.06);border-radius:3px;margin:0 12px}
@@ -489,7 +490,28 @@ textarea.input-dark{resize:vertical;min-height:68px}
 /* ══════════════════════════════════════════════════════════
    PANEL: SHOP
 ══════════════════════════════════════════════════════════ */
-.packs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:20px}
+.flux-shop-panel{
+  display:grid;grid-template-columns:minmax(260px,1fr) minmax(320px,1.35fr);
+  gap:14px;align-items:stretch;margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(0,255,198,.08),rgba(96,165,250,.05));
+  border:1px solid rgba(0,255,198,.16);border-radius:8px;padding:16px;
+}
+.flux-shop-copy p{font-size:.86rem;color:var(--text);line-height:1.5;max-width:680px}
+.flux-rate{display:inline-flex;margin-top:12px;padding:4px 9px;border-radius:3px;border:1px solid rgba(0,255,198,.25);background:rgba(0,255,198,.08);font-family:var(--font-head);font-size:.68rem;color:var(--acc);letter-spacing:.08em}
+.flux-bundles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.flux-bundle{
+  min-height:126px;padding:14px 10px;border-radius:8px;border:1px solid var(--border2);
+  background:radial-gradient(circle at 50% 0%,rgba(96,165,250,.18),transparent 58%),var(--bg2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  transition:all var(--tr);position:relative;overflow:hidden;
+}
+.flux-bundle:hover{border-color:#60a5fa;transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.36),0 0 18px rgba(96,165,250,.18)}
+.flux-bundle-amount{font-family:var(--font-head);font-size:1.75rem;font-weight:900;color:#60a5fa;line-height:1;text-shadow:0 0 14px rgba(96,165,250,.45)}
+.flux-bundle-label{font-family:var(--font-head);font-size:.62rem;letter-spacing:.18em;color:var(--text2)}
+.flux-bundle-price{font-family:var(--font-head);font-size:.82rem;color:var(--text);margin-top:4px}
+.flux-bundle-cta{margin-top:6px;padding:3px 8px;border-radius:3px;background:rgba(0,255,198,.12);color:var(--acc);font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.pack-drop-note{margin:0 0 10px;padding:9px 12px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,.025);font-size:.75rem;color:var(--text2)}
+.packs-grid{display:grid;grid-template-columns:repeat(3,minmax(210px,1fr));gap:12px;margin-bottom:20px}
 .pack-card{
   background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
   padding:22px 18px;text-align:center;cursor:pointer;
@@ -524,6 +546,7 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .pack-cost-claimed{font-family:var(--font-head);font-size:0.75rem;color:var(--text2);letter-spacing:0.08em}
 @keyframes welcome-pack-pulse{0%,100%{box-shadow:0 0 0 1px var(--acc),0 8px 32px rgba(0,255,198,0.15)}50%{box-shadow:0 0 0 2px var(--acc),0 12px 48px rgba(0,255,198,0.35)}}
 @keyframes welcome-icon-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.08)}}
+@media(max-width:980px){.flux-shop-panel{grid-template-columns:1fr}.flux-bundles{grid-template-columns:repeat(2,1fr)}.packs-grid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}}
 .pack-reveal-grid{display:flex;gap:12px;flex-wrap:wrap;padding:4px 0}
 .pack-reveal-card{animation:revealCard 0.45s ease-out both}
 @keyframes revealCard{from{opacity:0;transform:scale(0.72) translateY(18px) rotateY(22deg)}to{opacity:1;transform:none}}

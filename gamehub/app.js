@@ -30,11 +30,11 @@ const view = {
 const I18N = {
   es: {
     nav_play:'JUGAR AHORA', nav_learn:'APRENDER', nav_missions:'MISIONES', nav_battlepass:'PASE DE BATALLA',
-    panel_battlepass_title:'Pase de Batalla', panel_battlepass_sub:'30 días · 30 niveles · Gana SHARDS, FLUX y una carta GRAND aleatoria',
+    panel_battlepass_title:'Pase de Batalla', panel_battlepass_sub:'30 días · 30 niveles · Premium: FLUX, cartas random y una GRAND en nivel 30',
     bp_buy_premium:'Comprar Pase Premium', bp_owned:'Pase Premium activo', bp_locked_premium:'Premium', bp_claim:'Reclamar', bp_claimed:'Reclamado', bp_buy_with:'Comprar con',
     bp_xp_label:'XP del pase', bp_level:'Nivel', bp_required:'XP requerido',
     bp_ends_in:'Termina en', bp_days:'d', bp_hours:'h', bp_min:'min',
-    bp_reward_shards:'SHARDS', bp_reward_flux:'FLUX', bp_reward_grand:'1 carta GRAND',
+    bp_reward_shards:'SHARDS', bp_reward_flux:'FLUX', bp_reward_grand:'1 carta GRAND', bp_reward_card:'Carta random',
     nav_community:'COMUNIDAD', coll_search_ph:'Buscar cartas…',
     nav_jugar:'JUGAR', nav_perfil:'PERFIL', nav_coleccion:'COLECCIÓN',
     nav_mercado:'MERCADO', nav_guilds:'GUILDS', nav_shop:'PACK SHOP',
@@ -51,7 +51,7 @@ const I18N = {
     panel_coleccion_sub:'Deck activo, presets y cartas',
     panel_mercado_sub:'Listar cartas y revisar historial de transacciones',
     panel_guilds_sub:'Crea, personaliza y gestiona solicitudes',
-    panel_shop_sub:'Compra packs con FLUX o $SHS',
+    panel_shop_sub:'Recarga FLUX y compra packs de cartas',
     deck_active:'Deck Activo', preset_save:'Guardar', preset_load:'Cargar',
     preset_name_ph:'Nombre del preset…',
     preset_share:'Compartir a Comunidad',
@@ -83,8 +83,12 @@ const I18N = {
     guild_cost:'100 FLUX',
     guild_join_btn:'Solicitar ingreso', guild_approve_btn:'Aceptar', guild_deny_btn:'Rechazar',
     guild_cost:'100 FLUX',
-    pack_flux_name:'Pack FLUX', pack_flux_desc:'4 cartas aleatorias · Común → Rara',
-    pack_shs_name:'Pack $SHS', pack_shs_desc:'4 cartas aleatorias · Inusual garantizada',
+    flux_shop_title:'Recargar FLUX', flux_shop_sub:'Con tus FLUX podrás comprar packs de cartas, el Battle Pass Premium, entrar a torneos... ¡y mucho más!',
+    flux_buy_btn:'Comprar', pack_drop_note:'Mismas probabilidades en todos los packs · Sin TITANS ni GRAND',
+    pack_4_name:'Pack de 4 cartas', pack_4_desc:'4 cartas aleatorias · todos los clanes principales',
+    pack_8_name:'Pack de 8 cartas', pack_8_desc:'8 cartas aleatorias · todos los clanes principales',
+    pack_20_name:'Pack de 20 cartas', pack_20_desc:'20 cartas aleatorias · todos los clanes principales',
+    pack_rates:'Drops: Común alta · Inusual baja · Rara muy baja · Mítica ultra baja',
     pack_open_btn:'Abrir Pack', pack_last:'Última apertura',
     mode_classic:'CASUAL', mode_classic_sub:'PvP off-chain · Sin ELO',
     mode_ranked:'RANKED', mode_ranked_sub:'ELO semanal off-chain',
@@ -121,11 +125,11 @@ const I18N = {
   },
   en: {
     nav_play:'PLAY NOW', nav_learn:'LEARN', nav_missions:'MISSIONS', nav_battlepass:'BATTLE PASS',
-    panel_battlepass_title:'Battle Pass', panel_battlepass_sub:'30 days · 30 levels · Earn SHARDS, FLUX and a random GRAND card',
+    panel_battlepass_title:'Battle Pass', panel_battlepass_sub:'30 days · 30 levels · Premium: FLUX, random cards and a GRAND at level 30',
     bp_buy_premium:'Buy Premium Pass', bp_owned:'Premium Pass active', bp_locked_premium:'Premium', bp_claim:'Claim', bp_claimed:'Claimed', bp_buy_with:'Buy with',
     bp_xp_label:'Pass XP', bp_level:'Level', bp_required:'XP required',
     bp_ends_in:'Ends in', bp_days:'d', bp_hours:'h', bp_min:'min',
-    bp_reward_shards:'SHARDS', bp_reward_flux:'FLUX', bp_reward_grand:'1 GRAND card',
+    bp_reward_shards:'SHARDS', bp_reward_flux:'FLUX', bp_reward_grand:'1 GRAND card', bp_reward_card:'Random card',
     nav_community:'COMMUNITY', coll_search_ph:'Search cards…',
     nav_jugar:'PLAY', nav_perfil:'PROFILE', nav_coleccion:'COLLECTION',
     nav_mercado:'MARKET', nav_guilds:'GUILDS', nav_shop:'PACK SHOP',
@@ -142,7 +146,7 @@ const I18N = {
     panel_coleccion_sub:'Active deck, presets and cards',
     panel_mercado_sub:'List cards and review transaction history',
     panel_guilds_sub:'Create, customize and manage guild requests',
-    panel_shop_sub:'Buy packs with FLUX or $SHS',
+    panel_shop_sub:'Top up FLUX and buy card packs',
     deck_active:'Active Deck', preset_save:'Save', preset_load:'Load',
     preset_name_ph:'Preset name…',
     preset_share:'Share to Community',
@@ -172,8 +176,12 @@ const I18N = {
     learn_tab_clans:'Clans', learn_tab_cards:'Mechanics',
     guild_join_btn:'Request to join', guild_approve_btn:'Approve', guild_deny_btn:'Decline',
     guild_cost:'100 FLUX',
-    pack_flux_name:'FLUX Pack', pack_flux_desc:'4 random cards · Common → Rare',
-    pack_shs_name:'$SHS Pack', pack_shs_desc:'4 random cards · Uncommon guaranteed',
+    flux_shop_title:'Top Up FLUX', flux_shop_sub:'Use FLUX to buy card packs, unlock the Premium Battle Pass, enter tournaments... and much more.',
+    flux_buy_btn:'Buy', pack_drop_note:'Same drop rates in every pack · No TITANS or GRAND cards',
+    pack_4_name:'4-card Pack', pack_4_desc:'4 random cards · all main clans',
+    pack_8_name:'8-card Pack', pack_8_desc:'8 random cards · all main clans',
+    pack_20_name:'20-card Pack', pack_20_desc:'20 random cards · all main clans',
+    pack_rates:'Drops: Common high · Uncommon low · Rare very low · Mythic ultra low',
     pack_open_btn:'Open Pack', pack_last:'Last opened',
     mode_classic:'CASUAL', mode_classic_sub:'Off-chain PvP · No ELO',
     mode_ranked:'RANKED', mode_ranked_sub:'Weekly off-chain ELO',
@@ -1301,19 +1309,22 @@ const BP_XP_PER_LEVEL = 200;
 const BP_TOTAL_XP = BP_LEVELS * BP_XP_PER_LEVEL;
 const BP_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const BP_PRICE_USD = 20;
-function bpRewardFor(level){
-  if (level === 30) return { kind:'grand_card', label:'1 GRAND' };
-  if (level === 25) return { kind:'flux', amount:1, label:'1 FLUX' };
-  const milestones = {5:200, 10:400, 15:600, 20:800};
-  return { kind:'shards', amount: milestones[level] || 100, label:`${milestones[level]||100} SHARDS` };
+function bpRewardFor(level, track){
+  if (track === 'free') {
+    if (level % 3 !== 0) return null;
+    const amount = level === 30 ? 150 : (level % 9 === 0 ? 90 : 60);
+    return { kind:'shards', amount, label:`${amount} SHARDS` };
+  }
+  if (track === 'premium') {
+    if (level === 30) return { kind:'grand_card', label:'1 GRAND' };
+    if (level % 9 === 0) return { kind:'random_card', label: currentLang === 'es' ? 'Carta random' : 'Random card' };
+    if (level % 5 === 0) return { kind:'flux', amount:1, label:'1 FLUX' };
+    return null;
+  }
+  return null;
 }
 function bpPricing(){
-  const rates = (window.ORACLE_RATES) || { flux_usd: 2.0, shs_usd: 0.15 };
-  return {
-    usd: BP_PRICE_USD,
-    flux: Math.ceil(BP_PRICE_USD / rates.flux_usd),
-    shs:  Math.ceil(BP_PRICE_USD / rates.shs_usd),
-  };
+  return { usd: BP_PRICE_USD, flux: BP_PRICE_USD };
 }
 function ensureBpState(){
   const u = view.user; if (!u) return null;
@@ -1338,24 +1349,33 @@ function formatBpTime(ms){
   const m = Math.floor((ms % 3600000) / 60000);
   return d > 0 ? `${d}d ${h}h` : (h > 0 ? `${h}h ${m}min` : `${m}min`);
 }
-function buyBattlePass(currency){
+async function buyBattlePass(currency){
   const bp = ensureBpState(); if (!bp) return;
   const p = bpPricing();
+  if (!window.SB || !SB.buyBattlePassWithFlux) return toast('Sin conexión al servidor.');
+  if (!view.user || !view.user.uid) return toast('Iniciá sesión.');
   if (currency === 'flux') {
     if ((view.state.flux||0) < p.flux) return toast(`Necesitas ${p.flux} FLUX.`);
-    view.state.flux -= p.flux;
-  } else if (currency === 'shs') {
-    if ((view.state.shs||0) < p.shs) return toast(`Necesitas ${p.shs} $SHS.`);
-    view.state.shs -= p.shs;
   } else { return; }
+  const r = await SB.buyBattlePassWithFlux();
+  if (r?.error) {
+    const msg = ({
+      not_authenticated:'Iniciá sesión.',
+      already_premium:'Ya tenés Premium activo.',
+      not_enough_flux:`Necesitas ${p.flux} FLUX.`,
+    })[r.error] || ('Error: ' + (r.error.message || r.error));
+    return toast(msg);
+  }
+  view.state.flux = r.flux ?? Math.max(0, (view.state.flux||0) - p.flux);
   bp.premium = true;
-  persistToUser(); syncTopbar(); renderBattlePass();
+  await refreshFromSupabase();
+  syncTopbar(); renderBattlePass();
   toast('⭐ Battle Pass Premium activado');
 }
 window.buyBattlePass = buyBattlePass;
 async function claimBpLevel(level, track){
   // Default the track if the caller didn't pass one (older buttons).
-  if (!track) track = (level === 1 || level % 5 === 0) ? 'free' : 'premium';
+  if (!track) track = bpRewardFor(level, 'free') ? 'free' : 'premium';
   if (!window.SB || !SB.claimBattlePass) return toast('Sin conexión al servidor.');
   if (!view.user || !view.user.uid) return toast('Iniciá sesión.');
   const r = await SB.claimBattlePass(level|0, String(track));
@@ -1364,8 +1384,11 @@ async function claimBpLevel(level, track){
       not_authenticated:    'Iniciá sesión.',
       invalid_track:        'Pista inválida.',
       level_locked:         'Aún no alcanzaste ese nivel.',
+      not_enough_xp:        'Aún no alcanzaste ese nivel.',
       already_claimed:      'Ya lo reclamaste.',
       premium_required:     'Requiere Pase Premium.',
+      not_premium:          'Requiere Pase Premium.',
+      no_reward:            'No hay recompensa en este nivel.',
     })[r.error] || ('Error: ' + r.error);
     return toast(msg);
   }
@@ -1374,7 +1397,9 @@ async function claimBpLevel(level, track){
     if (k === 'shards') toast(`+${r.reward.amount} SHARDS`);
     else if (k === 'flux') toast(`+${r.reward.amount} FLUX`);
     else if (k === 'grand_card') toast(`👑 ${r.reward.card_id || 'Grand'}`);
-    else toast('Reclamado.');
+    else if (k === 'random_card') toast(`+ ${r.reward.card_id || (currentLang==='es'?'Carta':'Card')}`);
+  } else if (typeof r?.reward === 'number') {
+    toast(`+${r.reward} SHARDS`);
   } else {
     toast('Reclamado.');
   }
@@ -1398,9 +1423,8 @@ function renderBattlePass(){
          <div class="bp-buy-title">${L==='es'?'Desbloquear Premium':'Unlock Premium'} · $${p.usd}</div>
          <div class="bp-buy-row">
            <button class="btn btn-primary btn-sm" onclick="buyBattlePass('flux')">${p.flux} ⚡ FLUX</button>
-           <button class="btn btn-secondary btn-sm" onclick="buyBattlePass('shs')">${p.shs} ◎ $SHS</button>
          </div>
-         <div class="bp-buy-hint">${L==='es'?'El pase free solo da el nivel 1.':'Free pass only grants level 1.'}</div>
+         <div class="bp-buy-hint">${L==='es'?'Free: pocos SHARDS cada 3 niveles. Premium: FLUX, cartas y GRAND nivel 30.':'Free: small SHARDS every 3 levels. Premium: FLUX, cards and GRAND at level 30.'}</div>
        </div>`;
   const header = `
     <div class="bp-header">
@@ -1424,19 +1448,17 @@ function renderBattlePass(){
   const fillPx = Math.min(trackPx, fillSegments * segWidth);
 
   const tier = (level, isPremium) => {
-    const r = bpRewardFor(level);
+    const r = bpRewardFor(level, isPremium ? 'premium' : 'free');
+    if (!r) return `<div class="bp-cell bp-cell-empty" style="width:${segWidth}px"></div>`;
     const reached = level <= lvl;
     const track = isPremium ? 'premium' : 'free';
     const claimedKey = `${level}:${track}`;
-    const claimedSet = new Set((bp.claimedLevels || []).map(x => typeof x === 'string' ? x : `${x}:${level === 1 || level % 5 === 0 ? 'free' : 'premium'}`));
+    const claimedSet = new Set((bp.claimedLevels || []).map(x => typeof x === 'string' ? x : `${x}:${track}`));
     const claimed = claimedSet.has(claimedKey);
-    const isFreeLevel = (level === 1 || level % 5 === 0);
     const lockedByTier = isPremium ? !bp.premium : false;
-    const visibleRow = isPremium ? !isFreeLevel : isFreeLevel;
-    if (!visibleRow) return `<div class="bp-cell bp-cell-empty" style="width:${segWidth}px"></div>`;
     const canClaim = reached && !claimed && !lockedByTier;
-    const icon = r.kind==='grand_card' ? '👑' : r.kind==='flux' ? '⚡' : '◈';
-    const cls = r.kind==='grand_card' ? 'bp-rew-grand' : r.kind==='flux' ? 'bp-rew-flux' : 'bp-rew-shards';
+    const icon = r.kind==='grand_card' ? '👑' : r.kind==='flux' ? '⚡' : r.kind==='random_card' ? '▣' : '◈';
+    const cls = r.kind==='grand_card' ? 'bp-rew-grand' : r.kind==='flux' ? 'bp-rew-flux' : r.kind==='random_card' ? 'bp-rew-card' : 'bp-rew-shards';
     const stateCls = claimed ? 'claimed' : reached ? 'ready' : 'pending';
     return `
       <div class="bp-cell ${stateCls} ${lockedByTier?'locked':''}" style="width:${segWidth}px">
@@ -1627,25 +1649,61 @@ function submitComment(threadId) {
 }
 
 // ── RENDER: PACKS ──────────────────────────────────────────────
-// Oracle: convert USD price to FLUX/$SHS at request time.
-// Window.ORACLE_RATES can be hot-swapped by a real oracle later.
-function oracleQuote(usd){
-  const rates = (window.ORACLE_RATES) || { flux_usd: 2.0, shs_usd: 0.15 };
-  return { usd, flux: Math.max(1, Math.ceil(usd / rates.flux_usd)), shs: Math.max(1, Math.ceil(usd / rates.shs_usd)) };
-}
-const PACKS_DATA = [
-  { id:'welcome', name:{es:'Pack Bienvenida',en:'Welcome Pack'}, desc:{es:'8 cartas de regalo · Una sola vez · Gratuito',en:'8 free cards · One-time only · Free'}, costType:'welcome', usd:0,  color:'#00FFC6', icon:'🎁', cards:8, rarGuarantee:null },
-  { id:'shard',   name:{es:'Pack Shard',en:'Shard Pack'},        desc:{es:'3 cartas · Inusual garantizada',en:'3 cards · Uncommon guaranteed'},                  costType:'oracle',  usd:5,  color:'#F59E0B', icon:'◎', cards:3, rarGuarantee:'U' },
-  { id:'clan',    name:{es:'Pack Clan',en:'Clan Pack'},          desc:{es:'4 cartas · Todas del mismo clan',en:'4 cards · All from one clan'},                   costType:'oracle',  usd:7,  color:'#00FFC6', icon:'🧬', cards:4, rarGuarantee:null, randomClan:true },
-  { id:'elite',   name:{es:'Pack Élite',en:'Elite Pack'},        desc:{es:'4 cartas · Rara garantizada · Sin duplicados',en:'4 cards · Rare guaranteed · No dupes'}, costType:'oracle', usd:10, color:'#a855f7', icon:'🔮', cards:4, rarGuarantee:'R' },
-  // Pack TITANS removed: TITAN cards drop only as mission rewards.
-  { id:'grand',   name:{es:'Pack GRAND',en:'GRAND Pack'},        desc:{es:'5 cartas · Posible GRAND · Mítica posible',en:'5 cards · Chance of a GRAND · Mythic possible'}, costType:'oracle', usd:18, color:'#fbbf24', icon:'👑', cards:5, grandChance:0.25, rarGuarantee:'R' },
-  { id:'premium', name:{es:'Pack Premium',en:'Premium Pack'},    desc:{es:'6 cartas · Mítica garantizada',en:'6 cards · Mythic guaranteed'},                     costType:'oracle',  usd:22, color:'#d946ef', icon:'💎', cards:6, rarGuarantee:'M' },
+const FLUX_BUNDLES = [
+  { product:'FLUX_5',  flux:5,  usd:5 },
+  { product:'FLUX_10', flux:10, usd:10 },
+  { product:'FLUX_30', flux:30, usd:30 },
+  { product:'FLUX_50', flux:50, usd:50 },
 ];
+const PACKS_DATA = [
+  { id:'welcome', name:{es:'Pack Bienvenida',en:'Welcome Pack'}, desc:{es:'8 cartas de regalo · Una sola vez · Gratuito',en:'8 free cards · One-time only · Free'}, costType:'welcome', cost:0,  color:'#00FFC6', icon:'🎁', cards:8 },
+  { id:'pack_4',  name:{es:'Pack de 4 cartas',en:'4-card Pack'},  desc:{es:'4 cartas aleatorias · todos los clanes principales',en:'4 random cards · all main clans'}, costType:'flux', cost:5,  color:'#00FFC6', icon:'▣', cards:4 },
+  { id:'pack_8',  name:{es:'Pack de 8 cartas',en:'8-card Pack'},  desc:{es:'8 cartas aleatorias · todos los clanes principales',en:'8 random cards · all main clans'}, costType:'flux', cost:10, color:'#9B59B6', icon:'▦', cards:8 },
+  { id:'pack_20', name:{es:'Pack de 20 cartas',en:'20-card Pack'},desc:{es:'20 cartas aleatorias · todos los clanes principales',en:'20 random cards · all main clans'}, costType:'flux', cost:20, color:'#F59E0B', icon:'▩', cards:20 },
+];
+function renderFluxShop(){
+  const el = byId('flux-shop-root');
+  if (!el) return;
+  const L = currentLang;
+  el.innerHTML = `
+    <section class="flux-shop-panel">
+      <div class="flux-shop-copy">
+        <div class="block-title">${t('flux_shop_title')}</div>
+        <p>${t('flux_shop_sub')}</p>
+        <div class="flux-rate">1 FLUX = 1 USD</div>
+      </div>
+      <div class="flux-bundles">
+        ${FLUX_BUNDLES.map(b => `
+          <button class="flux-bundle" onclick="buyFluxBundle('${b.product}')">
+            <span class="flux-bundle-amount">${b.flux}</span>
+            <span class="flux-bundle-label">FLUX</span>
+            <span class="flux-bundle-price">$${b.usd}</span>
+            <span class="flux-bundle-cta">${t('flux_buy_btn')}</span>
+          </button>`).join('')}
+      </div>
+    </section>`;
+  el.insertAdjacentHTML('beforeend', `<div class="pack-drop-note">${t('pack_drop_note')}</div>`);
+}
+async function buyFluxBundle(product){
+  const bundle = FLUX_BUNDLES.find(x => x.product === product);
+  if (!bundle) return;
+  if (!window.SHS_PAY || !SHS_PAY.checkout) {
+    return toast(currentLang==='es'?'Checkout todavía no configurado.':'Checkout is not configured yet.');
+  }
+  const r = await SHS_PAY.checkout(product);
+  if (!r?.ok) {
+    const msg = r?.error === 'product_not_configured'
+      ? (currentLang==='es'?'Producto de FLUX pendiente de configurar en Polar.':'FLUX product still needs a Polar link.')
+      : (currentLang==='es'?'No se pudo abrir checkout.':'Could not open checkout.');
+    return toast(msg);
+  }
+}
+window.buyFluxBundle = buyFluxBundle;
 function renderPacks() {
   const el = byId('packs-grid');
   if (!el) return;
   const L = currentLang;
+  renderFluxShop();
   el.innerHTML = PACKS_DATA.map(p => {
     const isWelcome = p.costType === 'welcome';
     const accountClaimed = isWelcome && (view.user?.gameState?.welcomePackClaimed || view.state.welcomePackClaimed);
@@ -1656,13 +1714,9 @@ function renderPacks() {
         : `<span class="pack-cost-free">${L==='es'?'¡GRATIS!':'FREE!'}</span>`;
       payButtons = `<button class="pack-btn${accountClaimed?' pack-btn-disabled':''}" data-pack-id="${p.id}" data-pay="welcome" ${accountClaimed?'disabled':''}>${accountClaimed ? (L==='es'?'Reclamado':'Claimed') : (L==='es'?'¡Reclamar!':'Claim Now!')}</button>`;
     } else {
-      const q = oracleQuote(p.usd);
-      costLine = `<span class="pack-cost-amount">$${q.usd}</span><span class="pack-cost-or">${L==='es'?'oráculo':'oracle'}</span>`;
+      costLine = `<span class="pack-cost-amount">${p.cost}</span><span class="pack-cost-currency">FLUX</span>`;
       payButtons = `
-        <div class="pack-pay-row">
-          <button class="pack-btn pack-btn-flux" data-pack-id="${p.id}" data-pay="flux" title="${L==='es'?'Pagar con FLUX':'Pay with FLUX'}">${q.flux} ⚡ FLUX</button>
-          <button class="pack-btn pack-btn-shs" data-pack-id="${p.id}" data-pay="shs" title="${L==='es'?'Pagar con $SHS':'Pay with $SHS'}">${q.shs} ◎ $SHS</button>
-        </div>`;
+        <button class="pack-btn pack-btn-flux" data-pack-id="${p.id}" data-pay="flux" title="${L==='es'?'Pagar con FLUX':'Pay with FLUX'}">${L==='es'?'Abrir':'Open'}</button>`;
     }
     const wrapClass = `pack-card${isWelcome?' pack-card-welcome':''}${accountClaimed?' pack-card-claimed':''}`;
     return `<div class="${wrapClass}" style="--pc-color:${p.color};--pc-glow:${p.color}22">
@@ -1670,6 +1724,7 @@ function renderPacks() {
       <div class="pack-icon">${p.icon}</div>
       <div class="pack-name">${p.name[L]||p.name.es}</div>
       <div class="pack-desc">${p.desc[L]||p.desc.es}</div>
+      ${!isWelcome?`<div class="pack-guarantee"><span class="pack-guarantee-tag">${t('pack_rates')}</span></div>`:''}
       <div class="pack-cost">${costLine}</div>
       ${payButtons}
     </div>`;
@@ -1702,15 +1757,34 @@ function renderShop() {
 // ── PACK OPENING ───────────────────────────────────────────────
 function randomCards(n, opts={}) {
   let pool = [...((typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]))];
-  // TITANS-clan cards are mission-only rewards — always exclude from packs.
-  pool = pool.filter(c => c.clan !== 'titans');
+  // TITANS and GRAND cards are excluded from packs; they are special rewards.
+  pool = pool.filter(c => c.clan !== 'titans' && c.type !== 'grand');
   if (opts.clan) pool = pool.filter(c => c.clan === opts.clan);
-  if (opts.minRar) {
-    const ORDER = {C:0,U:1,R:2,M:3};
-    pool = pool.filter(c => (ORDER[c.rar]||0) >= (ORDER[opts.minRar]||0));
+  const byRar = {
+    C: pool.filter(c => c.rar === 'C'),
+    U: pool.filter(c => c.rar === 'U'),
+    R: pool.filter(c => c.rar === 'R'),
+    M: pool.filter(c => c.rar === 'M'),
+  };
+  const rates = opts.rates || { C:78, U:17, R:4, M:1 };
+  const rarRoll = () => {
+    const total = Object.values(rates).reduce((a,b)=>a+b,0);
+    let r = Math.random() * total;
+    for (const key of ['C','U','R','M']) {
+      r -= rates[key] || 0;
+      if (r <= 0) return key;
+    }
+    return 'C';
+  };
+  const out = [];
+  for (let i=0; i<n; i++) {
+    let bucket = rarRoll();
+    let candidates = byRar[bucket] || [];
+    if (!candidates.length) candidates = pool;
+    if (!candidates.length) break;
+    out.push(candidates[Math.floor(Math.random() * candidates.length)]);
   }
-  pool.sort(() => Math.random() - 0.5);
-  return pool.slice(0, Math.max(0, n));
+  return out;
 }
 function addCardToCollection(cardId) {
   const cur = view.state.collection[cardId];
@@ -1742,48 +1816,23 @@ function openPackById(packId, payWith) {
     }
     view.state.welcomePackClaimed = true;
     paidWith = 'welcome';
-  } else if (p.costType === 'oracle') {
-    const q = oracleQuote(p.usd);
+  } else if (p.costType === 'flux') {
     if (payWith === 'flux') {
-      if ((view.state.flux||0) < q.flux) return toast(`⚡ Necesitas ${q.flux} FLUX.`);
-      view.state.flux -= q.flux;
-      paidWith = 'flux'; cost = q.flux;
-    } else if (payWith === 'shs') {
-      if ((view.state.shs||0) < q.shs) return toast(`◎ Necesitas ${q.shs} $SHS.`);
-      view.state.shs -= q.shs;
-      paidWith = 'shs'; cost = q.shs;
+      if ((view.state.flux||0) < p.cost) return toast(`⚡ Necesitas ${p.cost} FLUX.`);
+      view.state.flux -= p.cost;
+      paidWith = 'flux'; cost = p.cost;
     } else {
-      return toast(currentLang==='es'?'Elige FLUX o $SHS.':'Pick FLUX or $SHS.');
+      return toast(currentLang==='es'?'Elegí pagar con FLUX.':'Choose FLUX payment.');
     }
   }
   // Draw cards
   const opts = {};
-  if (p.clanFilter) opts.clan = p.clanFilter;
-  if (p.randomClan) {
-    const clans = ['nexus','tidecall','ashborn','errvoid','vault','mycelium','ironpact','synthos','loopkin','phantom','frequenz','protocol'];
-    opts.clan = clans[Math.floor(Math.random()*clans.length)];
-  }
-  if (p.costType === 'welcome') opts.excludeEcho = true;
   let cards = randomCards(p.cards, opts);
-  // (Pack TITANS removed — TITAN-clan cards are mission-only rewards.)
-  if (p.grandChance && Math.random() < p.grandChance) {
-    const grands = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]).filter(c => c.type === 'grand');
-    if (grands.length) cards[cards.length-1] = grands[Math.floor(Math.random()*grands.length)];
-  }
   // Welcome pack: no Mythics — reroll any M card
   if (p.costType === 'welcome') {
-    const ORDER = {C:0,U:1,R:2,M:3};
-    const nonMythicPool = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]).filter(c=>c.rar!=='M'&&c.clan!=='echo');
+    const nonMythicPool = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[])
+      .filter(c => c.rar !== 'M' && c.clan !== 'titans' && c.type !== 'grand');
     cards = cards.map(c => c.rar==='M' ? nonMythicPool[Math.floor(Math.random()*nonMythicPool.length)]||c : c);
-  }
-  // Guarantee rarity
-  if (p.rarGuarantee && cards.length) {
-    const ORDER = {C:0,U:1,R:2,M:3};
-    const req = ORDER[p.rarGuarantee]||0;
-    if (!cards.some(c => (ORDER[c.rar]||0) >= req)) {
-      const pool = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]).filter(c => (ORDER[c.rar]||0) >= req);
-      if (pool.length) cards[0] = pool[Math.floor(Math.random()*pool.length)];
-    }
   }
   cards.forEach(c => addCardToCollection(c.id));
   view.lastPack = cards;
