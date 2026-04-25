@@ -84,11 +84,10 @@ const I18N = {
     guild_join_btn:'Solicitar ingreso', guild_approve_btn:'Aceptar', guild_deny_btn:'Rechazar',
     guild_cost:'100 FLUX',
     flux_shop_title:'Recargar FLUX', flux_shop_sub:'Con tus FLUX podrás comprar packs de cartas, el Battle Pass Premium, entrar a torneos... ¡y mucho más!',
-    flux_buy_btn:'Comprar', pack_drop_note:'Mismas probabilidades en todos los packs · Sin TITANS ni GRAND',
+    flux_buy_btn:'Comprar',
     pack_4_name:'Pack de 4 cartas', pack_4_desc:'4 cartas aleatorias · todos los clanes principales',
     pack_8_name:'Pack de 8 cartas', pack_8_desc:'8 cartas aleatorias · todos los clanes principales',
     pack_20_name:'Pack de 20 cartas', pack_20_desc:'20 cartas aleatorias · todos los clanes principales',
-    pack_rates:'Drops: Común alta · Inusual baja · Rara muy baja · Mítica ultra baja',
     pack_open_btn:'Abrir Pack', pack_last:'Última apertura',
     mode_classic:'CASUAL', mode_classic_sub:'PvP off-chain · Sin ELO',
     mode_ranked:'RANKED', mode_ranked_sub:'ELO semanal off-chain',
@@ -177,11 +176,10 @@ const I18N = {
     guild_join_btn:'Request to join', guild_approve_btn:'Approve', guild_deny_btn:'Decline',
     guild_cost:'100 FLUX',
     flux_shop_title:'Top Up FLUX', flux_shop_sub:'Use FLUX to buy card packs, unlock the Premium Battle Pass, enter tournaments... and much more.',
-    flux_buy_btn:'Buy', pack_drop_note:'Same drop rates in every pack · No TITANS or GRAND cards',
+    flux_buy_btn:'Buy',
     pack_4_name:'4-card Pack', pack_4_desc:'4 random cards · all main clans',
     pack_8_name:'8-card Pack', pack_8_desc:'8 random cards · all main clans',
     pack_20_name:'20-card Pack', pack_20_desc:'20 random cards · all main clans',
-    pack_rates:'Drops: Common high · Uncommon low · Rare very low · Mythic ultra low',
     pack_open_btn:'Open Pack', pack_last:'Last opened',
     mode_classic:'CASUAL', mode_classic_sub:'Off-chain PvP · No ELO',
     mode_ranked:'RANKED', mode_ranked_sub:'Weekly off-chain ELO',
@@ -1682,7 +1680,6 @@ function renderFluxShop(){
           </button>`).join('')}
       </div>
     </section>`;
-  el.insertAdjacentHTML('beforeend', `<div class="pack-drop-note">${t('pack_drop_note')}</div>`);
 }
 async function buyFluxBundle(product){
   const bundle = FLUX_BUNDLES.find(x => x.product === product);
@@ -1721,10 +1718,14 @@ function renderPacks() {
     const wrapClass = `pack-card${isWelcome?' pack-card-welcome':''}${accountClaimed?' pack-card-claimed':''}`;
     return `<div class="${wrapClass}" style="--pc-color:${p.color};--pc-glow:${p.color}22">
       ${isWelcome?'<div class="pack-welcome-badge">'+(L==='es'?'NUEVO JUGADOR':'NEW PLAYER')+'</div>':''}
-      <div class="pack-icon">${p.icon}</div>
+      <div class="pack-art pack-art-${p.id}">
+        <div class="pack-art-top">SHARDSTATE</div>
+        <div class="pack-art-sigil">${p.icon}</div>
+        <div class="pack-art-count">${p.cards}</div>
+        <div class="pack-art-caption">${L==='es'?'CARTAS':'CARDS'}</div>
+      </div>
       <div class="pack-name">${p.name[L]||p.name.es}</div>
       <div class="pack-desc">${p.desc[L]||p.desc.es}</div>
-      ${!isWelcome?`<div class="pack-guarantee"><span class="pack-guarantee-tag">${t('pack_rates')}</span></div>`:''}
       <div class="pack-cost">${costLine}</div>
       ${payButtons}
     </div>`;
