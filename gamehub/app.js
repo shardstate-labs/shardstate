@@ -2253,7 +2253,26 @@ function loadCustomCards() {
         _ac.push(c);
       }
     });
+    if (typeof assignAbilities === 'function' && typeof ALL_CARDS !== 'undefined') assignAbilities(ALL_CARDS);
   } catch(_){}
+}
+
+/** Pull admin-published custom cards from Supabase and merge into ALL_CARDS. */
+async function loadCustomCardsRemote(){
+  try {
+    if (!window.SB || !SB.loadCustomCards) return 0;
+    const remote = await SB.loadCustomCards();
+    if (!Array.isArray(remote) || !remote.length) return 0;
+    if (typeof window.applyRemoteCustomCards === 'function') return window.applyRemoteCustomCards(remote);
+    // Fallback if data.js helper isn't loaded (shouldn't happen).
+    const _ac = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:null);
+    if (!_ac) return 0;
+    const idx = new Map(_ac.map((c,i)=>[c.id,i]));
+    let added = 0;
+    remote.forEach(c => { if (idx.has(c.id)) _ac[idx.get(c.id)] = c; else { _ac.push(c); added++; } });
+    if (typeof assignAbilities === 'function') assignAbilities(_ac);
+    return added;
+  } catch(e){ console.warn('loadCustomCardsRemote failed:', e); return 0; }
 }
 
 function applyCustomCardsToCollection() {
@@ -2378,6 +2397,8 @@ async function start() {
         view.user = await hydrateFromSupabase(sess.user);
       }
     } catch(_){}
+    // Always attempt to pull admin-published custom cards (read is open).
+    loadCustomCardsRemote().catch(()=>{});
   }
   if (!view.user) view.user = resolveCurrentUser();
 

@@ -14,6 +14,10 @@ let adminFilter = '';
 function $(id){ return document.getElementById(id); }
 
 function abilityUnlockLv(stars){ return (stars >= 5) ? 4 : 2; }
+function pool_size_for(isTitans){
+  const pools = window.SHS_ABILITY_POOLS || {};
+  return ((isTitans ? pools.TITANS_POOL : pools.NORMAL_POOL) || []).length;
+}
 function interpolateStat(v0, vMax, lv, maxLv){
   if(maxLv <= 1) return vMax;
   const t = (lv - 1) / (maxLv - 1);
@@ -67,13 +71,7 @@ function loadCard(id){
   $('f-dmg1').value   = Array.isArray(c.dmg) ? c.dmg[0] : (c.stats?.level1?.damage ?? c.dmg ?? 1);
   $('f-dmg2').value   = Array.isArray(c.dmg) ? c.dmg[1] : (c.stats?.max?.damage    ?? c.dmg ?? 1);
 
-  const ab = c.abilityData || (c.ability && typeof c.ability === 'object' ? c.ability : null);
-  $('f-condition').value    = ab?.condition || '';
-  $('f-ability-type').value = ab?.type || 'POWER_MOD';
-  $('f-ability').value      = (typeof c.ability === 'string') ? c.ability : (ab?.text || '');
-
-  const bonusText = (typeof c.bonus === 'string') ? c.bonus : (c.bonus?.text || CLAN_DATA[c.clan]?.bonus || '');
-  $('f-bonus').value = bonusText;
+  populateAbilityDropdown(c.clan || 'nexus', c.abilityId || '');
 
   $('f-art2-url').value = c.visual?.image    || '';
   $('f-art1-url').value = c.visual?.imageLv1 || '';
@@ -86,6 +84,21 @@ function loadCard(id){
   showMsg(`Loaded: ${c.name} (${id})`, 'ok');
 }
 
+// Populate ability dropdown filtered by clan (titans-only or normal pool).
+function populateAbilityDropdown(clan, currentId){
+  const sel = $('f-ability-id');
+  if (!sel) return;
+  const isTitans = (clan === 'titans');
+  const pool = (window.SHS_ABILITY_POOLS) ? (isTitans ? window.SHS_ABILITY_POOLS.TITANS_POOL : window.SHS_ABILITY_POOLS.NORMAL_POOL) : [];
+  const cat = window.ABILITY_CATALOG || {};
+  sel.innerHTML = pool.map(id => {
+    const ab = cat[id] || {};
+    return `<option value="${id}">${ab.label || id}</option>`;
+  }).join('');
+  if (currentId && pool.includes(currentId)) sel.value = currentId;
+  else if (pool.length) sel.value = pool[0];
+}
+
 function newCard(){
   selectedCardId = null;
   $('f-id').value = 'custom_' + Date.now();
@@ -96,10 +109,7 @@ function newCard(){
   $('f-stars').value = '3';
   $('f-pow1').value = '3'; $('f-pow2').value = '5';
   $('f-dmg1').value = '2'; $('f-dmg2').value = '3';
-  $('f-condition').value = '';
-  $('f-ability-type').value = 'POWER_MOD';
-  $('f-ability').value = 'New ability text';
-  $('f-bonus').value = CLAN_DATA.nexus?.bonus || 'Clan bonus text';
+  populateAbilityDropdown('nexus', '');
   $('f-art1-url').value = ''; $('f-art2-url').value = ''; $('f-logo-url').value = '';
   blobArt1 = blobArt2 = blobLogo = null;
   previewLv = 1;
@@ -174,10 +184,24 @@ function syncCard(){
   const pow2     = parseInt($('f-pow2').value) || 1;
   const dmg1     = parseInt($('f-dmg1').value) || 1;
   const dmg2     = parseInt($('f-dmg2').value) || 1;
-  const cond     = $('f-condition').value.trim();
-  const abilText = $('f-ability').value || '';
-  const bonus    = $('f-bonus').value || '';
   const logoUrl  = $('f-logo-url').value.trim() || blobLogo || '';
+
+  // If clan changed, repopulate ability dropdown so titans-only filter applies.
+  const sel = $('f-ability-id');
+  const wantTitans = (clan === 'titans');
+  const optsAreTitans = sel && sel.options.length && (window.SHS_ABILITY_POOLS?.TITANS_POOL || []).includes(sel.options[0].value);
+  if (sel && optsAreTitans !== wantTitans) populateAbilityDropdown(clan, sel.value);
+
+  const abilityId = sel ? sel.value : '';
+  const cat = window.ABILITY_CATALOG || {};
+  const abilText = cat[abilityId]?.label || '';
+  const cond = '';
+  // Auto-derive bonus from clan
+  const bonusId = (window.CLAN_BONUS_MAP || {})[clan];
+  const bonus = bonusId ? (cat[bonusId]?.label || '') : (clan === 'echo' ? 'Sin bonus de clan' : (clan === 'titans' ? 'Cancela rivales Titans (auto)' : ''));
+  $('f-bonus').value = bonus;
+  const hint = $('f-ability-hint');
+  if (hint) hint.textContent = wantTitans ? 'Titans-only ability pool (passive, hand-based).' : `Slot único: ${pool_size_for(wantTitans)} habilidades disponibles.`;
 
   const cd = CLAN_DATA[clan] || {color:'#6B5CE7', emoji:'⚡'};
   const cc = cd.color, emoji = cd.emoji || '⚡';
@@ -232,8 +256,7 @@ function syncCard(){
     $('p-ability-text').textContent = `🔒 Unlocks at LV${unlockAt}`;
   } else {
     wrap.style.opacity = '1';
-    if(cond){ condEl.textContent = cond + ':'; condEl.style.display = 'inline'; }
-    else condEl.style.display = 'none';
+    condEl.style.display = 'none';
     $('p-ability-text').textContent = abilText;
   }
   $('p-bonus').textContent = bonus;
@@ -251,10 +274,11 @@ function buildCard(){
   const pow2   = parseInt($('f-pow2').value) || 1;
   const dmg1   = parseInt($('f-dmg1').value) || 1;
   const dmg2   = parseInt($('f-dmg2').value) || 1;
-  const cond   = $('f-condition').value.trim();
-  const abilType = $('f-ability-type').value;
-  const abilText = $('f-ability').value.trim();
-  const bonus  = $('f-bonus').value.trim();
+  const cat    = window.ABILITY_CATALOG || {};
+  const abilityId = $('f-ability-id') ? $('f-ability-id').value : '';
+  const bonusId   = (window.CLAN_BONUS_MAP || {})[clan] || null;
+  const abilText  = cat[abilityId]?.label || '';
+  const bonusText = bonusId ? (cat[bonusId]?.label || '') : (clan === 'echo' ? 'Sin bonus de clan' : (clan === 'titans' ? 'Cancela rivales Titans (auto)' : ''));
   const art1   = $('f-art1-url').value.trim() || blobArt1 || '';
   const art2   = $('f-art2-url').value.trim() || blobArt2 || '';
   const logo   = $('f-logo-url').value.trim() || blobLogo || '';
@@ -267,9 +291,11 @@ function buildCard(){
     lv:1, lv_max:stars,
     type:type || 'normal',
     rarity: RAR_TO_FULL[rar] || 'common',
+    abilityId,
+    bonusId,
     ability: abilText,
-    abilityData: { type: abilType, text: abilText, condition: cond || null },
-    bonus: { type:'CLAN_BONUS', text: bonus },
+    bonus:   bonusText,
+    abilityData: { id: abilityId, text: abilText, condition: null },
     tags:[],
     visual: { image:art2, imageLv1:art1, logo:logo || null, frame:clan, color:cc },
     rules:{}, economy:{ tradable:true },
@@ -277,7 +303,7 @@ function buildCard(){
   };
 }
 
-function addToGame(){
+async function addToGame(){
   const card = buildCard();
   if(!card.id || card.id === 'custom_card'){ showMsg('Give the card a unique ID before saving.', 'warn'); return; }
   let customs = [];
@@ -290,9 +316,20 @@ function addToGame(){
     showMsg('Could not save — image too large for localStorage. Use a smaller file.', 'err');
     return;
   }
+  // Best-effort push to Supabase so other clients see it.
+  try {
+    if (window.SB && SB.upsertCustomCard){
+      const r = await SB.upsertCustomCard(card.id, card);
+      if (r && r.error) showMsg(`Saved locally. Cloud sync skipped: ${r.error.message || 'no admin'}.`, 'warn');
+      else showMsg(`✓ "${card.name}" saved + synced. Reload to see updates.`, 'ok');
+    } else {
+      showMsg(`✓ "${card.name}" saved locally. Reload gamehub or game to see updates.`, 'ok');
+    }
+  } catch(e){
+    showMsg(`Saved locally. Cloud sync error: ${e.message}`, 'warn');
+  }
   selectedCardId = card.id;
   renderAdminList();
-  showMsg(`✓ "${card.name}" saved. Reload gamehub or game to see updates.`, 'ok');
 }
 
 function exportJS(){
@@ -301,7 +338,10 @@ function exportJS(){
     id: card.id, name: card.name, clan: card.clan,
     type: card.type, rarity: card.rarity, stars: card.stars,
     stats: { level1:{ power:card.pow[0], damage:card.dmg[0] }, max:{ power:card.pow[1], damage:card.dmg[1] } },
-    ability: card.abilityData, bonus: card.bonus,
+    abilityId: card.abilityId,
+    bonusId:   card.bonusId,
+    ability:   { id: card.abilityId, text: card.ability },
+    bonus:     { text: card.bonus },
     visual: { image:card.visual.image, imageLv1:card.visual.imageLv1, logo:card.visual.logo },
     rules:{}, economy:{ tradable:true },
   };

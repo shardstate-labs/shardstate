@@ -199,6 +199,48 @@
       return data || { error:'unknown' };
     },
 
+    // ── Custom cards (admin-authored) ───────────────────────────
+    async loadCustomCards(){
+      try {
+        const sb = await ensureClient();
+        const { data, error } = await sb.from('custom_cards')
+          .select('id, data, is_published, updated_at')
+          .order('updated_at', { ascending:false });
+        if (error) { console.warn('loadCustomCards error:', error); return []; }
+        return (data || [])
+          .filter(r => r.is_published !== false)
+          .map(r => Object.assign({}, r.data, { id: r.id, isCustom:true }));
+      } catch(e){ console.warn('loadCustomCards failed:', e); return []; }
+    },
+    async upsertCustomCard(cardId, cardData){
+      if (!cardId || !cardData) return { error:{ message:'invalid args' } };
+      try {
+        const sb = await ensureClient();
+        const user = await SB.getUser();
+        if (!user) return { error:{ message:'must be logged in' } };
+        const row = {
+          id: String(cardId),
+          data: cardData,
+          is_published: true,
+          updated_by: user.id,
+          updated_at: new Date().toISOString(),
+        };
+        const { data, error } = await sb.from('custom_cards')
+          .upsert(row, { onConflict:'id' })
+          .select().maybeSingle();
+        if (error) return { error };
+        return { data };
+      } catch(e){ return { error:{ message:e.message } }; }
+    },
+    async deleteCustomCard(cardId){
+      try {
+        const sb = await ensureClient();
+        const { error } = await sb.from('custom_cards').delete().eq('id', String(cardId));
+        if (error) return { error };
+        return { ok:true };
+      } catch(e){ return { error:{ message:e.message } }; }
+    },
+
     // ── Pack history ────────────────────────────────────────────
     async loadPackHistory(uid, limit){
       const sb = await ensureClient();

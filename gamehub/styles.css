@@ -969,3 +969,94 @@ textarea.input-dark{resize:vertical;min-height:68px}
   display:flex;gap:10px;justify-content:center;
 }
 .drm-actions .btn{ flex:1; max-width:180px; }
+
+/* ════════════════════════════════════════════════════════════
+ * OVERLAP / RESPONSIVE SAFETY LAYER
+ * Goal: nothing should clip, overlap, or push other UI off-screen
+ * across desktop · tablet · phone (down to 320px).
+ * ════════════════════════════════════════════════════════════ */
+*,*::before,*::after{ box-sizing:border-box; min-width:0; }
+html,body{ overflow-x:hidden; -webkit-text-size-adjust:100%; }
+img,svg,video,canvas{ max-width:100%; height:auto; }
+button{ max-width:100%; }
+input,select,textarea{ max-width:100%; }
+
+/* Truncate long text on UI labels that have no semantic need to wrap */
+.card-name, .player-name, .player-club, .me-name,
+.nav-label, .currency-label, .su-info,
+.coll-card-name, .pack-name, .market-card-name,
+.deck-card-name, .preset-name, .mission-title{
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* Allow long descriptions to wrap, never overflow */
+.card-ability, .card-bonus, .ability-condition,
+.bonus-text, .pack-desc, .mission-desc, .market-card-meta,
+.coll-card-meta, .rule-text, .forum-comment-text{
+  overflow-wrap:anywhere; word-break:break-word; white-space:normal;
+}
+
+/* Prevent toast/modal overflow on tiny viewports */
+.toast{ max-width:min(92vw,420px); }
+.modal, .modal-card, .drm-card{ max-width:min(94vw,560px); max-height:90vh; overflow:auto; }
+
+/* Topbar / actions: wrap chips instead of overflowing horizontally */
+.topbar, .topbar-actions, .pack-cost, .deck-controls,
+.bp-slider-controls, .market-filter-row, .coll-filter-row,
+.profile-actions, .ap-bottom, .end-actions{
+  flex-wrap:wrap;
+}
+
+/* Card grids must collapse cleanly */
+.coll-grid, .pack-grid, .market-grid, .deck-grid,
+.history-grid, .missions-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+  gap:10px;
+}
+
+/* Tablet (<=900px) */
+@media (max-width:900px){
+  .coll-grid, .pack-grid, .market-grid, .deck-grid{
+    grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));
+    gap:8px;
+  }
+  .modal, .modal-card, .drm-card{ padding:14px; }
+}
+
+/* Phone (<=600px) */
+@media (max-width:600px){
+  .coll-grid, .pack-grid, .market-grid, .deck-grid{
+    grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
+    gap:6px;
+  }
+  .panel-header, .coll-filter-row, .market-filter-row{
+    flex-wrap:wrap; gap:6px;
+  }
+  .panel-title, .coll-title{ font-size:1rem; }
+  .nav-play-btn{ padding:8px; }
+  .drm-actions .btn{ max-width:none; min-width:100%; }
+  .drm-actions{ flex-direction:column; }
+  .pack-card, .market-card, .coll-card{ padding:8px; }
+}
+
+/* Tiny phone (<=400px) */
+@media (max-width:400px){
+  :root{ --sidebar-w:0px; }
+  .sidebar{ display:none; }
+  .shell, #app{ padding-left:0 !important; }
+  .coll-grid, .pack-grid, .market-grid, .deck-grid{
+    grid-template-columns:repeat(2, 1fr);
+  }
+}
+
+/* Stacking discipline — keep modals on top of content but below toasts */
+.modal-backdrop{ z-index:90; }
+.modal, .modal-card, .drm-modal{ z-index:100; }
+.toast{ z-index:200; }
+
+/* Safe-area for notched devices */
+.shell, #app{
+  padding-top:env(safe-area-inset-top, 0);
+  padding-bottom:env(safe-area-inset-bottom, 0);
+}

@@ -20,6 +20,30 @@ const RARITY_LABEL = { C:'COMMON', U:'UNCOMMON', R:'RARE', M:'MYTHIC' };
   } catch(_){}
 })();
 
+// Late merge for custom_cards loaded from Supabase (admin-authored, multi-client).
+window.applyRemoteCustomCards = function(remoteCards){
+  if (!Array.isArray(remoteCards) || !remoteCards.length) return 0;
+  const idx = new Map(ALL_CARDS.map((c,i)=>[c.id,i]));
+  let added = 0;
+  remoteCards.forEach(c => {
+    if (!c || !c.id) return;
+    if (idx.has(c.id)) ALL_CARDS[idx.get(c.id)] = c;
+    else { ALL_CARDS.push(c); added++; }
+  });
+  if (typeof assignAbilities === 'function') assignAbilities(ALL_CARDS);
+  return added;
+};
+
+// Auto-fetch admin-published cards from Supabase on load. Fire-and-forget;
+// later draws will see them once the merge completes.
+(async function loadRemoteCustomCards(){
+  if (!window.SB || !SB.loadCustomCards) return;
+  try {
+    const remote = await SB.loadCustomCards();
+    if (remote && remote.length) window.applyRemoteCustomCards(remote);
+  } catch(_){}
+})();
+
 (function darkenClansForUI(){
   const darken = (hex) => {
     const n = parseInt(hex.slice(1), 16);

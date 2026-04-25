@@ -5,11 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SHARDSTATE — CARD EDITOR</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./style.css?v=2"/>
+<link rel="stylesheet" href="./style.css?v=12"/>
 </head>
 <body>
 
-<script src="../engine/cards.js?v=6"></script>
+<script src="../engine/cards.js?v=12"></script>
+<script src="../engine/ability_catalog.js?v=12"></script>
+<script src="../js/config.js?v=12"></script>
+<script src="../js/sb.js?v=12"></script>
 
 <aside class="editor">
   <div class="editor-header">
@@ -46,6 +49,7 @@
         <option value="frequenz">🎸 FREQUENZ</option>
         <option value="protocol">🛡 PROTOCOL</option>
         <option value="echo">✨ ECHO</option>
+        <option value="titans">🗿 TITANS</option>
       </select>
     </div>
     <div class="img-group" style="margin-top:4px">
@@ -91,28 +95,13 @@
     </div>
 
     <div class="sep">Ability & Bonus</div>
-    <div class="field"><label>Ability Condition (blank = always)</label>
-      <input id="f-condition" placeholder="Courage / Reprisal / KO …" oninput="syncCard()"/></div>
-    <div class="field"><label>Ability Type</label>
-      <select id="f-ability-type" onchange="syncCard()">
-        <option value="POWER_MOD">POWER_MOD</option>
-        <option value="DAMAGE_MOD">DAMAGE_MOD</option>
-        <option value="POISON">POISON</option>
-        <option value="COPY_BONUS">COPY_BONUS</option>
-        <option value="COPY_ABILITY">COPY_ABILITY</option>
-        <option value="PROTECT_ABILITY">PROTECT_ABILITY</option>
-        <option value="STOP">STOP</option>
-        <option value="WEAKEN">WEAKEN</option>
-        <option value="BRAWL">BRAWL</option>
-        <option value="BACKLASH">BACKLASH</option>
-        <option value="REGEN">REGEN</option>
-        <option value="PILLZ">PILLZ</option>
-        <option value="CANCEL_ALL">CANCEL_ALL</option>
-        <option value="NONE">NONE</option>
-      </select>
+    <div class="field"><label>Ability (locked catalog)</label>
+      <select id="f-ability-id" onchange="syncCard()"></select>
+      <p class="hint" id="f-ability-hint" style="margin-top:4px"></p>
     </div>
-    <div class="field"><label>Ability Text</label><textarea id="f-ability" oninput="syncCard()"></textarea></div>
-    <div class="field"><label>Clan Bonus Text</label><input id="f-bonus" oninput="syncCard()"/></div>
+    <div class="field"><label>Clan Bonus <span class="muted">(auto-derived from clan)</span></label>
+      <input id="f-bonus" readonly style="opacity:.75;cursor:not-allowed"/>
+    </div>
 
     <div class="sep">Card Art</div>
     <div class="img-group">
@@ -173,6 +162,6 @@
   </div>
 </main>
 
-<script src="./app.js?v=2"></script>
+<script src="./app.js?v=12"></script>
 </body>
 </html>

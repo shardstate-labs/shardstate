@@ -166,3 +166,26 @@ body{
   body{flex-direction:column}
   .editor{width:100%;height:auto;position:static;border-right:none;border-bottom:1px solid var(--border)}
 }
+
+/* ════════════════════════════════════════════════════════════
+ * ADMIN OVERLAP / RESPONSIVE SAFETY LAYER
+ * ════════════════════════════════════════════════════════════ */
+*,*::before,*::after{ min-width:0; }
+.muted{ opacity:.6; font-size:.85em; }
+.field input[readonly]{ background:rgba(255,255,255,.04); }
+.admin-card-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+#f-ability-id{ width:100%; padding:6px 8px; font-size:.85rem; }
+.field select{ max-width:100%; }
+.export-out{ max-width:100%; word-break:break-all; }
+
+@media (max-width:980px){
+  body{ flex-direction:column; }
+  .editor{ width:100%; max-width:none; max-height:55vh; overflow-y:auto; }
+  .main{ padding:14px; }
+}
+@media (max-width:600px){
+  .editor{ padding:10px; }
+  .field-row{ flex-direction:column; gap:6px; }
+  #preview-front{ transform:scale(.8); }
+  .btn-group{ flex-direction:column; gap:6px; }
+}
