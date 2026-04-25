@@ -801,6 +801,9 @@ function renderPerfil() {
   byId('xp-label') && (byId('xp-label').textContent = `ELO ${u.elo||0} · ${eb.label}`);
   const statsGrid = byId('profile-stats-grid');
   if (statsGrid) statsGrid.innerHTML = `
+    <div class="pstat pstat-balance"><span class="currency-icon shards"></span><div class="pstat-num">${(view.state.shards||0).toLocaleString()}</div><div class="pstat-label">SHARDS</div></div>
+    <div class="pstat pstat-balance"><span class="currency-icon flux"></span><div class="pstat-num">${(view.state.flux||0).toLocaleString()}</div><div class="pstat-label">FLUX</div></div>
+    <div class="pstat pstat-balance"><span class="currency-icon shs"></span><div class="pstat-num">${(view.state.shs||0).toLocaleString()}</div><div class="pstat-label">$SHS</div></div>
     <div class="pstat"><div class="pstat-num">${u.battlesTotal||0}</div><div class="pstat-label">Battles</div></div>
     <div class="pstat"><div class="pstat-num">${u.battleWins||0}</div><div class="pstat-label">Wins</div></div>
     <div class="pstat"><div class="pstat-num">${u.battleLosses||0}</div><div class="pstat-label">Losses</div></div>
@@ -1648,16 +1651,16 @@ function submitComment(threadId) {
 
 // ── RENDER: PACKS ──────────────────────────────────────────────
 const FLUX_BUNDLES = [
-  { product:'FLUX_5',  flux:5,  usd:5 },
-  { product:'FLUX_10', flux:10, usd:10 },
-  { product:'FLUX_30', flux:30, usd:30 },
-  { product:'FLUX_50', flux:50, usd:50 },
+  { product:'FLUX_5',  flux:5,  usd:5,  art:'./assets/shop/flux-5.png' },
+  { product:'FLUX_10', flux:10, usd:10, art:'./assets/shop/flux-10.png' },
+  { product:'FLUX_30', flux:30, usd:30, art:'./assets/shop/flux-30.png' },
+  { product:'FLUX_50', flux:50, usd:50, art:'./assets/shop/flux-50.png' },
 ];
 const PACKS_DATA = [
-  { id:'welcome', name:{es:'Pack Bienvenida',en:'Welcome Pack'}, desc:{es:'8 cartas de regalo · Una sola vez · Gratuito',en:'8 free cards · One-time only · Free'}, costType:'welcome', cost:0,  color:'#00FFC6', icon:'🎁', cards:8 },
-  { id:'pack_4',  name:{es:'Pack de 4 cartas',en:'4-card Pack'},  desc:{es:'4 cartas aleatorias · todos los clanes principales',en:'4 random cards · all main clans'}, costType:'flux', cost:5,  color:'#00FFC6', icon:'▣', cards:4 },
-  { id:'pack_8',  name:{es:'Pack de 8 cartas',en:'8-card Pack'},  desc:{es:'8 cartas aleatorias · todos los clanes principales',en:'8 random cards · all main clans'}, costType:'flux', cost:10, color:'#9B59B6', icon:'▦', cards:8 },
-  { id:'pack_20', name:{es:'Pack de 20 cartas',en:'20-card Pack'},desc:{es:'20 cartas aleatorias · todos los clanes principales',en:'20 random cards · all main clans'}, costType:'flux', cost:20, color:'#F59E0B', icon:'▩', cards:20 },
+  { id:'welcome', name:{es:'Pack Bienvenida',en:'Welcome Pack'}, desc:{es:'8 cartas de regalo · Una sola vez · Gratuito',en:'8 free cards · One-time only · Free'}, costType:'welcome', cost:0,  color:'#00FFC6', icon:'🎁', cards:8,  art:'./assets/shop/pack-welcome.png' },
+  { id:'pack_4',  name:{es:'Pack de 4 cartas',en:'4-card Pack'},  desc:{es:'4 cartas aleatorias · todos los clanes principales',en:'4 random cards · all main clans'}, costType:'flux', cost:5,  color:'#00FFC6', icon:'▣', cards:4,  art:'./assets/shop/pack-4.png' },
+  { id:'pack_8',  name:{es:'Pack de 8 cartas',en:'8-card Pack'},  desc:{es:'8 cartas aleatorias · todos los clanes principales',en:'8 random cards · all main clans'}, costType:'flux', cost:10, color:'#9B59B6', icon:'▦', cards:8,  art:'./assets/shop/pack-8.png' },
+  { id:'pack_20', name:{es:'Pack de 20 cartas',en:'20-card Pack'},desc:{es:'20 cartas aleatorias · todos los clanes principales',en:'20 random cards · all main clans'}, costType:'flux', cost:20, color:'#F59E0B', icon:'▩', cards:20, art:'./assets/shop/pack-20.png' },
 ];
 function renderFluxShop(){
   const el = byId('flux-shop-root');
@@ -1673,8 +1676,7 @@ function renderFluxShop(){
       <div class="flux-bundles">
         ${FLUX_BUNDLES.map(b => `
           <button class="flux-bundle" onclick="buyFluxBundle('${b.product}')">
-            <span class="flux-bundle-amount">${b.flux}</span>
-            <span class="flux-bundle-label">FLUX</span>
+            <img class="flux-bundle-art" src="${b.art}" alt="${b.flux} FLUX" loading="lazy"/>
             <span class="flux-bundle-price">$${b.usd}</span>
             <span class="flux-bundle-cta">${t('flux_buy_btn')}</span>
           </button>`).join('')}
@@ -1716,13 +1718,14 @@ function renderPacks() {
         <button class="pack-btn pack-btn-flux" data-pack-id="${p.id}" data-pay="flux" title="${L==='es'?'Pagar con FLUX':'Pay with FLUX'}">${L==='es'?'Abrir':'Open'}</button>`;
     }
     const wrapClass = `pack-card${isWelcome?' pack-card-welcome':''}${accountClaimed?' pack-card-claimed':''}`;
-    return `<div class="${wrapClass}" style="--pc-color:${p.color};--pc-glow:${p.color}22">
+    const cardAttrs = accountClaimed ? '' : `data-pack-id="${p.id}" data-pay="${isWelcome?'welcome':'flux'}" role="button" tabindex="0"`;
+    const art = p.art
+      ? `<img class="pack-art-img" src="${p.art}" alt="${p.name[L]||p.name.es}" loading="lazy"/>`
+      : `<div class="pack-art-top">SHARDSTATE</div><div class="pack-art-sigil">${p.icon}</div><div class="pack-art-count">${p.cards}</div><div class="pack-art-caption">${L==='es'?'CARTAS':'CARDS'}</div>`;
+    return `<div class="${wrapClass}" ${cardAttrs} style="--pc-color:${p.color};--pc-glow:${p.color}22">
       ${isWelcome?'<div class="pack-welcome-badge">'+(L==='es'?'NUEVO JUGADOR':'NEW PLAYER')+'</div>':''}
-      <div class="pack-art pack-art-${p.id}">
-        <div class="pack-art-top">SHARDSTATE</div>
-        <div class="pack-art-sigil">${p.icon}</div>
-        <div class="pack-art-count">${p.cards}</div>
-        <div class="pack-art-caption">${L==='es'?'CARTAS':'CARDS'}</div>
+      <div class="pack-art pack-art-${p.id}${p.art?' pack-art-asset':''}">
+        ${art}
       </div>
       <div class="pack-name">${p.name[L]||p.name.es}</div>
       <div class="pack-desc">${p.desc[L]||p.desc.es}</div>
@@ -1735,6 +1738,13 @@ function renderPacks() {
     el.addEventListener('click', e => {
       const btn = e.target.closest('[data-pack-id]');
       if (btn) openPackById(btn.getAttribute('data-pack-id'), btn.getAttribute('data-pay'));
+    });
+    el.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const card = e.target.closest('[data-pack-id]');
+      if (!card) return;
+      e.preventDefault();
+      openPackById(card.getAttribute('data-pack-id'), card.getAttribute('data-pay'));
     });
   }
 }
