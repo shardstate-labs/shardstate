@@ -32,6 +32,27 @@
     return data;
   }
 
+  function subscribeReady(ch){
+    return new Promise((resolve, reject) => {
+      let done = false;
+      const timer = setTimeout(() => {
+        if (!done) { done = true; reject(new Error('Realtime subscribe timeout')); }
+      }, 8000);
+      ch.subscribe(status => {
+        if (done) return;
+        if (status === 'SUBSCRIBED') {
+          done = true;
+          clearTimeout(timer);
+          resolve(ch);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          done = true;
+          clearTimeout(timer);
+          reject(new Error('Realtime subscribe failed: ' + status));
+        }
+      });
+    });
+  }
+
   const SHS_PVP = {
     /** Try to pair right now or join the queue. */
     async findMatch(mode, deckIds){
@@ -56,7 +77,7 @@
             { event:'INSERT', schema:'public', table:'matches',
               filter:`p2_user_id=eq.${uid}` },
             payload => cb(payload.new));
-      await ch.subscribe();
+      await subscribeReady(ch);
       _watcher = {
         unsubscribe: async () => { try { await sb.removeChannel(ch); } catch(_){} _watcher = null; }
       };
@@ -76,7 +97,7 @@
       ch.on('postgres_changes',
         { event:'UPDATE', schema:'public', table:'matches', filter:`id=eq.${matchId}` },
         payload => statusCbs.forEach(fn => { try { fn(payload.new); } catch(_){} }));
-      await ch.subscribe();
+      await subscribeReady(ch);
       const api = {
         side,
         async send(action){
@@ -101,11 +122,13 @@
     },
 
     /** Returns my active match (if any), null otherwise. */
-    async myActiveMatch(uid){
+    async myActiveMatch(uid, mode){
       const sb = await SB.client();
-      const { data } = await sb.from('matches').select('*')
+      let q = sb.from('matches').select('*')
         .or(`p1_user_id.eq.${uid},p2_user_id.eq.${uid}`)
-        .eq('status','active').maybeSingle();
+        .eq('status','active');
+      if (mode) q = q.eq('mode', mode);
+      const { data } = await q.order('created_at', { ascending:false }).limit(1).maybeSingle();
       return data || null;
     },
   };

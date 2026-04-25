@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./style.css?v=20"/>
+<link rel="stylesheet" href="./style.css?v=21"/>
 </head>
 <body>
 <div id="app">
@@ -49,6 +49,11 @@
       <div class="mm-tag" id="mm-tag">QUEUE</div>
       <div class="mm-title" id="mm-title">CASUAL</div>
       <div class="mm-sub" id="mm-sub">SCANNING NETWORK FOR OPPONENT</div>
+      <div class="mm-meta">
+        <span id="mm-timer">00:00</span>
+        <span class="mm-online" id="mm-online">● PLAYERS ONLINE: 1</span>
+      </div>
+      <div class="mm-hint" id="mm-hint"></div>
       <div class="mm-spinner"></div>
       <div class="mm-cancel" onclick="backToMenu()">CANCEL</div>
     </div>
@@ -128,6 +133,19 @@
 
     <!-- Battle log (toggleable) -->
     <div class="battle-log" id="battle-log"></div>
+
+    <div class="surrender-modal" id="surrender-modal" aria-hidden="true">
+      <div class="surrender-card" role="dialog" aria-modal="true" aria-labelledby="surrender-title">
+        <div class="surrender-tag">ABANDON</div>
+        <h2 id="surrender-title">¿Estás seguro que quieres rendirte?</h2>
+        <p id="surrender-copy">Cuenta como abandono. La conexión se corta y el rival gana el combate.</p>
+        <div class="surrender-count" id="surrender-count">10</div>
+        <div class="surrender-actions">
+          <button class="btn btn-ghost" id="surrender-no" onclick="closeSurrenderModal()">NO</button>
+          <button class="btn btn-primary danger" id="surrender-yes" onclick="confirmSurrender()">SI</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Action Panel -->
     <div class="action-panel" id="action-panel">
@@ -251,16 +269,16 @@
 
 </div>
 
-<script src="../engine/cards.js?v=20"></script>
-<script src="../engine/ability_catalog.js?v=20"></script>
-<script src="../engine/round_engine.js?v=20"></script>
-<script src="../js/config.js?v=20"></script>
-<script src="../js/sb.js?v=20"></script>
-<script src="../js/sync.js?v=20"></script>
-<script src="../js/pvp.js?v=20"></script>
-<script src="./data.js?v=20"></script>
-<script src="./engine.js?v=20"></script>
-<script src="./render.js?v=20"></script>
-<script src="./main.js?v=20"></script>
+<script src="../engine/cards.js?v=21"></script>
+<script src="../engine/ability_catalog.js?v=21"></script>
+<script src="../engine/round_engine.js?v=21"></script>
+<script src="../js/config.js?v=21"></script>
+<script src="../js/sb.js?v=21"></script>
+<script src="../js/sync.js?v=21"></script>
+<script src="../js/pvp.js?v=21"></script>
+<script src="./data.js?v=21"></script>
+<script src="./engine.js?v=21"></script>
+<script src="./render.js?v=21"></script>
+<script src="./main.js?v=21"></script>
 </body>
 </html>

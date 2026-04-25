@@ -59,6 +59,9 @@ const APP = {
   inputLocked: false,
   logOpen: false,
   statusKey: null,
+  matchmaking: null,
+  surrenderTimerId: null,
+  surrenderRemaining: 10,
 };
 
 const PVP_MODES = new Set(['casual','ranked']);
@@ -77,6 +80,11 @@ const GAME_I18N = {
     waitingLink:'ESPERANDO LINK RIVAL', pvpOpenFailed:'No se pudo abrir la partida PvP.',
     pvpUnavailable:'PvP no disponible.', signinPvp:'Inicia sesión para jugar PvP.',
     abandonLock:'Penalización por abandonos. Vuelve a jugar en',
+    onlinePlayers:'JUGADORES ONLINE', longWait:'Parece que estás esperando hace bastante.. quizás sea mejor probar con otro modo de juego',
+    emptyWait:'Psssst.. no hay jugadoras a la vista. Mientras tanto podés usar el modo de entrenamiento.. PROTOCOL OBSERVA.. 010101010000010100101',
+    queueClosed:'No se encontró rival. Link cerrado.',
+    surrenderTitle:'¿Estás seguro que quieres rendirte?', surrenderCopy:'Cuenta como abandono. La conexión se corta y el rival gana el combate.',
+    yes:'SI', no:'NO', abandon:'ABANDONAR',
     win:'VICTORIA', defeat:'DERROTA', result:'RESULTADO', shards:'SHARDS', xp:'XP', elo:'ELO',
     cardWin:'VICTORIA', cardLoss:'DERROTA',
     menu:'Menú', rematch:'Revancha', linkStable:'SHARDS ASEGURADOS · LINK ESTABLE',
@@ -96,6 +104,11 @@ const GAME_I18N = {
     waitingLink:'WAITING FOR RIVAL LINK', pvpOpenFailed:'Could not open PvP match.',
     pvpUnavailable:'PvP unavailable.', signinPvp:'Sign in to play PvP.',
     abandonLock:'Abandon penalty. Play again in',
+    onlinePlayers:'PLAYERS ONLINE', longWait:'Looks like you have been waiting a while.. maybe try another game mode',
+    emptyWait:'Psssst.. no players in sight. Meanwhile you can use training mode.. PROTOCOL OBSERVES.. 010101010000010100101',
+    queueClosed:'No rival found. Link closed.',
+    surrenderTitle:'Are you sure you want to surrender?', surrenderCopy:'Counts as abandon. The link breaks and your rival wins the combat.',
+    yes:'YES', no:'NO', abandon:'ABANDON',
     win:'VICTORY', defeat:'DEFEAT', result:'RESULT', shards:'SHARDS', xp:'XP', elo:'ELO',
     cardWin:'VICTORY', cardLoss:'DEFEAT',
     menu:'Menu', rematch:'Rematch', linkStable:'SHARDS SECURED · LINK STABLE',
@@ -159,6 +172,12 @@ function applyGameLang(){
     '#rw-elo-box .lbl':'elo',
     '.end-actions .btn-ghost':'menu',
     '.end-actions .btn-primary':'rematch',
+    '#surrender-title':'surrenderTitle',
+    '#surrender-copy':'surrenderCopy',
+    '#surrender-no':'no',
+    '#surrender-yes':'yes',
+    '.surrender-tag':'abandon',
+    '.mm-cancel':'cancel',
   };
   Object.entries(map).forEach(([sel,key]) => {
     if(!key) return;
@@ -177,6 +196,82 @@ function applyGameLang(){
   if(bgmBtn) bgmBtn.title = gt('music');
   const langBtn = document.getElementById('game-lang-toggle');
   if(langBtn) langBtn.textContent = GAME_LANG === 'es' ? 'EN' : 'ES';
+  updateMatchmakingHud();
+}
+
+function fmtClock(ms){
+  const total = Math.max(0, Math.floor(ms / 1000));
+  return `${String(Math.floor(total / 60)).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`;
+}
+
+function updateMatchmakingHud(){
+  const mm = APP.matchmaking;
+  const timer = document.getElementById('mm-timer');
+  const online = document.getElementById('mm-online');
+  const hint = document.getElementById('mm-hint');
+  if(!timer || !online || !hint) return;
+  const elapsed = mm ? Date.now() - mm.startedAt : 0;
+  timer.textContent = fmtClock(elapsed);
+  online.textContent = `● ${gt('onlinePlayers')}: ${Math.max(1, mm?.online || 1)}`;
+  hint.textContent = '';
+  hint.classList.remove('warn');
+  if(elapsed >= 180000) {
+    hint.textContent = gt('emptyWait');
+    hint.classList.add('warn');
+  } else if(elapsed >= 120000) {
+    hint.textContent = gt('longWait');
+  }
+}
+
+async function startMatchmakingHud(mode, uid){
+  stopMatchmakingHud(false);
+  APP.matchmaking = { mode, uid, startedAt: Date.now(), online: 1, closed:false };
+  updateMatchmakingHud();
+  APP.matchmaking.timerId = setInterval(() => {
+    updateMatchmakingHud();
+    const mm = APP.matchmaking;
+    if(!mm || mm.closed || APP.screen !== 'matchmaking') return;
+    if(Date.now() - mm.startedAt >= 190000) {
+      mm.closed = true;
+      const sub = document.getElementById('mm-sub');
+      if(sub) sub.textContent = gt('queueClosed');
+      setTimeout(() => backToMenu(), 1200);
+    }
+  }, 1000);
+  if(PVP_MODES.has(mode) && uid && window.SB) {
+    try {
+      const sb = await SB.client();
+      const ch = sb.channel('mm-presence:' + mode, { config:{ presence:{ key:uid } } });
+      ch.on('presence', { event:'sync' }, () => {
+        const state = ch.presenceState();
+        const count = Object.values(state || {}).reduce((sum, entries) => sum + (Array.isArray(entries) ? entries.length : 1), 0);
+        if(APP.matchmaking) {
+          APP.matchmaking.online = Math.max(1, count);
+          updateMatchmakingHud();
+        }
+      });
+      ch.subscribe(status => {
+        if(status === 'SUBSCRIBED') ch.track({ uid, mode, at: Date.now() });
+      });
+      APP.matchmaking.presence = { channel:ch, sb };
+    } catch(err) {
+      console.warn('matchmaking presence failed', err);
+    }
+  }
+}
+
+function stopMatchmakingHud(cancelQueue=true){
+  const mm = APP.matchmaking;
+  if(!mm) return;
+  if(mm.timerId) clearInterval(mm.timerId);
+  if(mm.pollId) clearInterval(mm.pollId);
+  if(mm.presence?.sb && mm.presence?.channel) {
+    try { mm.presence.sb.removeChannel(mm.presence.channel); } catch(_){}
+  }
+  APP.matchmaking = null;
+  if(cancelQueue && APP.screen === 'matchmaking' && window.SHS_PVP) {
+    try { SHS_PVP.cancelQueue(); } catch(_){}
+  }
 }
 
 // ─── LOADING ─────────────────────────────────────────────────
@@ -311,23 +406,42 @@ async function startPvpMode(mode){
     const uid = user?.id || APP_IMPORT.player?.uid;
     if(!uid) throw new Error(gt('signinPvp'));
     APP.pvp = { mode, uid, localMove:null, remoteMove:null, resolving:false, matched:false };
-    const watcher = await SHS_PVP.watchForMatch(uid, row => {
+    await startMatchmakingHud(mode, uid);
+    const enterMatch = async row => {
       if(APP.pvp?.matched) return;
       APP.pvp.matched = true;
-      beginPvpBattle(mode, row, uid).catch(err => {
-        console.warn('beginPvpBattle failed', err);
-        alert(gt('pvpOpenFailed'));
-        backToMenu();
+      await beginPvpBattle(mode, row, uid);
+    };
+    let watcher = null;
+    try {
+      watcher = await SHS_PVP.watchForMatch(uid, row => {
+        enterMatch(row).catch(err => {
+          console.warn('beginPvpBattle failed', err);
+          alert(gt('pvpOpenFailed'));
+          backToMenu();
+        });
       });
-    });
-    APP.pvp.watcher = watcher;
+      APP.pvp.watcher = watcher;
+    } catch(err) {
+      console.warn('PvP match watcher unavailable; polling fallback active', err);
+    }
     const rsp = await SHS_PVP.findMatch(mode, APP.deck);
     if(rsp && !rsp.queued){
-      APP.pvp.matched = true;
       if(watcher?.unsubscribe) await watcher.unsubscribe();
-      await beginPvpBattle(mode, rsp, uid);
+      await enterMatch(rsp);
     } else {
       document.getElementById('mm-sub').textContent = gt('waitingLink');
+      const pollActive = async () => {
+        if(APP.pvp?.matched || APP.screen !== 'matchmaking') return;
+        try {
+          const row = await SHS_PVP.myActiveMatch(uid, mode);
+          if(row) await enterMatch(row);
+        } catch(err) {
+          console.warn('active match poll failed', err);
+        }
+      };
+      if(APP.matchmaking) APP.matchmaking.pollId = setInterval(pollActive, 2000);
+      setTimeout(pollActive, 600);
     }
   } catch(err) {
     console.warn('PvP queue failed', err);
@@ -361,6 +475,7 @@ function normalizePvpMatch(row, uid){
 async function beginPvpBattle(mode, row, uid){
   const match = normalizePvpMatch(row, uid);
   if(!match.id) throw new Error('Match id missing');
+  stopMatchmakingHud(false);
   if(APP.pvp?.watcher?.unsubscribe) await APP.pvp.watcher.unsubscribe();
   const channel = await SHS_PVP.openMatch(match.id, match.side);
   APP.pvp = Object.assign(APP.pvp || {}, {
@@ -1159,16 +1274,46 @@ function toggleLog(){
   document.getElementById('battle-log').classList.toggle('show', APP.logOpen);
 }
 function surrender(){
-  if(confirm('¿Salir del combate? Cuenta como abandono.')) {
-    recordAbandon();
-    // Mark the battle as a player loss so showEnd() renders the proper screen
-    // (defeat banner + ELO/penalty info), then route through the normal
-    // end-of-battle flow instead of dumping the user back to the menu.
-    try {
-      if (APP && APP.battle) { APP.battle.winner = 'o'; APP.battle.abandoned = true; }
-    } catch(_){}
-    showEnd();
+  if(!APP.battle || APP.screen !== 'battle') return;
+  openSurrenderModal();
+}
+function openSurrenderModal(){
+  closeSurrenderModal();
+  APP.surrenderRemaining = 10;
+  const modal = document.getElementById('surrender-modal');
+  const count = document.getElementById('surrender-count');
+  if(!modal || !count) return;
+  applyGameLang();
+  count.textContent = APP.surrenderRemaining;
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('surrender-open');
+  APP.surrenderTimerId = setInterval(() => {
+    APP.surrenderRemaining -= 1;
+    count.textContent = Math.max(0, APP.surrenderRemaining);
+    if(APP.surrenderRemaining <= 0) closeSurrenderModal();
+  }, 1000);
+}
+function closeSurrenderModal(){
+  if(APP.surrenderTimerId) clearInterval(APP.surrenderTimerId);
+  APP.surrenderTimerId = null;
+  const modal = document.getElementById('surrender-modal');
+  if(modal) {
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
   }
+  document.body.classList.remove('surrender-open');
+}
+function confirmSurrender(){
+  closeSurrenderModal();
+  recordAbandon();
+  // Mark the battle as a player loss so showEnd() renders the proper screen
+  // (defeat banner + ELO/penalty info), then route through the normal
+  // end-of-battle flow instead of dumping the user back to the menu.
+  try {
+    if (APP && APP.battle) { APP.battle.winner = 'o'; APP.battle.abandoned = true; }
+  } catch(_){}
+  showEnd();
 }
 function surrenderForced(){
   recordAbandon();
@@ -1352,9 +1497,10 @@ function extractPvpReward(rsp, uid){
 function backToMenu(){
   APP.inputLocked = false;
   stopRoundTimer();
+  closeSurrenderModal();
+  stopMatchmakingHud(true);
   try { if(APP.pvp?.watcher?.unsubscribe) APP.pvp.watcher.unsubscribe(); } catch(_){}
   try { if(APP.pvp?.channel?.close) APP.pvp.channel.close(); } catch(_){}
-  try { if(APP.screen === 'matchmaking' && window.SHS_PVP) SHS_PVP.cancelQueue(); } catch(_){}
   APP.pvp = null;
   goScreen('menu');
   renderMenu();
