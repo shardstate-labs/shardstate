@@ -141,9 +141,11 @@
       const seed = hashId(c.id || '');
       const isTitan = (c.clan === C.TITANS_CLAN_KEY);
       const pool = isTitan ? TITANS_POOL : NORMAL_POOL;
-      c.abilityId = pick(pool, seed);
+      // Preserve admin-picked abilityId if it's a known catalog entry; otherwise hash-assign.
+      const adminPicked = c.abilityId && CAT[c.abilityId];
+      if (!adminPicked) c.abilityId = pick(pool, seed);
       c.bonusId   = CLAN_BONUS[c.clan] || null;
-      // Mirror to text fields for legacy renderers / UI:
+      // Mirror to text fields for legacy renderers / UI (always overwrite so old strings don't leak):
       c.ability   = CAT[c.abilityId]?.label || '';
       c.bonus     = c.bonusId ? CAT[c.bonusId].label : (c.clan==='titans' ? 'Cancela TITANS rival' : '');
     });
@@ -154,4 +156,9 @@
   global.SHS_CONST       = C;
   global.assignAbilities = assignAbilities;
   global.SHS_ABILITY_POOLS = { TITANS_POOL, NORMAL_POOL };
+
+  // Auto-run on baseline ALL_CARDS so gamehub collection (which doesn't load
+  // game/data.js) shows the catalog labels. Re-runs are idempotent — admin-
+  // picked abilityIds are preserved by the guard inside assignAbilities.
+  if (Array.isArray(global.ALL_CARDS)) assignAbilities(global.ALL_CARDS);
 })(typeof window !== 'undefined' ? window : globalThis);

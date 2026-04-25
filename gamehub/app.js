@@ -1639,7 +1639,7 @@ const PACKS_DATA = [
   { id:'shard',   name:{es:'Pack Shard',en:'Shard Pack'},        desc:{es:'3 cartas · Inusual garantizada',en:'3 cards · Uncommon guaranteed'},                  costType:'oracle',  usd:5,  color:'#F59E0B', icon:'◎', cards:3, rarGuarantee:'U' },
   { id:'clan',    name:{es:'Pack Clan',en:'Clan Pack'},          desc:{es:'4 cartas · Todas del mismo clan',en:'4 cards · All from one clan'},                   costType:'oracle',  usd:7,  color:'#00FFC6', icon:'🧬', cards:4, rarGuarantee:null, randomClan:true },
   { id:'elite',   name:{es:'Pack Élite',en:'Elite Pack'},        desc:{es:'4 cartas · Rara garantizada · Sin duplicados',en:'4 cards · Rare guaranteed · No dupes'}, costType:'oracle', usd:10, color:'#a855f7', icon:'🔮', cards:4, rarGuarantee:'R' },
-  { id:'titans',  name:{es:'Pack TITANS',en:'TITANS Pack'},      desc:{es:'5 cartas · Posible TITAN',en:'5 cards · Chance of a TITAN card'},                     costType:'oracle',  usd:14, color:'#f5f0e8', icon:'🗿', cards:5, titanChance:0.35 },
+  // Pack TITANS removed: TITAN cards drop only as mission rewards.
   { id:'grand',   name:{es:'Pack GRAND',en:'GRAND Pack'},        desc:{es:'5 cartas · Posible GRAND · Mítica posible',en:'5 cards · Chance of a GRAND · Mythic possible'}, costType:'oracle', usd:18, color:'#fbbf24', icon:'👑', cards:5, grandChance:0.25, rarGuarantee:'R' },
   { id:'premium', name:{es:'Pack Premium',en:'Premium Pack'},    desc:{es:'6 cartas · Mítica garantizada',en:'6 cards · Mythic guaranteed'},                     costType:'oracle',  usd:22, color:'#d946ef', icon:'💎', cards:6, rarGuarantee:'M' },
 ];
@@ -1703,8 +1703,9 @@ function renderShop() {
 // ── PACK OPENING ───────────────────────────────────────────────
 function randomCards(n, opts={}) {
   let pool = [...((typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]))];
+  // TITANS-clan cards are mission-only rewards — always exclude from packs.
+  pool = pool.filter(c => c.clan !== 'titans');
   if (opts.clan) pool = pool.filter(c => c.clan === opts.clan);
-  if (opts.excludeEcho) pool = pool.filter(c => c.clan !== 'echo');
   if (opts.minRar) {
     const ORDER = {C:0,U:1,R:2,M:3};
     pool = pool.filter(c => (ORDER[c.rar]||0) >= (ORDER[opts.minRar]||0));
@@ -1765,11 +1766,7 @@ function openPackById(packId, payWith) {
   }
   if (p.costType === 'welcome') opts.excludeEcho = true;
   let cards = randomCards(p.cards, opts);
-  // Optional special-card chance injection
-  if (p.titanChance && Math.random() < p.titanChance) {
-    const titans = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]).filter(c => c.clan === 'titans');
-    if (titans.length) cards[0] = titans[Math.floor(Math.random()*titans.length)];
-  }
+  // (Pack TITANS removed — TITAN-clan cards are mission-only rewards.)
   if (p.grandChance && Math.random() < p.grandChance) {
     const grands = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]).filter(c => c.type === 'grand');
     if (grands.length) cards[cards.length-1] = grands[Math.floor(Math.random()*grands.length)];
