@@ -595,6 +595,12 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   transition: all var(--tr);
 }
 .tool-btn:hover{ color: var(--acc); border-color: var(--acc); }
+.tool-btn.lang-btn{
+  font-family:var(--font-head);
+  font-size:10px;
+  letter-spacing:.08em;
+  color:var(--acc);
+}
 
 /* BATTLE FIELD */
 .battle-field{
@@ -1560,6 +1566,9 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 .round-timer{margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:1.2rem;color:#00FFC6;text-shadow:0 0 8px rgba(0,255,198,.6);letter-spacing:.1em}
 .round-timer.warn{color:#FBBF24;text-shadow:0 0 10px rgba(251,191,36,.7);animation:rt-pulse 1s ease-in-out infinite}
 .round-timer.crit{color:#FF3B3B;text-shadow:0 0 14px rgba(255,59,59,.85);animation:rt-pulse .4s ease-in-out infinite}
+.turn-stack .center-status.opp-turn + .round-timer.crit{
+  box-shadow:0 0 18px rgba(255,59,59,.35);
+}
 @keyframes rt-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 
 .round-banner.show.turn-anim{animation:turn-banner-in 1.8s cubic-bezier(.2,.8,.3,1) forwards}

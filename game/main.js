@@ -58,9 +58,59 @@ const APP = {
   pendingColapso: false,
   inputLocked: false,
   logOpen: false,
+  statusKey: null,
 };
 
 const PVP_MODES = new Set(['casual','ranked']);
+const GAME_I18N = {
+  es: {
+    battleLog:'Registro de combate', surrender:'Rendirse', music:'Música on/off',
+    round:'RONDA', yourTurn:'TU TURNO', lockMove:'ELEGÍ TU MOVIMIENTO',
+    waitingRival:'RIVAL PIERDE TURNO EN', rivalLocked:'RIVAL LISTO · APURATE',
+    clash:'COMBATE', roundWon:'RONDA GANADA', roundLost:'RONDA PERDIDA', draw:'EMPATE',
+    pulse:'PULSOS', selected:'Seleccionada', cancel:'Cancelar', fight:'COMBATIR',
+    battleStarted:'Combate iniciado', pvpReady:'PvP enlazado · broadcast listo',
+    rivalAction:'Rival listo', sendFailed:'Falló envío PvP · reintenta',
+    timeoutAuto:'Tiempo agotado · jugada automática', doubleTimeout:'Doble timeout · rendición forzada',
+    rivalTimeout:'Rival sin respuesta · esperando cierre',
+    aiBoot:'INICIANDO ENTRENAMIENTO IA', scanOpponent:'BUSCANDO RIVAL EN LA RED',
+    waitingLink:'ESPERANDO LINK RIVAL', pvpOpenFailed:'No se pudo abrir la partida PvP.',
+    pvpUnavailable:'PvP no disponible.', signinPvp:'Inicia sesión para jugar PvP.',
+    abandonLock:'Penalización por abandonos. Vuelve a jugar en',
+    win:'VICTORIA', defeat:'DERROTA', result:'RESULTADO', shards:'SHARDS', xp:'XP', elo:'ELO',
+    cardWin:'VICTORIA', cardLoss:'DERROTA',
+    menu:'Menú', rematch:'Revancha', linkStable:'SHARDS ASEGURADOS · LINK ESTABLE',
+    linkSevered:'LINK CORTADO · PROTOCOL OBSERVA', impasse:'IMPASSE · NADIE PREVALECE',
+  },
+  en: {
+    battleLog:'Battle log', surrender:'Surrender', music:'Music on/off',
+    round:'ROUND', yourTurn:'YOUR TURN', lockMove:'LOCK YOUR MOVE',
+    waitingRival:'RIVAL LOSES TURN IN', rivalLocked:'RIVAL LOCKED · CHOOSE FAST',
+    clash:'CLASH', roundWon:'ROUND WON', roundLost:'ROUND LOST', draw:'DRAW',
+    pulse:'PULSE', selected:'Selected', cancel:'Cancel', fight:'FIGHT',
+    battleStarted:'Battle started', pvpReady:'PvP link active · broadcast ready',
+    rivalAction:'Rival action locked', sendFailed:'PvP send failed · retry',
+    timeoutAuto:'Time expired · automatic move', doubleTimeout:'Double timeout · forced surrender',
+    rivalTimeout:'Rival timeout · waiting close',
+    aiBoot:'BOOTING AI SPARRING', scanOpponent:'SCANNING NETWORK FOR OPPONENT',
+    waitingLink:'WAITING FOR RIVAL LINK', pvpOpenFailed:'Could not open PvP match.',
+    pvpUnavailable:'PvP unavailable.', signinPvp:'Sign in to play PvP.',
+    abandonLock:'Abandon penalty. Play again in',
+    win:'VICTORY', defeat:'DEFEAT', result:'RESULT', shards:'SHARDS', xp:'XP', elo:'ELO',
+    cardWin:'VICTORY', cardLoss:'DEFEAT',
+    menu:'Menu', rematch:'Rematch', linkStable:'SHARDS SECURED · LINK STABLE',
+    linkSevered:'LINK SEVERED · PROTOCOL OBSERVES', impasse:'IMPASSE · NO ECHO PREVAILS',
+  },
+};
+let GAME_LANG = localStorage.getItem('shs_lang') || 'es';
+function gt(key){ return (GAME_I18N[GAME_LANG] || GAME_I18N.es)[key] || key; }
+function setGameLang(lang){
+  GAME_LANG = lang === 'en' ? 'en' : 'es';
+  localStorage.setItem('shs_lang', GAME_LANG);
+  document.documentElement.lang = GAME_LANG;
+  applyGameLang();
+}
+function toggleGameLang(){ setGameLang(GAME_LANG === 'es' ? 'en' : 'es'); }
 
 const MODE_ORDER = ['training','casual','ranked'];
 const MODE_META = {
@@ -71,6 +121,7 @@ const MODE_META = {
 
 function bootGame(){
   initFX();
+  setGameLang(GAME_LANG);
   // Hard gate: if /gamehub didn't hand us a valid 8-card deck, refuse to start.
   if(!APP_IMPORT.deck){
     showNoDeckOverlay();
@@ -80,6 +131,7 @@ function bootGame(){
   if(fill) fill.style.width = '100%';
   goScreen('menu');
   renderMenu();
+  applyGameLang();
 }
 if(document.readyState === 'loading'){
   document.addEventListener('DOMContentLoaded', bootGame, { once:true });
@@ -92,6 +144,39 @@ function goScreen(name){
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const node = document.getElementById('screen-'+name);
   if(node) node.classList.add('active');
+}
+
+function applyGameLang(){
+  const map = {
+    '.round-tag':'round',
+    '#center-status': APP.statusKey || (APP.battle?.pvp ? 'lockMove' : 'yourTurn'),
+    '#ap-name': null,
+    '.ap-head .lbl':'selected',
+    '.btn-cancel':'cancel',
+    '#btn-fight':'fight',
+    '#rw-shards-box .lbl':'shards',
+    '#rw-xp-box .lbl':'xp',
+    '#rw-elo-box .lbl':'elo',
+    '.end-actions .btn-ghost':'menu',
+    '.end-actions .btn-primary':'rematch',
+  };
+  Object.entries(map).forEach(([sel,key]) => {
+    if(!key) return;
+    document.querySelectorAll(sel).forEach(el => { el.textContent = gt(key); });
+  });
+  document.querySelectorAll('.vital-row .lbl').forEach(el => {
+    if(el.textContent.trim().toUpperCase() === 'PULSE' || el.textContent.trim().toUpperCase() === 'PULSOS') {
+      el.textContent = gt('pulse');
+    }
+  });
+  const logBtn = document.querySelector('.battle-tools .tool-btn[onclick="toggleLog()"]');
+  if(logBtn) logBtn.title = gt('battleLog');
+  const surrenderBtn = document.querySelector('.surrender-btn');
+  if(surrenderBtn) surrenderBtn.title = gt('surrender');
+  const bgmBtn = document.getElementById('bgm-toggle');
+  if(bgmBtn) bgmBtn.title = gt('music');
+  const langBtn = document.getElementById('game-lang-toggle');
+  if(langBtn) langBtn.textContent = GAME_LANG === 'es' ? 'EN' : 'ES';
 }
 
 // ─── LOADING ─────────────────────────────────────────────────
@@ -203,7 +288,7 @@ function startMode(mode){
     if (cur.lockoutUntil && Date.now() < cur.lockoutUntil) {
       const sec = Math.ceil((cur.lockoutUntil - Date.now())/1000);
       const mm = Math.floor(sec/60), ss = String(sec%60).padStart(2,'0');
-      alert(`⛔ Penalización por abandonos. Vuelve a jugar en ${mm}:${ss}.`);
+      alert(`⛔ ${gt('abandonLock')} ${mm}:${ss}.`);
       return;
     }
   } catch(_){}
@@ -211,7 +296,7 @@ function startMode(mode){
   document.getElementById('mm-tag').textContent   = MODE_META[mode].tag;
   document.getElementById('mm-title').textContent = MODES[mode].label;
   document.getElementById('mm-sub').textContent =
-    (mode === 'training') ? 'BOOTING AI SPARRING' : 'SCANNING NETWORK FOR OPPONENT';
+    (mode === 'training') ? gt('aiBoot') : gt('scanOpponent');
   if(PVP_MODES.has(mode)){
     startPvpMode(mode);
     return;
@@ -224,14 +309,14 @@ async function startPvpMode(mode){
     if(!window.SHS_PVP || !window.SB) throw new Error('PvP offline');
     const user = await SB.getUser();
     const uid = user?.id || APP_IMPORT.player?.uid;
-    if(!uid) throw new Error('Inicia sesion para jugar PvP.');
+    if(!uid) throw new Error(gt('signinPvp'));
     APP.pvp = { mode, uid, localMove:null, remoteMove:null, resolving:false, matched:false };
     const watcher = await SHS_PVP.watchForMatch(uid, row => {
       if(APP.pvp?.matched) return;
       APP.pvp.matched = true;
       beginPvpBattle(mode, row, uid).catch(err => {
         console.warn('beginPvpBattle failed', err);
-        alert('No se pudo abrir la partida PvP.');
+        alert(gt('pvpOpenFailed'));
         backToMenu();
       });
     });
@@ -242,11 +327,11 @@ async function startPvpMode(mode){
       if(watcher?.unsubscribe) await watcher.unsubscribe();
       await beginPvpBattle(mode, rsp, uid);
     } else {
-      document.getElementById('mm-sub').textContent = 'WAITING FOR RIVAL LINK';
+      document.getElementById('mm-sub').textContent = gt('waitingLink');
     }
   } catch(err) {
     console.warn('PvP queue failed', err);
-    alert(err?.message || 'PvP no disponible.');
+    alert(err?.message || gt('pvpUnavailable'));
     backToMenu();
   }
 }
@@ -363,8 +448,8 @@ function beginBattle(mode, pvpMatch){
   renderHud();
   hideActionPanel();
   ensureBattleTopUI();
-  appendLog('Combate iniciado · ' + MODES[mode].label, '');
-  if(pvpMatch) appendLog('PvP link activo · broadcast ready', '');
+  appendLog(`${gt('battleStarted')} · ${MODES[mode].label}`, '');
+  if(pvpMatch) appendLog(gt('pvpReady'), '');
   showTurnBanner(()=> startRoundTimer());
 }
 
@@ -383,7 +468,7 @@ function layoutHand(side, ids, faceDown){
       if (outcome === 'loss') el.classList.add('card-loser');
       const tag = document.createElement('div');
       tag.className = 'card-result-tag ' + (outcome==='win'?'win':outcome==='loss'?'lose':'draw');
-      tag.textContent = outcome === 'win' ? 'VICTORY' : outcome === 'loss' ? 'LOSER' : 'DRAW';
+      tag.textContent = outcome === 'win' ? gt('cardWin') : outcome === 'loss' ? gt('cardLoss') : gt('draw');
       el.appendChild(tag);
     } else if(side === 'me'){
       el.onclick = () => selectCard(id);
@@ -421,9 +506,10 @@ function renderHud(){
   });
 }
 
-function setStatus(text, oppTurn){
+function setStatus(text, oppTurn, key){
   const s = document.getElementById('center-status');
   if (!s) return;
+  APP.statusKey = key || null;
   s.textContent = text;
   s.className = 'center-status' + (oppTurn ? ' opp-turn' : '');
 }
@@ -448,10 +534,19 @@ function ensureBattleTopUI(){
   }
   // Audio controls inline with log + surrender buttons.
   const tools = document.querySelector('.battle-tools');
+  if (tools && !document.getElementById('game-lang-toggle')) {
+    const lang = document.createElement('button');
+    lang.className = 'tool-btn lang-btn';
+    lang.id = 'game-lang-toggle';
+    lang.title = 'Language / Idioma';
+    lang.textContent = GAME_LANG === 'es' ? 'EN' : 'ES';
+    lang.onclick = toggleGameLang;
+    tools.appendChild(lang);
+  }
   if (tools && !document.getElementById('bgm-toggle')) {
     const btn = document.createElement('button');
     btn.className = 'tool-btn'; btn.id = 'bgm-toggle';
-    btn.title = 'Music on/off';
+    btn.title = gt('music');
     btn.textContent = '🎵';
     btn.onclick = toggleBgm;
     const vol = document.createElement('input');
@@ -462,6 +557,7 @@ function ensureBattleTopUI(){
     tools.appendChild(vol);
     initBgm();
   }
+  applyGameLang();
   // Projectile overlay (above combat-stage, below action-panel).
   if (!document.getElementById('projectile-layer')) {
     const layer = document.createElement('div');
@@ -481,7 +577,7 @@ function startRoundTimer(){
     const ss = String(s%60).padStart(2,'0');
     el.textContent = `${mm}:${ss}`;
     el.classList.toggle('warn', ms <= 20000);
-    el.classList.toggle('crit', ms <= 5000);
+    el.classList.toggle('crit', ms <= 10000);
     if (ms <= 0) {
       stopRoundTimer();
       handleRoundTimeout();
@@ -496,11 +592,16 @@ function stopRoundTimer(){
   APP.roundTimerId = null;
 }
 function handleRoundTimeout(){
+  if (APP.battle?.pvp && APP.pvp?.localMove && !APP.pvp?.remoteMove) {
+    setStatus(gt('rivalTimeout'), true, 'rivalTimeout');
+    appendLog(gt('rivalTimeout'), 'loss');
+    return;
+  }
   if (APP.inputLocked) return;
   APP.timeoutStreak = (APP.timeoutStreak||0) + 1;
-  appendLog(`⏱ Tiempo agotado · jugada automática (${APP.timeoutStreak}/2)`, 'loss');
+  appendLog(`⏱ ${gt('timeoutAuto')} (${APP.timeoutStreak}/2)`, 'loss');
   if (APP.timeoutStreak >= 2) {
-    appendLog('⛔ Doble timeout · rendición forzada', 'loss');
+    appendLog('⛔ ' + gt('doubleTimeout'), 'loss');
     return surrenderForced();
   }
   // Auto-play: pick first available card, no pulses, no colapso.
@@ -514,12 +615,12 @@ function handleRoundTimeout(){
 function showTurnBanner(done){
   const b = document.getElementById('round-banner');
   if (!b) { done && done(); return; }
-  setStatus('', false);
-  b.textContent = `ROUND ${(APP.battle.round||0)+1}`;
+  setStatus('', false, null);
+  b.textContent = `${gt('round')} ${(APP.battle.round||0)+1}`;
   b.className = 'round-banner show turn-anim';
   setTimeout(() => {
     b.className = 'round-banner';
-    setStatus(APP.battle?.pvp ? 'LOCK YOUR MOVE' : 'YOUR TURN', false);
+    setStatus(APP.battle?.pvp ? gt('lockMove') : gt('yourTurn'), false, APP.battle?.pvp ? 'lockMove' : 'yourTurn');
     done && done();
   }, 1800);
 }
@@ -584,6 +685,7 @@ function showActionPanel(){
 
   buildPulseRow();
   refreshActionPanel();
+  applyGameLang();
   document.getElementById('action-panel').classList.add('show');
 }
 function hideActionPanel(){
@@ -654,7 +756,7 @@ function confirmAction(){
   if(cost > APP.battle.pPulses) return;
 
   APP.inputLocked = true;
-  stopRoundTimer();
+  if(!APP.battle.pvp) stopRoundTimer();
   APP.battle.pPulses -= cost;
   hideActionPanel();
   renderHud();
@@ -664,10 +766,10 @@ function confirmAction(){
     APP.pvp.localMove = move;
     const meEl  = document.querySelector(`#hand-me  .card[data-card-id="${cardId}"]`);
     if(meEl) meEl.classList.add('played');
-    setStatus('WAITING RIVAL', true);
+    setStatus(gt('waitingRival'), true, 'waitingRival');
     APP.pvp.channel?.send(move).catch(err => {
       console.warn('PvP move send failed', err);
-      appendLog('PvP send failed · retry with next action', 'loss');
+      appendLog(gt('sendFailed'), 'loss');
       APP.inputLocked = false;
     });
     maybeResolvePvpRound();
@@ -693,8 +795,8 @@ function handlePvpMove(payload){
   if(action.round !== APP.battle.round) return;
   action.ts = action.ts || payload.ts || Date.now();
   APP.pvp.remoteMove = action;
-  appendLog('Rival action locked', '');
-  if(!APP.pvp.localMove) setStatus('RIVAL LOCKED · CHOOSE FAST', false);
+  appendLog(gt('rivalAction'), '');
+  if(!APP.pvp.localMove) setStatus(gt('rivalLocked'), false, 'rivalLocked');
   maybeResolvePvpRound();
 }
 
@@ -708,6 +810,7 @@ function maybeResolvePvpRound(){
   const oppEl = document.querySelector(`#hand-opp .card[data-card-id="${remote.cardId}"]`);
   if(oppEl) oppEl.classList.add('played');
   renderHud();
+  stopRoundTimer();
   if(!APP.battle._starter){
     APP.battle._starter = (local.ts || 0) <= (remote.ts || 0) ? 'p' : 'o';
   }
@@ -727,7 +830,7 @@ function maybeResolvePvpRound(){
 // ─── COMBAT FOCUS PHASE ──────────────────────────────────────
 function runCombatPhase(result, done){
   const stage = document.getElementById('combat-stage');
-  setStatus('CLASH', true);
+  setStatus(gt('clash'), true, 'clash');
 
   const pCard = getCard(result.p.cardId);
   const oCard = getCard(result.o.cardId);
@@ -827,7 +930,11 @@ function runCombatPhase(result, done){
   }, 2250);
 
   setTimeout(()=>{
-    const map = { p:{t:'ROUND WON', c:'win'}, o:{t:'ROUND LOST', c:'loss'}, draw:{t:'DRAW', c:'draw'} };
+    const map = {
+      p:{t:gt('roundWon'), c:'win'},
+      o:{t:gt('roundLost'), c:'loss'},
+      draw:{t:gt('draw'), c:'draw'},
+    };
     const v = map[result.winner] || map.draw;
     verdict.textContent = v.t + (result.dmg ? ` · −${result.dmg}` : '');
     verdict.classList.add(v.c, 'show');
@@ -1127,21 +1234,21 @@ function showEnd(){
   const tag = document.getElementById('end-tag');
 
   if(B.winner === 'p'){
-    t.textContent = 'VICTORY'; t.className = 'end-title win';
-    s.textContent = 'SHARDS SECURED · LINK STABLE';
-    tag.textContent = 'WIN';
+    t.textContent = gt('win'); t.className = 'end-title win';
+    s.textContent = gt('linkStable');
+    tag.textContent = gt('win');
     card.className = 'end-card win';
     spawnConfetti();
   } else if(B.winner === 'o'){
-    t.textContent = 'DEFEAT'; t.className = 'end-title loss';
-    s.textContent = 'LINK SEVERED · PROTOCOL OBSERVES';
-    tag.textContent = 'LOSS';
+    t.textContent = gt('defeat'); t.className = 'end-title loss';
+    s.textContent = gt('linkSevered');
+    tag.textContent = gt('defeat');
     card.className = 'end-card loss';
     spawnBurst(window.innerWidth/2, window.innerHeight/2, '#FF3B3B', 70, 6);
   } else {
-    t.textContent = 'DRAW'; t.className = 'end-title draw';
-    s.textContent = 'IMPASSE · NO ECHO PREVAILS';
-    tag.textContent = 'DRAW';
+    t.textContent = gt('draw'); t.className = 'end-title draw';
+    s.textContent = gt('impasse');
+    tag.textContent = gt('draw');
     card.className = 'end-card draw';
     spawnBurst(window.innerWidth/2, window.innerHeight/2, '#f59e0b', 40, 4);
   }
@@ -1158,6 +1265,7 @@ function showEnd(){
   document.getElementById('rw-shards-box').className = 'rw ' + (rw.shards>0?'pos':'');
   document.getElementById('rw-xp-box').className     = 'rw ' + (rw.xp>0?'pos':'');
   document.getElementById('rw-elo-box').className    = 'rw ' + (rw.elo>0?'pos':(rw.elo<0?'neg':''));
+  applyGameLang();
 
   // ── Server-authoritative finalization (Phase 2A) ────────────
   // Calls finalize_battle RPC. Server recomputes rewards atomically
