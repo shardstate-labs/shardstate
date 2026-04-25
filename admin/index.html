@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>SHARDSTATE — CARD EDITOR</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./style.css?v=12"/>
+<link rel="stylesheet" href="./style.css?v=13"/>
 </head>
 <body>
 
-<script src="../engine/cards.js?v=12"></script>
-<script src="../engine/ability_catalog.js?v=12"></script>
-<script src="../js/config.js?v=12"></script>
-<script src="../js/sb.js?v=12"></script>
+<script src="../engine/cards.js?v=13"></script>
+<script src="../engine/ability_catalog.js?v=13"></script>
+<script src="../js/config.js?v=13"></script>
+<script src="../js/sb.js?v=13"></script>
 
 <aside class="editor">
   <div class="editor-header">
@@ -48,7 +48,6 @@
         <option value="phantom">👁 PHANTOM</option>
         <option value="frequenz">🎸 FREQUENZ</option>
         <option value="protocol">🛡 PROTOCOL</option>
-        <option value="echo">✨ ECHO</option>
         <option value="titans">🗿 TITANS</option>
       </select>
     </div>
@@ -61,9 +60,9 @@
     <div class="field-row">
       <div class="field"><label>Type</label>
         <select id="f-type" onchange="syncCard()">
-          <option value="normal">Normal</option>
-          <option value="titan">Titan</option>
-          <option value="grand">Grand</option>
+          <option value="normal">Común</option>
+          <option value="grand">Grand (LD)</option>
+          <option value="eco">Eco (CR)</option>
         </select>
       </div>
       <div class="field"><label>Rarity</label>
@@ -162,6 +161,6 @@
   </div>
 </main>
 
-<script src="./app.js?v=12"></script>
+<script src="./app.js?v=13"></script>
 </body>
 </html>

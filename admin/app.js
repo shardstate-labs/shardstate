@@ -198,7 +198,7 @@ function syncCard(){
   const cond = '';
   // Auto-derive bonus from clan
   const bonusId = (window.CLAN_BONUS_MAP || {})[clan];
-  const bonus = bonusId ? (cat[bonusId]?.label || '') : (clan === 'echo' ? 'Sin bonus de clan' : (clan === 'titans' ? 'Cancela rivales Titans (auto)' : ''));
+  const bonus = bonusId ? (cat[bonusId]?.label || '') : (clan === 'titans' ? 'Cancela TITANS rival' : '');
   $('f-bonus').value = bonus;
   const hint = $('f-ability-hint');
   if (hint) hint.textContent = wantTitans ? 'Titans-only ability pool (passive, hand-based).' : `Slot único: ${pool_size_for(wantTitans)} habilidades disponibles.`;
@@ -240,8 +240,8 @@ function syncCard(){
   $('p-rar').className    = `card-rar rar-${rar}`;
 
   const badge = $('p-type-badge');
-  const TYPE_LABEL = { titan:'TITANS', grand:'GRAND', echo:'TITANS', nexus:'GRAND' };
-  if(type !== 'normal'){ badge.textContent = TYPE_LABEL[type] || type.toUpperCase(); badge.style.display = 'block'; }
+  const TYPE_LABEL = { grand:'GRAND', eco:'ECO' };
+  if(type === 'grand' || type === 'eco'){ badge.textContent = TYPE_LABEL[type]; badge.style.display = 'block'; }
   else badge.style.display = 'none';
 
   $('p-pow').textContent = showPow;
@@ -278,7 +278,7 @@ function buildCard(){
   const abilityId = $('f-ability-id') ? $('f-ability-id').value : '';
   const bonusId   = (window.CLAN_BONUS_MAP || {})[clan] || null;
   const abilText  = cat[abilityId]?.label || '';
-  const bonusText = bonusId ? (cat[bonusId]?.label || '') : (clan === 'echo' ? 'Sin bonus de clan' : (clan === 'titans' ? 'Cancela rivales Titans (auto)' : ''));
+  const bonusText = bonusId ? (cat[bonusId]?.label || '') : (clan === 'titans' ? 'Cancela TITANS rival' : '');
   const art1   = $('f-art1-url').value.trim() || blobArt1 || '';
   const art2   = $('f-art2-url').value.trim() || blobArt2 || '';
   const logo   = $('f-logo-url').value.trim() || blobLogo || '';

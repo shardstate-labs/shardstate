@@ -451,6 +451,12 @@ function syncTopbar() {
   if (eloEl) { eloEl.textContent = eloText; eloEl.className = `user-elo ${eb.cls}`; }
   const eloEl2 = byId('topbar-elo2');
   if (eloEl2) { eloEl2.textContent = eloText; eloEl2.className = `topbar-elo ${eb.cls}`; }
+  // Show admin nav link only for the admin email.
+  const adminLink = byId('nav-admin-link');
+  if (adminLink) {
+    const isAdmin = (u.email || '').toLowerCase() === 'faxie.contact@gmail.com';
+    adminLink.style.display = isAdmin ? '' : 'none';
+  }
 }
 
 // ── TAB NAVIGATION ─────────────────────────────────────────────
@@ -506,7 +512,9 @@ function rarLabel(rar) {
 }
 
 function typeLabel(t) {
-  const map = { titan:'TITANS', grand:'GRAND', echo:'TITANS', nexus:'GRAND' };
+  // Only true card *types* are 'grand' (LD-equiv) and 'eco' (CR-equiv).
+  // 'titans' is a CLAN now, not a type. Legacy values map to nothing.
+  const map = { grand:'GRAND', eco:'ECO' };
   return map[t] || (t || '').toUpperCase();
 }
 
@@ -563,7 +571,7 @@ function renderCard(id, opts = {}) {
     ${opts.missing ? '<div class="card-missing-lock">🔒</div>' : ''}
   </div>
   <div class="card-vignette"></div>
-  ${cardType !== 'normal' ? `<div class="card-type-badge" style="display:block">${typeLabel(cardType)}</div>` : ''}
+  ${(cardType==='grand'||cardType==='eco') ? `<div class="card-type-badge type-${cardType}">${typeLabel(cardType)}</div>` : ''}
   <div class="card-top">
     ${logoSrc ? `<img class="card-logo show" src="${logoSrc}" alt="" onerror="this.classList.remove('show')"/>` : ''}
     <span class="card-name">${card.name}</span>
@@ -699,7 +707,7 @@ function _renderCardDetailModal(card, owned) {
       <div class="cdm-clan-row">
         <span class="cdm-clan-dot" style="background:${cc}"></span>
         <span class="cdm-clan-name" style="color:${cc}">${ce} ${clanName}</span>
-        ${cardType!=='normal'?`<span class="cdm-type-badge">${typeLabel(cardType)}</span>`:''}
+        ${(cardType==='grand'||cardType==='eco')?`<span class="cdm-type-badge type-${cardType}">${typeLabel(cardType)}</span>`:''}
       </div>
       <div class="cdm-stars-row">${starsHtml}</div>
 
@@ -1178,7 +1186,7 @@ function ownedTitanCount(){
   const col = view.state.collection || {};
   return Object.keys(col).filter(id => {
     const c = _allCards().find(x => x.id === id);
-    return c && c.type === 'titan';
+    return c && c.clan === 'titans';
   }).length;
 }
 const TITAN_TIERS = [10,20,30,40,50];
@@ -1243,8 +1251,8 @@ function claimMission(id){
     view.state.shards = (view.state.shards||0) + (m.reward||0);
     toast(`+${m.reward} SHARDS`);
   } else if (m.type === 'titan_card') {
-    const pool = _allCards().filter(c => c.type === 'titan' && !view.state.collection?.[c.id]);
-    const pick = pool[Math.floor(Math.random()*pool.length)] || _allCards().find(c=>c.type==='titan');
+    const pool = _allCards().filter(c => c.clan === 'titans' && !view.state.collection?.[c.id]);
+    const pick = pool[Math.floor(Math.random()*pool.length)] || _allCards().find(c=>c.clan==='titans');
     if (pick) {
       view.state.collection = view.state.collection || {};
       addCardToCollection(pick.id);
@@ -1759,7 +1767,7 @@ function openPackById(packId, payWith) {
   let cards = randomCards(p.cards, opts);
   // Optional special-card chance injection
   if (p.titanChance && Math.random() < p.titanChance) {
-    const titans = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]).filter(c => c.type === 'titan');
+    const titans = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]).filter(c => c.clan === 'titans');
     if (titans.length) cards[0] = titans[Math.floor(Math.random()*titans.length)];
   }
   if (p.grandChance && Math.random() < p.grandChance) {

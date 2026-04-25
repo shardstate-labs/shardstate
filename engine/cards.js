@@ -19,7 +19,7 @@ const CLANS = {
   phantom:  { name:'PHANTOM',  emoji:'👁', color:'#1ABC9C', bonus:'-6 ATQ adv (mín 5)' },
   frequenz: { name:'FREQUENZ', emoji:'🎸', color:'#F39C12', bonus:'-12 ATQ adv (mín 8)' },
   protocol: { name:'PROTOCOL', emoji:'🛡', color:'#7F8C8D', bonus:'Anular habilidad adv' },
-  echo:     { name:'ECHO',     emoji:'✨', color:'#F5F0E8', bonus:'Sin bonus de clan (líderes del mundo anterior)' },
+  titans:   { name:'TITANS',   emoji:'🗿', color:'#F5F0E8', bonus:'Cancela TITANS rival si ambos tienen TITANS en mano' },
 };
 
 // ─── RARITY MAP ──────────────────────────────────────────────
@@ -1271,7 +1271,7 @@ createCard({
 // Se desbloquean subiendo nivel de cuenta
 // ══════════════════════════════════════════════════════════
 createCard({
-  id:'titan_atlas', name:'ATLAS', clan:'echo', type:'titan', stars:3, rarity:'common',
+  id:'titan_atlas', name:'ATLAS', clan:'titans', type:'normal', stars:3, rarity:'common',
   stats:{ level1:{power:5,damage:2}, max:{power:7,damage:4} },
   ability:{ type:'COURAGE', text:'Courage: +3 POD si jugás primero esta ronda', condition:'Courage' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1282,7 +1282,7 @@ createCard({
   unlockLevel: 5,
 }),
 createCard({
-  id:'titan_selene', name:'SELENE', clan:'echo', type:'titan', stars:3, rarity:'uncommon',
+  id:'titan_selene', name:'SELENE', clan:'titans', type:'normal', stars:3, rarity:'uncommon',
   stats:{ level1:{power:4,damage:3}, max:{power:7,damage:5} },
   ability:{ type:'HEALER_AURA', text:'Healer Aura: al final de cada ronda, recuperás 1 vida' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1293,7 +1293,7 @@ createCard({
   unlockLevel: 10,
 }),
 createCard({
-  id:'titan_themis', name:'THEMIS', clan:'echo', type:'titan', stars:3, rarity:'uncommon',
+  id:'titan_themis', name:'THEMIS', clan:'titans', type:'normal', stars:3, rarity:'uncommon',
   stats:{ level1:{power:5,damage:3}, max:{power:7,damage:4} },
   ability:{ type:'WISDOM_TRANSFER', text:'Wisdom Transfer: copiás el bonus del clan de tu carta de más estrellas' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1304,7 +1304,7 @@ createCard({
   unlockLevel: 15,
 }),
 createCard({
-  id:'titan_eos', name:'EOS', clan:'echo', type:'titan', stars:3, rarity:'uncommon',
+  id:'titan_eos', name:'EOS', clan:'titans', type:'normal', stars:3, rarity:'uncommon',
   stats:{ level1:{power:4,damage:4}, max:{power:7,damage:6} },
   ability:{ type:'BALANCE', text:'Balance: al inicio de ronda, el jugador con menos vida gana 1 vida' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1315,7 +1315,7 @@ createCard({
   unlockLevel: 20,
 }),
 createCard({
-  id:'titan_cronos', name:'CRONOS', clan:'echo', type:'titan', stars:3, rarity:'rare',
+  id:'titan_cronos', name:'CRONOS', clan:'titans', type:'normal', stars:3, rarity:'rare',
   stats:{ level1:{power:6,damage:3}, max:{power:8,damage:4} },
   ability:{ type:'COMMANDERS_AURA', text:"Commander's Aura: todas tus cartas ganan +1 POD esta ronda" },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1326,7 +1326,7 @@ createCard({
   unlockLevel: 25,
 }),
 createCard({
-  id:'titan_helios', name:'HELIOS', clan:'echo', type:'titan', stars:3, rarity:'uncommon',
+  id:'titan_helios', name:'HELIOS', clan:'titans', type:'normal', stars:3, rarity:'uncommon',
   stats:{ level1:{power:4,damage:5}, max:{power:7,damage:7} },
   ability:{ type:'INSPIRATION', text:'Inspiration: tu carta de menor Daño gana +3 Daño esta ronda' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1337,7 +1337,7 @@ createCard({
   unlockLevel: 30,
 }),
 createCard({
-  id:'titan_oceanus', name:'OCEANUS', clan:'echo', type:'titan', stars:3, rarity:'uncommon',
+  id:'titan_oceanus', name:'OCEANUS', clan:'titans', type:'normal', stars:3, rarity:'uncommon',
   stats:{ level1:{power:5,damage:3}, max:{power:8,damage:5} },
   ability:{ type:'VETERANS_STANCE', text:"Veteran's Stance: si perdés 2 rondas seguidas, +4 POD", condition:'loss_streak' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1348,7 +1348,7 @@ createCard({
   unlockLevel: 35,
 }),
 createCard({
-  id:'titan_phoebe', name:'PHOEBE', clan:'echo', type:'titan', stars:3, rarity:'uncommon',
+  id:'titan_phoebe', name:'PHOEBE', clan:'titans', type:'normal', stars:3, rarity:'uncommon',
   stats:{ level1:{power:4,damage:4}, max:{power:7,damage:6} },
   ability:{ type:'DIPLOMAT', text:'Diplomat: cancela la primera habilidad del rival de la partida (1 vez)' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1359,7 +1359,7 @@ createCard({
   unlockLevel: 40,
 }),
 createCard({
-  id:'titan_hyperion', name:'HYPERION', clan:'echo', type:'titan', stars:3, rarity:'rare',
+  id:'titan_hyperion', name:'HYPERION', clan:'titans', type:'normal', stars:3, rarity:'rare',
   stats:{ level1:{power:6,damage:4}, max:{power:9,damage:5} },
   ability:{ type:'PROTECTOR', text:'Protector: absorbe hasta 2 puntos de daño por ronda' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },
@@ -1370,7 +1370,7 @@ createCard({
   unlockLevel: 45,
 }),
 createCard({
-  id:'titan_mnemosyne', name:'MNEMOSYNE', clan:'echo', type:'titan', stars:3, rarity:'rare',
+  id:'titan_mnemosyne', name:'MNEMOSYNE', clan:'titans', type:'normal', stars:3, rarity:'rare',
   stats:{ level1:{power:7,damage:5}, max:{power:9,damage:7} },
   ability:{ type:'LEGACY', text:'Legacy: todas las habilidades de tu deck se activan desde nivel 1' },
   bonus:{ type:'NONE', text:'Sin bonus de clan' },

@@ -116,7 +116,6 @@
     phantom:  'ATK_M6_F5',
     frequenz: 'ATK_M12_F8',
     protocol: 'CANCEL_ABILITY_ADV',
-    echo:     null,        // Echo = no clan bonus (lore: leaders of prior world)
     titans:   null,        // Titans bonus is the global cancel rule, not a per-card buff
   };
 
@@ -146,7 +145,7 @@
       c.bonusId   = CLAN_BONUS[c.clan] || null;
       // Mirror to text fields for legacy renderers / UI:
       c.ability   = CAT[c.abilityId]?.label || '';
-      c.bonus     = c.bonusId ? CAT[c.bonusId].label : (c.clan==='echo' ? 'Sin bonus de clan' : '');
+      c.bonus     = c.bonusId ? CAT[c.bonusId].label : (c.clan==='titans' ? 'Cancela TITANS rival' : '');
     });
   }
 

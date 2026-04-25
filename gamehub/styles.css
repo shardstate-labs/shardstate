@@ -1060,3 +1060,94 @@ input,select,textarea{ max-width:100%; }
   padding-top:env(safe-area-inset-top, 0);
   padding-bottom:env(safe-area-inset-bottom, 0);
 }
+
+/* ════════════════════════════════════════════════════════════
+ * UI/UX-PRO-MAX POLISH PASS — overlap + responsive fixes
+ * Rules: truncation-strategy, z-index-management, touch-target-size,
+ *        primary-action lane, mobile-first.
+ * ════════════════════════════════════════════════════════════ */
+
+/* (1) Card detail modal — close button never overlaps header content */
+.cdm-close{
+  top:10px !important; right:10px !important;
+  width:36px; height:36px;                /* >=44px hit area via padding/hitSlop on mobile below */
+  border-radius:50%;
+  background:rgba(15,17,22,.92);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 6px 16px rgba(0,0,0,.55), 0 0 0 1px rgba(0,0,0,.4) inset;
+  font-size:15px; line-height:1; color:#e8edf5;
+  z-index:50;
+  transition:transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.cdm-close:hover{ transform:scale(1.06); }
+.cdm-close:active{ transform:scale(.94); }
+/* Reserve a clean lane in the info column so name/rarity/type badges never
+ * pass under the close button. */
+.cdm-info{ padding-right:56px; }
+.cdm-header{ padding-right:4px; gap:8px; flex-wrap:wrap; }
+.cdm-name{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cdm-rar{ flex-shrink:0; }
+@media (max-width:600px){
+  .cdm-close{ top:6px !important; right:6px !important; width:32px; height:32px; }
+  .cdm-info{ padding-right:48px; }
+}
+
+/* (2) Type badge (GRAND / ECO only) — corner placement, never on the name */
+.card-type-badge{
+  position:absolute; top:8px; left:8px;
+  padding:2px 7px; border-radius:3px;
+  font-family:'Orbitron',sans-serif; font-weight:800;
+  font-size:.58rem; letter-spacing:.08em;
+  white-space:nowrap; line-height:1.2;
+  pointer-events:none;
+  box-shadow:0 2px 6px rgba(0,0,0,.45);
+  z-index:5;
+}
+.card-type-badge.type-grand{
+  background:linear-gradient(135deg,#FBBF24,#F59E0B);
+  color:#1a1410; border:1px solid rgba(0,0,0,.2);
+}
+.card-type-badge.type-eco{
+  background:linear-gradient(135deg,#22D3EE,#0EA5E9);
+  color:#06121a; border:1px solid rgba(0,0,0,.2);
+}
+.cdm-type-badge{
+  display:inline-flex; align-items:center;
+  padding:2px 8px; border-radius:4px;
+  font-size:.65rem; font-weight:700; letter-spacing:.06em;
+  margin-left:6px; flex-shrink:0;
+}
+.cdm-type-badge.type-grand{ background:linear-gradient(135deg,#FBBF24,#F59E0B); color:#1a1410; }
+.cdm-type-badge.type-eco  { background:linear-gradient(135deg,#22D3EE,#0EA5E9); color:#06121a; }
+@media (max-width:600px){
+  .card-type-badge{ font-size:.5rem; padding:1px 5px; top:6px; left:6px; }
+  .cdm-type-badge { font-size:.55rem; padding:1px 6px; }
+}
+@media (max-width:400px){
+  .card-type-badge{ font-size:.45rem; padding:1px 4px; }
+}
+
+/* (3) Card name + rarity badge — name truncates, rarity always fits */
+.tcg-card .card-top, .card .card-top{
+  display:flex; align-items:center; gap:6px;
+  position:relative; min-width:0;
+  padding-right:4px;
+}
+.tcg-card .card-name, .card .card-name{
+  flex:1 1 auto; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  padding-right:2px;
+}
+.tcg-card .card-rar, .card .card-rar{
+  flex-shrink:0;
+  position:relative; top:0; right:0;
+  font-size:.55rem; padding:1px 5px; border-radius:3px;
+  font-weight:800; letter-spacing:.05em;
+}
+
+/* If a type badge AND rarity both exist, give the name a touch more breathing room */
+.tcg-card:has(.card-type-badge) .card-name{ padding-right:4px; }
+@media (max-width:600px){
+  .tcg-card .card-name, .card .card-name{ font-size:.78rem; }
+  .tcg-card .card-rar,  .card .card-rar { font-size:.5rem; padding:1px 4px; }
+}
