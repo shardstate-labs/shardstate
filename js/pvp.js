@@ -79,7 +79,10 @@
       await ch.subscribe();
       const api = {
         side,
-        async send(action){ return ch.send({ type:'broadcast', event:'move', payload:{ side, action, ts: Date.now() } }); },
+        async send(action){
+          const ts = action?.ts || Date.now();
+          return ch.send({ type:'broadcast', event:'move', payload:{ side, action, ts } });
+        },
         onMove(fn){ moveCbs.push(fn); },
         onStatus(fn){ statusCbs.push(fn); },
         async close(){ try { await sb.removeChannel(ch); } catch(_){} _channel = null; },

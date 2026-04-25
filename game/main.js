@@ -289,6 +289,27 @@ async function beginPvpBattle(mode, row, uid){
     opponentId: match.opponentId,
     opponentDeck: match.opponentDeck,
   });
+  loadPvpOpponentProfile(match.opponentId);
+}
+
+async function loadPvpOpponentProfile(uid){
+  if(!uid || !window.SB || !APP.battle?.pvp) return;
+  try {
+    const r = await SB.loadProfile(uid);
+    const name = r?.profile?.username || r?.profile?.display_name || ('RIVAL ' + String(uid).slice(0, 6).toUpperCase());
+    const lvl = (r?.gameState?.level ?? r?.profile?.level ?? 1) | 0;
+    const elo = (r?.gameState?.elo ?? r?.profile?.elo ?? 0) | 0;
+    APP.battle.opponent.name = name;
+    APP.battle.opponent.club = `LV ${Math.max(1, lvl)} · ELO ${elo}`;
+    const nameEl = document.getElementById('opp-name');
+    const clubEl = document.getElementById('opp-club');
+    const avatarEl = document.getElementById('opp-avatar');
+    if(nameEl) nameEl.textContent = APP.battle.opponent.name;
+    if(clubEl) clubEl.textContent = APP.battle.opponent.club;
+    if(avatarEl) avatarEl.textContent = APP.battle.opponent.name.charAt(0);
+  } catch(err) {
+    console.warn('Opponent profile load failed', err);
+  }
 }
 
 // ─── BATTLE ──────────────────────────────────────────────────
@@ -312,7 +333,7 @@ function beginBattle(mode, pvpMatch){
   if(pvpMatch){
     APP.battle.opponent = {
       name: pvpMatch.opponentId ? ('RIVAL ' + String(pvpMatch.opponentId).slice(0, 6).toUpperCase()) : 'RIVAL',
-      club: pvpMatch.side === 'p1' ? 'P2 LINK' : 'P1 LINK',
+      club: 'LOADING PROFILE',
     };
   }
 
@@ -498,7 +519,7 @@ function showTurnBanner(done){
   b.className = 'round-banner show turn-anim';
   setTimeout(() => {
     b.className = 'round-banner';
-    setStatus('YOUR TURN', false);
+    setStatus(APP.battle?.pvp ? 'LOCK YOUR MOVE' : 'YOUR TURN', false);
     done && done();
   }, 1800);
 }
@@ -639,7 +660,7 @@ function confirmAction(){
   renderHud();
 
   if(APP.battle.pvp){
-    const move = { round:APP.battle.round, cardId, pulses, colapso };
+    const move = { round:APP.battle.round, cardId, pulses, colapso, ts:Date.now() };
     APP.pvp.localMove = move;
     const meEl  = document.querySelector(`#hand-me  .card[data-card-id="${cardId}"]`);
     if(meEl) meEl.classList.add('played');
@@ -670,8 +691,10 @@ function handlePvpMove(payload){
   if(!APP.battle?.pvp || !payload || payload.side === APP.pvp?.side) return;
   const action = payload.action || payload;
   if(action.round !== APP.battle.round) return;
+  action.ts = action.ts || payload.ts || Date.now();
   APP.pvp.remoteMove = action;
   appendLog('Rival action locked', '');
+  if(!APP.pvp.localMove) setStatus('RIVAL LOCKED · CHOOSE FAST', false);
   maybeResolvePvpRound();
 }
 
@@ -685,8 +708,8 @@ function maybeResolvePvpRound(){
   const oppEl = document.querySelector(`#hand-opp .card[data-card-id="${remote.cardId}"]`);
   if(oppEl) oppEl.classList.add('played');
   renderHud();
-  if(APP.pvp?.side && !APP.battle._starter){
-    APP.battle._starter = APP.pvp.side === 'p1' ? 'p' : 'o';
+  if(!APP.battle._starter){
+    APP.battle._starter = (local.ts || 0) <= (remote.ts || 0) ? 'p' : 'o';
   }
   const result = resolveRound(
     APP.battle,
@@ -1176,21 +1199,46 @@ function finalizePvpBattle(reason){
     : (B.winner === 'o' ? APP.pvp.opponentId : null);
   SHS_PVP.finalize(APP.pvp.matchId || B.matchId, winnerUid, B.roundLog || B.history || [])
     .then(rsp => {
-      if(!rsp) return;
+      const reward = extractPvpReward(rsp, APP.pvp.uid);
+      if(!reward) return;
       try {
-        const sd = rsp.shards_delta|0, xd = rsp.xp_delta|0, ed = rsp.elo_delta|0;
+        const sd = reward.shards|0, xd = reward.xp|0, ed = reward.elo|0;
         const elS = document.getElementById('rw-shards');
         const elX = document.getElementById('rw-xp');
         const elE = document.getElementById('rw-elo');
         if (elS) elS.textContent = (sd>=0?'+':'') + sd;
         if (elX) elX.textContent = (xd>=0?'+':'') + xd;
         if (elE) elE.textContent = (ed>=0?'+':'') + ed;
+        document.getElementById('rw-shards-box').className = 'rw ' + (sd>0?'pos':'');
+        document.getElementById('rw-xp-box').className     = 'rw ' + (xd>0?'pos':'');
+        document.getElementById('rw-elo-box').className    = 'rw ' + (ed>0?'pos':(ed<0?'neg':''));
       } catch(_){}
     })
     .catch(err => {
       console.warn('finalize_pvp_match failed', reason, err);
       APP.pvp.finalized = false;
     });
+}
+
+function extractPvpReward(rsp, uid){
+  if(!rsp) return null;
+  if(Array.isArray(rsp)) rsp = rsp[0];
+  if(typeof rsp === 'string'){
+    try { rsp = JSON.parse(rsp); } catch(_){ return null; }
+  }
+  const mine = rsp?.rewards?.[uid] || rsp?.players?.[uid] || rsp?.[uid] || rsp?.local || rsp;
+  const out = {
+    shards: mine.shards_delta ?? mine.shardsDelta ?? mine.shards ?? mine.reward_shards,
+    xp:     mine.xp_delta     ?? mine.xpDelta     ?? mine.xp     ?? mine.reward_xp,
+    elo:    mine.elo_delta    ?? mine.eloDelta    ?? mine.elo    ?? mine.reward_elo,
+  };
+  const hasAny = Object.values(out).some(v => v != null);
+  if(!hasAny) return null;
+  const allZero = Object.values(out).every(v => (v|0) === 0);
+  if(allZero && APP.battle?.rewards && Object.values(APP.battle.rewards).some(v => (v|0) !== 0)){
+    return APP.battle.rewards;
+  }
+  return out;
 }
 
 function backToMenu(){
