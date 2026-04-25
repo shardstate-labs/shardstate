@@ -44,6 +44,8 @@ const RARITY_LABEL = { C:'COMMON', U:'UNCOMMON', R:'RARE', M:'MYTHIC' };
     if(c.bonus && typeof c.bonus === 'object') c.bonus = c.bonus.text || '';
     if(c.ability && typeof c.ability === 'object') c.ability = c.ability.text || '';
   });
+  // Apply normalized ability + clan-bonus mapping (deterministic per card.id).
+  if (typeof assignAbilities === 'function') assignAbilities(ALL_CARDS);
 })();
 
 const ARENA_BG = [

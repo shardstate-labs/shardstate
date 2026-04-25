@@ -5,19 +5,20 @@
 // ════════════════════════════════════════════════════════════
 
 // ─── CLAN REGISTRY (12 main + ECHO) ─────────────────────────
+// Bonus text reflects the locked spec (see ability_catalog.js → CLAN_BONUS_MAP).
 const CLANS = {
-  nexus:    { name:'NEXUS',    emoji:'⚡', color:'#6B5CE7', bonus:'−2 ATQ rival (mín. 5)' },
-  tidecall: { name:'TIDECALL', emoji:'🌊', color:'#00B4D8', bonus:'+1 Pulso por ronda ganada' },
-  ashborn:  { name:'ASHBORN',  emoji:'🔥', color:'#FF6B35', bonus:'+2 Daño si ganás la ronda' },
-  errvoid:  { name:'ERRVOID',  emoji:'👾', color:'#B5179E', bonus:'Anulan la habilidad del rival' },
-  vault:    { name:'VAULT',    emoji:'👑', color:'#F7B731', bonus:'+8 ATQ base (sin necesitar Pulsos)' },
-  mycelium: { name:'MYCELIUM', emoji:'🍄', color:'#2ECC71', bonus:'Poison 1 al ganar la ronda' },
-  ironpact: { name:'IRONPACT', emoji:'💀', color:'#E74C3C', bonus:'+2 POD si el rival tiene más Daño que vos' },
-  synthos:  { name:'SYNTHOS',  emoji:'🔬', color:'#3498DB', bonus:'Copian la habilidad del rival si ganan' },
-  loopkin:  { name:'LOOPKIN',  emoji:'⏳', color:'#9B59B6', bonus:'+1 Pulso por ronda desde la ronda 2' },
-  phantom:  { name:'PHANTOM',  emoji:'👁', color:'#1ABC9C', bonus:'−1 POD al rival (mín. 1)' },
-  frequenz: { name:'FREQUENZ', emoji:'🎸', color:'#F39C12', bonus:'+2 Pulsos si hacés KO al rival' },
-  protocol: { name:'PROTOCOL', emoji:'🛡', color:'#7F8C8D', bonus:'Inmunes a anulaciones de habilidad' },
+  nexus:    { name:'NEXUS',    emoji:'⚡', color:'#6B5CE7', bonus:'+1 PWR por PULSO restante (máx 6)' },
+  tidecall: { name:'TIDECALL', emoji:'🌊', color:'#00B4D8', bonus:'+1 PWR por HP perdido (máx 5)' },
+  ashborn:  { name:'ASHBORN',  emoji:'🔥', color:'#FF6B35', bonus:'POISON 2 (mín 3)' },
+  errvoid:  { name:'ERRVOID',  emoji:'👾', color:'#B5179E', bonus:'Anular bonus adv' },
+  vault:    { name:'VAULT',    emoji:'👑', color:'#F7B731', bonus:'-3 DMG (mín 2)' },
+  mycelium: { name:'MYCELIUM', emoji:'🍄', color:'#2ECC71', bonus:'+HP por daño' },
+  ironpact: { name:'IRONPACT', emoji:'💀', color:'#E74C3C', bonus:'+8 ATQ' },
+  synthos:  { name:'SYNTHOS',  emoji:'🔬', color:'#3498DB', bonus:'Copia el PWR adv' },
+  loopkin:  { name:'LOOPKIN',  emoji:'⏳', color:'#9B59B6', bonus:'COMBO: +4 PWR' },
+  phantom:  { name:'PHANTOM',  emoji:'👁', color:'#1ABC9C', bonus:'-6 ATQ adv (mín 5)' },
+  frequenz: { name:'FREQUENZ', emoji:'🎸', color:'#F39C12', bonus:'-12 ATQ adv (mín 8)' },
+  protocol: { name:'PROTOCOL', emoji:'🛡', color:'#7F8C8D', bonus:'Anular habilidad adv' },
   echo:     { name:'ECHO',     emoji:'✨', color:'#F5F0E8', bonus:'Sin bonus de clan (líderes del mundo anterior)' },
 };
 

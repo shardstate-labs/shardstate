@@ -138,70 +138,86 @@ function tickStatus(B){
 }
 
 function resolveRound(B, pCardId, pPulses, pColapso, oCardId, oPulses, oColapso){
-  if(B.round>0) tickStatus(B);
+  // Early-exit if a player was already at 0 HP (e.g. from prior poison tick).
   if(B.pHP===0 || B.oHP===0){
     B.finished = true;
     B.winner = (B.pHP===B.oHP) ? 'draw' : (B.pHP>B.oHP ? 'p' : 'o');
     B.rewards = computeRewards(B);
+    return { round:B.round, winner:B.winner, dmg:0, p:{cardId:pCardId}, o:{cardId:oCardId} };
   }
+
+  const pCard = getCard(pCardId), oCard = getCard(oCardId);
+
+  // Bridge to new modular RoundEngine (engine/round_engine.js).
+  if (typeof window !== 'undefined' && window.SHS_ENGINE){
+    const match = {
+      round: B.round,
+      lastWinner: B._lastWinner || null,
+      starter:    B._starter    || ((B.round % 2 === 0) ? 'p' : 'o'),
+      _status:    B._status,
+      p: { _id:'p', card:pCard, hand:B.pHand, hp:B.pHP, pulsos:B.pPulses, spend:pPulses, colapso:pColapso },
+      o: { _id:'o', card:oCard, hand:B.oHand, hp:B.oHP, pulsos:B.oPulses, spend:oPulses, colapso:oColapso },
+    };
+    const r = window.SHS_ENGINE.runRound(match);
+    // Sync back
+    B.pHP = match.p.hp;     B.oHP = match.o.hp;
+    B.pPulses = match.p.pulsos;  B.oPulses = match.o.pulsos;
+    B._lastWinner = match.lastWinner;
+    B._starter    = match.starter;
+    B._status     = match._status;
+
+    const result = {
+      round: B.round, winner: r.winner, dmg: r.dmg,
+      p: { cardId:pCardId, pow:r.p.pow, atk:r.p.atk, pulses:pPulses, colapso:pColapso, bonus:r.p.bonus },
+      o: { cardId:oCardId, pow:r.o.pow, atk:r.o.atk, pulses:oPulses, colapso:oColapso, bonus:r.o.bonus },
+    };
+    B.history.push(result);
+    B.pHand = B.pHand.filter(id=>id!==pCardId);
+    B.oHand = B.oHand.filter(id=>id!==oCardId);
+    B.round += 1;
+    if(B.round>=4 || B.pHP===0 || B.oHP===0){
+      B.finished = true;
+      if(B.pHP===B.oHP) B.winner='draw';
+      else B.winner = (B.pHP > B.oHP) ? 'p' : 'o';
+      B.rewards = computeRewards(B);
+    }
+    return result;
+  }
+
+  // ── Legacy fallback (only if SHS_ENGINE failed to load) ─────
+  if(B.round>0) tickStatus(B);
   const sides = ['p','o'].map(side=>{
     const card = getCard(side==='p'?pCardId:oCardId);
     const pulses = side==='p'?pPulses:oPulses;
     const colapso = side==='p'?pColapso:oColapso;
     const hand = side==='p'?B.pHand:B.oHand;
-    return {
-      side, card, pulses, colapso, round:B.round,
-      pow: card.pow, dmg: card.dmg,
-      powD:0, atkD:0, dmgD:0,
+    return { side, card, pulses, colapso, round:B.round,
+      pow: card.pow, dmg: card.dmg, powD:0, atkD:0, dmgD:0,
       hasBonus: clanBonusActive(hand, card),
-      pulseWin:0, pulseKO:0,
-      stopAbility:false, stopBonus:false,
+      pulseWin:0, pulseKO:0, stopAbility:false, stopBonus:false,
       copyEnemyBonus:false, copyEnemyAbility:false,
       poisonOnWin:null, regenOnWin:null,
-      immuneToStop: card.clan==='protocol',
-    };
+      immuneToStop: card.clan==='protocol' };
   });
   const [P,O] = sides;
-  applyClanBonus(P,O);
-  applyClanBonus(O,P);
-  applyAbility(P,O);
-  applyAbility(O,P);
-  applyCopyEffects(P,O);
-  applyCopyEffects(O,P);
+  applyClanBonus(P,O); applyClanBonus(O,P);
+  applyAbility(P,O);   applyAbility(O,P);
+  applyCopyEffects(P,O); applyCopyEffects(O,P);
   P.pow = Math.max(1, P.pow + P.powD);
   O.pow = Math.max(1, O.pow + O.powD);
   P.atk = Math.max(0, P.pow * (P.pulses+1) + P.atkD);
   O.atk = Math.max(0, O.pow * (O.pulses+1) + O.atkD);
-  if(P.card.clan==='nexus' && P.hasBonus && !O.stopBonus) O.atk = Math.max(5, O.atk);
-  if(O.card.clan==='nexus' && O.hasBonus && !P.stopBonus) P.atk = Math.max(5, P.atk);
-
   let winner;
   if(P.atk > O.atk) winner='p';
   else if(O.atk > P.atk) winner='o';
   else winner = (B.round % 2 === 0) ? 'o' : 'p';
-
-  let dmg = 0;
   const W = winner==='p' ? P : O;
-  const L = winner==='p' ? O : P;
-  dmg = W.card.dmg + W.dmgD + (W.colapso ? W.card.dmg : 0);
-  if(winner==='p'){
-    B.oHP = Math.max(0, B.oHP - dmg);
-    B.pPulses += W.pulseWin||0;
-    if(B.oHP===0) B.pPulses += W.pulseKO||0;
-    if(W.poisonOnWin) B.oStatus.poison = { ...W.poisonOnWin };
-    if(W.regenOnWin)  B.pStatus.regen  = { ...W.regenOnWin };
-  } else {
-    B.pHP = Math.max(0, B.pHP - dmg);
-    B.oPulses += W.pulseWin||0;
-    if(B.pHP===0) B.oPulses += W.pulseKO||0;
-    if(W.poisonOnWin) B.pStatus.poison = { ...W.poisonOnWin };
-    if(W.regenOnWin)  B.oStatus.regen  = { ...W.regenOnWin };
-  }
-  const result = {
-    round: B.round, winner, dmg,
+  const dmg = W.card.dmg + W.dmgD + (W.colapso ? W.card.dmg : 0);
+  if(winner==='p'){ B.oHP = Math.max(0, B.oHP - dmg); B.pPulses += W.pulseWin||0; }
+  else            { B.pHP = Math.max(0, B.pHP - dmg); B.oPulses += W.pulseWin||0; }
+  const result = { round: B.round, winner, dmg,
     p: { cardId:pCardId, pow:P.pow, atk:P.atk, pulses:pPulses, colapso:pColapso, bonus:P.hasBonus },
-    o: { cardId:oCardId, pow:O.pow, atk:O.atk, pulses:oPulses, colapso:oColapso, bonus:O.hasBonus },
-  };
+    o: { cardId:oCardId, pow:O.pow, atk:O.atk, pulses:oPulses, colapso:oColapso, bonus:O.hasBonus } };
   B.history.push(result);
   B.pHand = B.pHand.filter(id=>id!==pCardId);
   B.oHand = B.oHand.filter(id=>id!==oCardId);
