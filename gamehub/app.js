@@ -25,6 +25,9 @@ const view = {
 };
 
 const ADMIN_EMAILS = new Set(['faxie.contact@gmail.com', 'shardstate.game@gmail.com']);
+const COLLECTION_PAGE_SIZE = 15;
+let currentCollectionFilter = 'owned';
+let currentCollectionPage = 1;
 
 // ════════════════════════════════════════════════════════════
 // I18N — Bilingual UI (ES/EN)
@@ -1203,35 +1206,7 @@ function renderColeccion() {
     });
   }
 
-  // Owned / missing cards as visual TCG cards
-  const owned   = Object.keys(view.state.collection || {});
-  const allIds  = ((typeof ALL_CARDS!=='undefined'?ALL_CARDS:[])).map(c => c.id);
-  const missing = allIds.filter(id => !view.state.collection[id]);
-
-  const ownedEl   = byId('owned-cards');
-  const missingEl = byId('missing-cards');
-  ownedEl.innerHTML   = '';
-  missingEl.innerHTML = '';
-
-  byId('owned-count').textContent   = owned.length;
-  byId('missing-count').textContent = missing.length;
-
-  if (!owned.length) {
-    ownedEl.innerHTML = `<div class="feed-muted full-span">${t('no_cards')}</div>`;
-  } else {
-    owned.forEach(id => {
-      const entry = view.state.collection[id];
-      const qty = Math.max(1, (typeof entry === 'number') ? entry : (entry?.qty | 0) || 1);
-      for (let copy = 0; copy < qty; copy++) {
-        let html = renderCard(id, { size: 'sm' });
-        html = html.replace('class="shs-card', `data-qty="${qty}" data-dup-copy="${copy}" class="shs-card`);
-        if (copy > 0) html = html.replace('class="shs-card', 'style="display:none" class="shs-card');
-        ownedEl.insertAdjacentHTML('beforeend', html);
-      }
-    });
-  }
-  missing.forEach(id => missingEl.insertAdjacentHTML('beforeend', renderCard(id, { missing: true, size: 'sm' })));
-  filterCollection();
+  renderCollectionPage();
 }
 
 // ── RENDER: MERCADO — server-authoritative ─────────────────────
@@ -2454,36 +2429,106 @@ function toggleLang() {
 }
 
 // ── FILTER COLLECTION ──────────────────────────────────────────
-let currentCollectionFilter = 'all';
-function filterCollection(filter) {
-  const query = (byId('coll-search')?.value || '').toLowerCase();
-  const owned   = byId('collection-section-owned');
-  const missing = byId('collection-section-missing');
-  if (filter) currentCollectionFilter = filter;
-  filter = currentCollectionFilter;
-  if (filter === 'owned')   { owned && (owned.style.display=''); missing && (missing.style.display='none'); }
-  else if (filter === 'missing') { owned && (owned.style.display='none'); missing && (missing.style.display=''); }
-  else if (filter === 'duplicates') {
-    owned && (owned.style.display=''); missing && (missing.style.display='none');
+function collectionFilterTitle(filter) {
+  if (filter === 'missing') return t('coll_filter_missing');
+  if (filter === 'duplicates') return t('coll_filter_dupes');
+  return t('coll_owned');
+}
+function collectionSearchHaystack(id) {
+  const card = (typeof getCard === 'function') ? getCard(id) : null;
+  return [
+    id,
+    card?.name,
+    card?.clan,
+    card?.rar,
+    card?.type,
+    card?.abilityData?.id,
+    typeof card?.ability === 'object' ? card.ability.text : card?.ability,
+    typeof card?.bonus === 'object' ? card.bonus.text : card?.bonus,
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+function getFilteredCollectionIds() {
+  const query = String(byId('coll-search')?.value || '').trim().toLowerCase();
+  const collection = view.state.collection || {};
+  const allIds = ((typeof ALL_CARDS !== 'undefined' ? ALL_CARDS : [])).map(c => c.id);
+  let ids;
+  if (currentCollectionFilter === 'missing') {
+    ids = allIds.filter(id => !collection[id]);
+  } else if (currentCollectionFilter === 'duplicates') {
+    ids = Object.keys(collection).filter(id => collectionQty(id) > 1);
+  } else {
+    ids = Object.keys(collection);
   }
-  else { owned && (owned.style.display=''); missing && (missing.style.display=''); }
-  // Filter by search query and duplicates flag
-  const dupOnly = (filter === 'duplicates');
-  document.querySelectorAll('#owned-cards .shs-card').forEach(el => {
-    const name = (el.getAttribute('data-name') || el.getAttribute('title') || '').toLowerCase();
-    const qty  = parseInt(el.getAttribute('data-qty') || '1', 10);
-    const dupCopy = parseInt(el.getAttribute('data-dup-copy') || '0', 10);
-    const passQuery = !query || name.includes(query);
-    const passDup   = !dupOnly || qty > 1;
-    const passCopy  = dupOnly || dupCopy === 0;
-    el.style.display = (passQuery && passDup && passCopy) ? '' : 'none';
-  });
-  document.querySelectorAll('#missing-cards .shs-card').forEach(el => {
-    const name = (el.getAttribute('data-name') || el.getAttribute('title') || '').toLowerCase();
-    el.style.display = (!query || name.includes(query)) ? '' : 'none';
-  });
+  if (!query) return ids;
+  return ids.filter(id => collectionSearchHaystack(id).includes(query));
+}
+function renderCollectionCard(id) {
+  const isMissing = currentCollectionFilter === 'missing';
+  const qty = collectionQty(id);
+  let html = renderCard(id, { missing: isMissing, size: 'md' });
+  html = html.replace('class="shs-card', `data-qty="${qty}" class="shs-card`);
+  if (!isMissing && qty > 1) {
+    const at = html.lastIndexOf('</div>');
+    if (at >= 0) html = `${html.slice(0, at)}<div class="shs-dup-badge">x${qty}</div>${html.slice(at)}`;
+  }
+  return html;
+}
+function renderCollectionPage() {
+  const grid = byId('owned-cards');
+  if (!grid) return;
+
+  const missingSection = byId('collection-section-missing');
+  if (missingSection) missingSection.style.display = 'none';
+
+  const ids = getFilteredCollectionIds();
+  const totalPages = Math.max(1, Math.ceil(ids.length / COLLECTION_PAGE_SIZE));
+  currentCollectionPage = Math.min(Math.max(1, currentCollectionPage), totalPages);
+
+  const start = (currentCollectionPage - 1) * COLLECTION_PAGE_SIZE;
+  const pageIds = ids.slice(start, start + COLLECTION_PAGE_SIZE);
+  const titleEl = byId('collection-results-title');
+  const countEl = byId('owned-count');
+  const missingCountEl = byId('missing-count');
+  const infoEl = byId('collection-page-info');
+  const paginationEl = byId('collection-pagination');
+  const missingCount = ((typeof ALL_CARDS !== 'undefined' ? ALL_CARDS : [])).filter(c => !view.state.collection?.[c.id]).length;
+
+  if (titleEl) titleEl.textContent = collectionFilterTitle(currentCollectionFilter);
+  if (countEl) countEl.textContent = ids.length;
+  if (missingCountEl) missingCountEl.textContent = missingCount;
+  if (infoEl) {
+    const from = ids.length ? start + 1 : 0;
+    const to = Math.min(start + COLLECTION_PAGE_SIZE, ids.length);
+    infoEl.textContent = currentLang === 'es'
+      ? `Pagina ${currentCollectionPage}/${totalPages} - ${from}-${to} de ${ids.length}`
+      : `Page ${currentCollectionPage}/${totalPages} - ${from}-${to} of ${ids.length}`;
+  }
+
+  grid.innerHTML = pageIds.length
+    ? pageIds.map(renderCollectionCard).join('')
+    : `<div class="feed-muted full-span">${currentCollectionFilter === 'missing' ? t('coll_missing') : t('no_cards')}</div>`;
+
+  if (paginationEl) {
+    paginationEl.innerHTML = `
+      <button class="btn btn-ghost btn-sm" ${currentCollectionPage <= 1 ? 'disabled' : ''} onclick="setCollectionPage(${currentCollectionPage - 1})">&lt;</button>
+      <span>${currentCollectionPage}/${totalPages}</span>
+      <button class="btn btn-ghost btn-sm" ${currentCollectionPage >= totalPages ? 'disabled' : ''} onclick="setCollectionPage(${currentCollectionPage + 1})">&gt;</button>
+    `;
+  }
+}
+function filterCollection(filter) {
+  if (filter) {
+    currentCollectionFilter = filter === 'all' ? 'owned' : filter;
+  }
+  currentCollectionPage = 1;
+  renderCollectionPage();
+}
+function setCollectionPage(page) {
+  currentCollectionPage = Number(page) || 1;
+  renderCollectionPage();
 }
 window.filterCollection = filterCollection;
+window.setCollectionPage = setCollectionPage;
 
 // ── OPEN DISCORD ───────────────────────────────────────────────
 function openDiscord() {

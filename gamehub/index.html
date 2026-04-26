@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=36"/>
+<link rel="stylesheet" href="./styles.css?v=37"/>
 </head>
 <body>
 
@@ -183,7 +183,6 @@
           </div>
           <div class="panel-actions">
             <input type="text" class="input-dark coll-search" id="coll-search" placeholder="Search cards…" data-i18n-ph="coll_search_ph" oninput="filterCollection()"/>
-            <button class="btn btn-ghost btn-sm" onclick="filterCollection('all')" data-i18n="coll_filter_all">All</button>
             <button class="btn btn-ghost btn-sm" onclick="filterCollection('owned')" data-i18n="coll_filter_owned">Owned</button>
             <button class="btn btn-ghost btn-sm" onclick="filterCollection('duplicates')" data-i18n="coll_filter_dupes">Duplicates</button>
             <button class="btn btn-ghost btn-sm" onclick="filterCollection('missing')" data-i18n="coll_filter_missing">Missing</button>
@@ -216,19 +215,20 @@
           </div>
 
           <!-- CARDS GRID -->
-          <div>
-            <div id="collection-section-owned" style="margin-bottom:24px">
-              <div class="block-title" style="margin-bottom:12px">
-                <span data-i18n="coll_owned">Owned</span>
-                <span id="owned-count" style="font-family:var(--font-body);font-size:0.75rem;color:var(--text2);font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px"></span>
+          <div class="collection-results-panel">
+            <div id="collection-section-owned">
+              <div class="collection-results-head">
+                <div class="block-title">
+                  <span id="collection-results-title" data-i18n="coll_owned">Owned</span>
+                  <span id="owned-count" style="font-family:var(--font-body);font-size:0.75rem;color:var(--text2);font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px"></span>
+                </div>
+                <div id="collection-page-info" class="collection-page-info"></div>
               </div>
-              <div id="owned-cards" class="cards-grid"></div>
+              <div id="owned-cards" class="cards-grid collection-page-grid"></div>
+              <div id="collection-pagination" class="collection-pagination"></div>
             </div>
-            <div id="collection-section-missing">
-              <div class="block-title" style="margin-bottom:12px">
-                <span data-i18n="coll_missing">Not Owned</span>
-                <span id="missing-count" style="font-family:var(--font-body);font-size:0.75rem;color:var(--text2);font-weight:400;letter-spacing:0;text-transform:none;margin-left:4px"></span>
-              </div>
+            <div id="collection-section-missing" style="display:none">
+              <span id="missing-count"></span>
               <div id="missing-cards" class="cards-grid"></div>
             </div>
           </div>
@@ -510,15 +510,15 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=36"></script>
-<script src="../engine/ability_catalog.js?v=36"></script>
-<script src="../engine/round_engine.js?v=36"></script>
-<script src="../engine/utils.js?v=36"></script>
-<script src="../js/config.js?v=36"></script>
-<script src="../js/sb.js?v=36"></script>
-<script src="../js/sync.js?v=36"></script>
-<script src="../js/pvp.js?v=36"></script>
-<script src="../js/payments.js?v=36"></script>
-<script src="./app.js?v=36"></script>
+<script src="../engine/cards.js?v=37"></script>
+<script src="../engine/ability_catalog.js?v=37"></script>
+<script src="../engine/round_engine.js?v=37"></script>
+<script src="../engine/utils.js?v=37"></script>
+<script src="../js/config.js?v=37"></script>
+<script src="../js/sb.js?v=37"></script>
+<script src="../js/sync.js?v=37"></script>
+<script src="../js/pvp.js?v=37"></script>
+<script src="../js/payments.js?v=37"></script>
+<script src="./app.js?v=37"></script>
 </body>
 </html>

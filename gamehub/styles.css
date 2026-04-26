@@ -378,7 +378,7 @@ textarea.input-dark{resize:vertical;min-height:68px}
 /* ══════════════════════════════════════════════════════════
    PANEL: COLLECTION + DECK BUILDER
 ══════════════════════════════════════════════════════════ */
-.coll-layout{display:grid;grid-template-columns:250px 1fr;gap:14px;align-items:start}
+.coll-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:20px;align-items:start}
 .deck-builder-panel{position:sticky;top:0}
 .deck-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .deck-title{font-family:var(--font-head);font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700}
@@ -403,6 +403,28 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .filter-btn.active{background:var(--acc-dim);border-color:rgba(0,255,198,0.3);color:var(--acc)}
 .coll-search{flex:1;min-width:130px}
 .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:16px;padding:6px 2px}
+.collection-results-panel{min-width:0}
+.collection-results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.collection-page-info{font-family:var(--font-head);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);white-space:nowrap}
+.collection-page-grid{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(150px,1fr));
+  gap:24px 22px;
+  align-items:start;
+  justify-items:center;
+  min-height:716px;
+  padding:8px 0 4px;
+}
+.collection-page-grid .shs-card{margin:0}
+.collection-pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px}
+.collection-pagination span{font-family:var(--font-head);font-size:.72rem;color:var(--text2);letter-spacing:.08em}
+.collection-pagination button[disabled]{opacity:.35;pointer-events:none}
+.shs-dup-badge{
+  position:absolute;left:8px;top:28px;z-index:13;
+  padding:2px 7px;border-radius:3px;background:rgba(0,255,198,.9);color:#02100d;
+  font-family:var(--font-head);font-size:7px;font-weight:900;letter-spacing:.08em;
+  box-shadow:0 0 12px rgba(0,255,198,.35);
+}
 
 /* ══════════════════════════════════════════════════════════
    SHS CARD — Full-art, matches card-template.html exactly
@@ -546,7 +568,7 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .history-layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 
 /* ── CARD GRIDS ─────────────────────────────────────────── */
-.cards-grid{display:flex;flex-wrap:wrap;gap:10px;padding:4px 0}
+.cards-grid:not(.collection-page-grid){display:flex;flex-wrap:wrap;gap:10px;padding:4px 0}
 .pack-reveal-grid{display:flex;flex-wrap:wrap;gap:10px;padding:4px 0}
 .pack-reveal-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
 
@@ -906,9 +928,13 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .profile-elo-badge.elo-singularidad{background:rgba(0,255,198,0.1);color:var(--acc);border-color:rgba(0,255,198,0.3)}
 
 /* ── RESPONSIVE ──────────────────────────────────────────── */
+@media(max-width:1400px){
+  .collection-page-grid{grid-template-columns:repeat(4,minmax(145px,1fr));min-height:auto}
+}
 @media(max-width:1100px){
   :root{--sidebar-w:190px}
   .coll-layout{grid-template-columns:220px 1fr}
+  .collection-page-grid{grid-template-columns:repeat(4,minmax(145px,1fr));min-height:auto}
   .market-layout{grid-template-columns:230px 1fr}
   .guilds-layout{grid-template-columns:240px 1fr}
   .community-layout{grid-template-columns:1fr 240px}
@@ -923,6 +949,10 @@ textarea.input-dark{resize:vertical;min-height:68px}
   .nav-play-btn{padding:10px;margin:6px 4px}
   .nav-play-btn span{display:none}
   .coll-layout,.market-layout,.guilds-layout,.community-layout,.profile-layout{grid-template-columns:1fr}
+  .deck-builder-panel{position:relative}
+  .collection-page-grid{grid-template-columns:repeat(3,minmax(145px,1fr))}
+  .collection-results-head{align-items:flex-start;flex-direction:column}
+  .collection-page-info{white-space:normal}
   .market-filterbar{grid-template-columns:1fr 1fr}
   .missions-grid,.two-col,.history-layout{grid-template-columns:1fr}
   .play-modes-grid{grid-template-columns:1fr}
@@ -1239,6 +1269,7 @@ input,select,textarea{ max-width:100%; }
 
 /* Phone (<=600px) */
 @media (max-width:600px){
+  .collection-page-grid{grid-template-columns:repeat(2,minmax(135px,1fr));gap:16px 12px}
   .coll-grid, .pack-grid, .market-grid, .deck-grid{
     grid-template-columns:repeat(auto-fill, minmax(110px, 1fr));
     gap:6px;
