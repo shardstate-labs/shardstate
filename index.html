@@ -1052,9 +1052,10 @@ function genUid(){
   return (crypto.randomUUID && crypto.randomUUID()) || ('uid_'+Date.now()+'_'+Math.random().toString(36).slice(2));
 }
 function normalizeEmail(e){ return String(e||'').trim().toLowerCase(); }
+function normalizeUsernameInput(n){ return String(n||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,16); }
 function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 function validPassword(p){ return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(p||''); }
-function validUsername(n){ return /^[a-zA-Z0-9_]{3,16}$/.test(String(n||'').trim()); }
+function validUsername(n){ return /^[a-z0-9_]{3,16}$/.test(normalizeUsernameInput(n)); }
 async function sha256(text){
   if(window.crypto && crypto.subtle){
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -1246,7 +1247,8 @@ function finishAuth(user, isNew){
 
 async function saveUsername(){
   if(!AUTH.currentUser) return;
-  const username = String(document.getElementById('auth-username').value||'').trim();
+  const username = normalizeUsernameInput(document.getElementById('auth-username').value||'');
+  document.getElementById('auth-username').value = username;
   if(!validUsername(username)){ usernameFeedback('3–16 chars: letters, numbers or underscore.'); return; }
   // Supabase-backed uniqueness when online; local fallback otherwise.
   if (window.SB) {
@@ -1254,8 +1256,6 @@ async function saveUsername(){
       const ok = await SB.usernameAvailable(username, AUTH.currentUser.uid);
       if (!ok) { usernameFeedback('Username taken. Try another.'); return; }
     } catch(_){}
-    try { await SB.upsertProfile(AUTH.currentUser.uid, { username, language: landingLang || 'es' }); }
-    catch(e){ console.warn('upsertProfile failed:', e); }
   } else {
     const taken = Object.values(AUTH.db.users).some(u=> u.uid !== AUTH.currentUser.uid && String(u.username||'').toLowerCase()===username.toLowerCase());
     if(taken){ usernameFeedback('Username taken. Try another.'); return; }
@@ -1264,7 +1264,11 @@ async function saveUsername(){
   const refCode = sessionStorage.getItem(REF_SESSION_KEY);
   const me = AUTH.db.users[AUTH.currentUser.uid];
   if(refCode && !me.referredByUid){
-    const sponsor = Object.values(AUTH.db.users).find(x=>x.referralCode===refCode);
+    let sponsor = Object.values(AUTH.db.users).find(x=>x.referralCode===refCode);
+    if(!sponsor && window.SB && SB.findProfileByReferralCode){
+      const sp = await SB.findProfileByReferralCode(refCode);
+      if(sp) sponsor = { uid:sp.user_id, username:sp.username, referralCode:sp.referral_code };
+    }
     if(sponsor && sponsor.uid !== AUTH.currentUser.uid){
       me.referredByUid = sponsor.uid;
       sponsor.referrals = sponsor.referrals||[];
@@ -1275,7 +1279,11 @@ async function saveUsername(){
   // Manual sponsor
   const sponsorInput = String((document.getElementById('auth-sponsor-username')||{}).value||'').trim();
   if(sponsorInput && !me.referredByUid){
-    const suid = AUTH.db.usernameToUid[sponsorInput.toLowerCase()];
+    let suid = AUTH.db.usernameToUid[normalizeUsernameInput(sponsorInput)];
+    if(!suid && window.SB && SB.findProfileByUsername){
+      const sp = await SB.findProfileByUsername(sponsorInput);
+      if(sp) suid = sp.user_id;
+    }
     if(!suid){ usernameFeedback('Sponsor not found.'); return; }
     if(suid===AUTH.currentUser.uid){ usernameFeedback('Cannot sponsor yourself.'); return; }
     me.referredByUid = suid;
@@ -1284,6 +1292,16 @@ async function saveUsername(){
   }
   me.username = username;
   AUTH.currentUser.username = username;
+  if (window.SB) {
+    try {
+      await SB.upsertProfile(AUTH.currentUser.uid, {
+        username,
+        language: landingLang || 'es',
+        referral_code: me.referralCode || '',
+        referred_by: me.referredByUid || null,
+      });
+    } catch(e){ console.warn('upsertProfile failed:', e); }
+  }
   me.updatedAt = Date.now();
   saveAuthDb();
   redirectToApp();

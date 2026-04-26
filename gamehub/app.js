@@ -24,6 +24,8 @@ const view = {
   lastPack: [],
 };
 
+const ADMIN_EMAILS = new Set(['faxie.contact@gmail.com', 'shardstate.game@gmail.com']);
+
 // ════════════════════════════════════════════════════════════
 // I18N — Bilingual UI (ES/EN)
 // ════════════════════════════════════════════════════════════
@@ -66,7 +68,7 @@ const I18N = {
     market_onchain_btn:'Conectar Wallet',
     market_price_ph:'Precio en SHARDS',
     shop_last_opened:'Último Pack Abierto', shop_empty:'Abre un pack para ver el resultado.',
-    guild_create:'Crear Gremio', guild_create_cost:'100 FLUX',
+    guild_create:'Crear Gremio', guild_create_cost:'2 FLUX',
     guild_my:'Mi Gremio', guild_pending:'Solicitudes Pendientes',
     guild_requests:'Solicitudes recibidas', guild_directory:'Directorio de Gremios',
     guild_create_btn:'Crear Gremio', guild_search_ph:'Buscar gremios…',
@@ -80,9 +82,9 @@ const I18N = {
     learn_tab_rules:'Reglas', learn_tab_modes:'Modos', learn_tab_rankings:'Rankings',
     learn_tab_clans:'Clanes', learn_tab_cards:'Mecánicas',
     guild_join_btn:'Solicitar unirse', guild_approve_btn:'Aprobar', guild_deny_btn:'Rechazar',
-    guild_cost:'100 FLUX',
+    guild_cost:'2 FLUX',
     guild_join_btn:'Solicitar ingreso', guild_approve_btn:'Aceptar', guild_deny_btn:'Rechazar',
-    guild_cost:'100 FLUX',
+    guild_cost:'2 FLUX',
     flux_shop_title:'Recargar FLUX', flux_shop_sub:'Con tus FLUX podrás comprar packs de cartas, el Battle Pass Premium, entrar a torneos... ¡y mucho más!',
     flux_buy_btn:'Comprar',
     pack_4_name:'Pack de 4 cartas', pack_4_desc:'4 cartas aleatorias · todos los clanes principales',
@@ -160,7 +162,7 @@ const I18N = {
     market_onchain_btn:'Connect Wallet to Trade',
     market_price_ph:'Price in SHARDS',
     shop_last_opened:'Last Opened', shop_empty:'Open a pack to see results.',
-    guild_create:'Create Guild', guild_create_cost:'100 FLUX',
+    guild_create:'Create Guild', guild_create_cost:'2 FLUX',
     guild_my:'My Guild', guild_pending:'Pending Requests',
     guild_requests:'Incoming requests', guild_directory:'Guild Directory',
     guild_create_btn:'Create Guild', guild_search_ph:'Search guilds…',
@@ -174,7 +176,7 @@ const I18N = {
     learn_tab_rules:'Rules', learn_tab_modes:'Modes', learn_tab_rankings:'Rankings',
     learn_tab_clans:'Clans', learn_tab_cards:'Mechanics',
     guild_join_btn:'Request to join', guild_approve_btn:'Approve', guild_deny_btn:'Decline',
-    guild_cost:'100 FLUX',
+    guild_cost:'2 FLUX',
     flux_shop_title:'Top Up FLUX', flux_shop_sub:'Use FLUX to buy card packs, unlock the Premium Battle Pass, enter tournaments... and much more.',
     flux_buy_btn:'Buy',
     pack_4_name:'4-card Pack', pack_4_desc:'4 random cards · all main clans',
@@ -508,7 +510,7 @@ function syncTopbar() {
   // Show admin nav link only for the admin email.
   const adminLink = byId('nav-admin-link');
   if (adminLink) {
-    const isAdmin = (u.email || '').toLowerCase() === 'faxie.contact@gmail.com';
+    const isAdmin = ADMIN_EMAILS.has((u.email || '').toLowerCase());
     adminLink.style.display = isAdmin ? '' : 'none';
   }
 }
@@ -883,7 +885,10 @@ function renderPerfil() {
 
 // ── ACCOUNT EDIT ──────────────────────────────────────────────
 async function saveUsername(){
-  const newName = String(byId('acct-username')?.value || '').trim().slice(0,24);
+  const newName = window.SB && SB.normalizeUsername
+    ? SB.normalizeUsername(byId('acct-username')?.value || '')
+    : String(byId('acct-username')?.value || '').trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,16);
+  if (byId('acct-username')) byId('acct-username').value = newName;
   if (!newName) return toast('Ingresa un username válido.');
   if (!window.SB || !SB.updateUsername) return toast('Sin conexión al servidor.');
   if (!view.user || !view.user.uid) return toast('Iniciá sesión.');
@@ -1061,6 +1066,13 @@ function renderColeccion() {
 async function renderMercado() {
   const u = view.user;
   const sellSel = byId('sell-card-id');
+  const clanFilter = byId('market-clan-filter');
+  if (clanFilter && !clanFilter.dataset.ready) {
+    clanFilter.dataset.ready = '1';
+    const clans = Array.from(new Set(_allCards().filter(c => c.clan && c.clan !== 'titans').map(c => c.clan))).sort();
+    clanFilter.innerHTML = `<option value="">${currentLang === 'es' ? 'Todos los clanes' : 'All clans'}</option>` +
+      clans.map(cl => `<option value="${cl}">${cl.toUpperCase()}</option>`).join('');
+  }
   // Sell selector is filtered: cannot sell cards locked in the active deck (server enforces too).
   sellSel.innerHTML = '';
   const owned = view.state.collection || {};
@@ -1092,7 +1104,28 @@ async function renderMercado() {
   }
 
   // Live listings from other players
-  const active = await SB.loadMarketActive(view.user.uid);
+  let active = await SB.loadMarketActive(view.user.uid);
+  const q = String(byId('market-search')?.value || '').trim().toLowerCase();
+  const clanQ = byId('market-clan-filter')?.value || '';
+  const rarQ = byId('market-rarity-filter')?.value || '';
+  const starsQ = Number(byId('market-stars-filter')?.value || 0);
+  const sortQ = byId('market-sort')?.value || 'newest';
+  active = active.filter(l => {
+    const card = (typeof getCard === 'function') ? getCard(l.card_id) : null;
+    if (!card) return !q;
+    if (q && !String(card.name || l.card_id).toLowerCase().includes(q)) return false;
+    if (clanQ && card.clan !== clanQ) return false;
+    if (rarQ && card.rar !== rarQ) return false;
+    if (starsQ && (card.stars|0) !== starsQ) return false;
+    return true;
+  });
+  active.sort((a,b) => {
+    const ca = getCard(a.card_id) || {}, cb = getCard(b.card_id) || {};
+    if (sortQ === 'price_asc') return (a.price|0) - (b.price|0);
+    if (sortQ === 'price_desc') return (b.price|0) - (a.price|0);
+    if (sortQ === 'stars_desc') return (cb.stars|0) - (ca.stars|0) || (b.price|0) - (a.price|0);
+    return String(b.listed_at || '').localeCompare(String(a.listed_at || ''));
+  });
   if (mList) {
     mList.innerHTML = active.length ? '' : `<div class="feed-muted">${t('no_market')}</div>`;
     active.forEach(l => {
@@ -1112,7 +1145,12 @@ async function renderMercado() {
           </div>
           <div class="mcard-info">
             <div class="mcard-name">${name}</div>
-            <div class="mcard-stats">${pow} / ${dmg}</div>
+            <div class="mcard-stats">POW ${pow} · DMG ${dmg}</div>
+            <div class="mcard-meta">
+              <span class="mcard-chip">${card?.rar || '?'}</span>
+              <span class="mcard-chip">${card?.stars || '?'}★</span>
+              <span class="mcard-chip">${card?.clan?.toUpperCase() || ''}</span>
+            </div>
             <div class="mcard-price">${l.price} SHARDS</div>
             <button class="btn-primary full" data-buy="${l.id}">${t('market_buy_btn')}</button>
           </div>
@@ -1818,6 +1856,7 @@ function randomCards(n, opts={}) {
   let pool = [...((typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]))];
   // TITANS and GRAND cards are excluded from packs; they are special rewards.
   pool = pool.filter(c => c.clan !== 'titans' && c.type !== 'grand');
+  if (opts.excludeMythic) pool = pool.filter(c => c.rar !== 'M');
   if (opts.clan) pool = pool.filter(c => c.clan === opts.clan);
   const byRar = {
     C: pool.filter(c => c.rar === 'C'),
@@ -1836,12 +1875,15 @@ function randomCards(n, opts={}) {
     return 'C';
   };
   const out = [];
+  const picked = new Set();
   for (let i=0; i<n; i++) {
     let bucket = rarRoll();
-    let candidates = byRar[bucket] || [];
-    if (!candidates.length) candidates = pool;
+    let candidates = (byRar[bucket] || []).filter(c => !picked.has(c.id));
+    if (!candidates.length) candidates = pool.filter(c => !picked.has(c.id));
     if (!candidates.length) break;
-    out.push(candidates[Math.floor(Math.random() * candidates.length)]);
+    const pick = candidates[Math.floor(Math.random() * candidates.length)];
+    picked.add(pick.id);
+    out.push(pick);
   }
   return out;
 }
@@ -1884,15 +1926,16 @@ function openPackById(packId, payWith) {
       return toast(currentLang==='es'?'Elegí pagar con FLUX.':'Choose FLUX payment.');
     }
   }
-  // Draw cards
-  const opts = {};
-  let cards = randomCards(p.cards, opts);
-  // Welcome pack: no Mythics — reroll any M card
-  if (p.costType === 'welcome') {
-    const nonMythicPool = (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[])
-      .filter(c => c.rar !== 'M' && c.clan !== 'titans' && c.type !== 'grand');
-    cards = cards.map(c => c.rar==='M' ? nonMythicPool[Math.floor(Math.random()*nonMythicPool.length)]||c : c);
-  }
+  const beforeQty = {};
+  Object.keys(view.state.collection || {}).forEach(id => { beforeQty[id] = collectionQty(id); });
+  // A single pack cannot contain the same card twice.
+  const cards = randomCards(p.cards, { excludeMythic:p.costType === 'welcome' });
+  const revealMeta = cards.map(c => {
+    const before = beforeQty[c.id] || 0;
+    const after = before + 1;
+    beforeQty[c.id] = after;
+    return { cardId:c.id, isNew:before === 0, qty:after };
+  });
   cards.forEach(c => addCardToCollection(c.id));
   view.lastPack = cards;
   persistToUser();
@@ -1907,10 +1950,10 @@ function openPackById(packId, payWith) {
     }
   } catch(_){}
   // Show pack opening overlay
-  showPackOverlay(p, cards);
+  showPackOverlay(p, cards, revealMeta);
 }
 
-function showPackOverlay(pack, cards) {
+function showPackOverlay(pack, cards, meta=[]) {
   const overlay = byId('pack-opening-overlay');
   if (!overlay) return;
   // Set pack art & name
@@ -1939,6 +1982,7 @@ function showPackOverlay(pack, cards) {
   byId('pack-cards-reveal').style.display = 'none';
   // Store cards for reveal
   overlay._cards = cards;
+  overlay._meta = meta;
   overlay.style.display = 'flex';
 }
 
@@ -1955,14 +1999,24 @@ function revealPackCards() {
     revealEl.style.display = 'flex';
     const row = byId('pack-reveal-row');
     row.innerHTML = '';
+    const meta = overlay._meta || [];
     cards.forEach((c, i) => {
       const html = renderCard(c.id, { size: 'md' });
       const wrapper = document.createElement('div');
+      wrapper.className = 'pack-reveal-item';
       wrapper.innerHTML = html;
       const card = wrapper.firstElementChild;
       if (card) {
         card.style.animationDelay = (i * 140) + 'ms';
-        row.appendChild(card);
+        wrapper.appendChild(card);
+        const m = meta[i] || {};
+        const badge = document.createElement('div');
+        badge.className = 'pack-result-badge ' + (m.isNew ? 'is-new' : 'is-dupe');
+        badge.textContent = m.isNew
+          ? (currentLang === 'es' ? '¡NUEVA!' : 'NEW!')
+          : (currentLang === 'es' ? `Ahora tenés ${m.qty || collectionQty(c.id)}` : `Now you have ${m.qty || collectionQty(c.id)}`);
+        wrapper.appendChild(badge);
+        row.appendChild(wrapper);
       }
     });
   }, 820);
@@ -2287,8 +2341,8 @@ function bindEvents() {
     const bio    = String(byId('guild-bio').value || '').trim();
     if (!name)               return toast('Nombre de gremio requerido.');
     if (view.user.guildId)   return toast('Ya perteneces a un gremio.');
-    if (view.state.flux < 100) return toast('Necesitas 100 FLUX para crear un gremio.');
-    view.state.flux -= 100;
+    if (view.state.flux < 2) return toast('Necesitas 2 FLUX para crear un gremio.');
+    view.state.flux -= 2;
     const guild = {
       id:        `g_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
       name:      name.slice(0,24),
@@ -2429,6 +2483,8 @@ async function hydrateFromSupabase(authUser){
   }, existing);
   if (profile) {
     u.username = profile.username || u.username;
+    u.referredByUid = profile.referred_by || u.referredByUid || null;
+    u.referralCode = profile.referral_code || u.referralCode || '';
   }
   if (gs) {
     u.shardsBalance  = gs.shards ?? u.shardsBalance ?? 0;

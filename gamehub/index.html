@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=30"/>
+<link rel="stylesheet" href="./styles.css?v=31"/>
 </head>
 <body>
 
@@ -269,6 +269,33 @@
             <div>
               <div class="card-block">
                 <div class="block-title" data-i18n="market_live">Market Listings</div>
+                <div class="market-filterbar">
+                  <input id="market-search" class="input-dark" placeholder="Buscar carta..." oninput="renderMercado()"/>
+                  <select id="market-clan-filter" class="select-dark" onchange="renderMercado()">
+                    <option value="">Todos los clanes</option>
+                  </select>
+                  <select id="market-rarity-filter" class="select-dark" onchange="renderMercado()">
+                    <option value="">Todas las rarezas</option>
+                    <option value="C">Común</option>
+                    <option value="U">Inusual</option>
+                    <option value="R">Rara</option>
+                    <option value="M">Mítica</option>
+                  </select>
+                  <select id="market-stars-filter" class="select-dark" onchange="renderMercado()">
+                    <option value="">Estrellas</option>
+                    <option value="1">1★</option>
+                    <option value="2">2★</option>
+                    <option value="3">3★</option>
+                    <option value="4">4★</option>
+                    <option value="5">5★</option>
+                  </select>
+                  <select id="market-sort" class="select-dark" onchange="renderMercado()">
+                    <option value="newest">Más nuevas</option>
+                    <option value="price_asc">Precio menor</option>
+                    <option value="price_desc">Precio mayor</option>
+                    <option value="stars_desc">Más estrellas</option>
+                  </select>
+                </div>
                 <div id="market-list" class="market-cards-grid"></div>
               </div>
             </div>
@@ -327,7 +354,7 @@
         <div class="guilds-layout">
           <div>
             <div class="card-block" style="margin-bottom:12px">
-              <div class="block-title"><span data-i18n="guild_create">Create Guild</span> <span class="cost-tag" data-i18n="guild_create_cost">100 FLUX</span></div>
+              <div class="block-title"><span data-i18n="guild_create">Create Guild</span> <span class="cost-tag" data-i18n="guild_create_cost">2 FLUX</span></div>
               <div class="stack-form">
                 <input id="guild-name" class="input-dark" maxlength="24" placeholder="Guild name" data-i18n-ph="guild_name_ph"/>
                 <div style="display:flex;gap:7px">
@@ -478,15 +505,15 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=30"></script>
-<script src="../engine/ability_catalog.js?v=30"></script>
-<script src="../engine/round_engine.js?v=30"></script>
-<script src="../engine/utils.js?v=30"></script>
-<script src="../js/config.js?v=30"></script>
-<script src="../js/sb.js?v=30"></script>
-<script src="../js/sync.js?v=30"></script>
-<script src="../js/pvp.js?v=30"></script>
-<script src="../js/payments.js?v=30"></script>
-<script src="./app.js?v=30"></script>
+<script src="../engine/cards.js?v=31"></script>
+<script src="../engine/ability_catalog.js?v=31"></script>
+<script src="../engine/round_engine.js?v=31"></script>
+<script src="../engine/utils.js?v=31"></script>
+<script src="../js/config.js?v=31"></script>
+<script src="../js/sb.js?v=31"></script>
+<script src="../js/sync.js?v=31"></script>
+<script src="../js/pvp.js?v=31"></script>
+<script src="../js/payments.js?v=31"></script>
+<script src="./app.js?v=31"></script>
 </body>
 </html>

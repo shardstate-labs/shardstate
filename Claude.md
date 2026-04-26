@@ -7,7 +7,7 @@ Last updated: 2026-04-25
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=30`.
+- Current asset cache version: `v=31`.
 
 ## Live URLs
 
@@ -103,6 +103,11 @@ Future modes are intentionally not enabled yet:
 - Collection sync has a delete safety rail and DB trigger guard to prevent reload/stale-state bugs from wiping owned cards.
 - Active deck persistence preserves local decks during pending Supabase sync and no longer deletes the server deck unless the player intentionally empties the deck.
 - Collection duplicate filter is localized as `Duplicadas` / `Duplicates` and filters cards with quantity greater than 1.
+- Pack openings never return two copies of the same card in a single pack.
+- Pack reveal labels show `¡NUEVA!` for first-time cards and `Ahora tenés X` for duplicates.
+- Admin emails: `faxie.contact@gmail.com`, `shardstate.game@gmail.com`.
+- Usernames are normalized to lowercase `[a-z0-9_]` and enforced unique case-insensitively in Supabase.
+- Referral ledger scaffold exists: a sponsor can receive `+1 FLUX` once when a referred account buys any FLUX bundle.
 
 ### Phase 4 - Payments Scaffold
 

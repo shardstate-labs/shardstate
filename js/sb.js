@@ -18,6 +18,9 @@
 
   // ── Lazy CDN loader for @supabase/supabase-js v2 ──────────────
   let _clientPromise = null;
+  function normalizeUsername(username){
+    return String(username || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16);
+  }
   function ensureClient(){
     if (_clientPromise) return _clientPromise;
     _clientPromise = new Promise((resolve, reject) => {
@@ -164,11 +167,35 @@
     /** Username uniqueness check. Returns true if available. */
     async usernameAvailable(username, exceptUid){
       const sb = await ensureClient();
-      let q = sb.from('profiles').select('user_id', { count:'exact', head:true }).ilike('username', username);
+      const u = normalizeUsername(username);
+      if (!/^[a-z0-9_]{3,16}$/.test(u)) return false;
+      let q = sb.from('profiles').select('user_id', { count:'exact', head:true }).eq('username', u);
       if (exceptUid) q = q.neq('user_id', exceptUid);
       const { count, error } = await q;
       if (error) return false;
       return (count || 0) === 0;
+    },
+    async findProfileByUsername(username){
+      const sb = await ensureClient();
+      const u = normalizeUsername(username);
+      if (!u) return null;
+      const { data, error } = await sb.from('profiles')
+        .select('user_id,username,display_name,avatar_url,referral_code')
+        .eq('username', u)
+        .maybeSingle();
+      if (error) return null;
+      return data || null;
+    },
+    async findProfileByReferralCode(code){
+      const sb = await ensureClient();
+      const c = String(code || '').trim();
+      if (!c) return null;
+      const { data, error } = await sb.from('profiles')
+        .select('user_id,username,display_name,avatar_url,referral_code')
+        .eq('referral_code', c)
+        .maybeSingle();
+      if (error) return null;
+      return data || null;
     },
 
     // ── Market ──────────────────────────────────────────────────
@@ -343,8 +370,8 @@
     // ── Profile mutations ───────────────────────────────────────
     async updateUsername(uid, username){
       const sb = await ensureClient();
-      const u = String(username||'').trim().slice(0,24);
-      if (!u) return { error:'invalid_username' };
+      const u = normalizeUsername(username);
+      if (!/^[a-z0-9_]{3,16}$/.test(u)) return { error:'invalid_username' };
       const free = await SB.usernameAvailable(u, uid);
       if (!free) return { error:'username_taken' };
       const { data, error } = await sb.from('profiles')
@@ -366,6 +393,7 @@
       return { user: data?.user || null };
     },
   };
+  SB.normalizeUsername = normalizeUsername;
 
   window.SB = SB;
 })();

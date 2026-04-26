@@ -130,6 +130,7 @@ serve(async (req) => {
       await sb.from('entitlements').insert({
         user_id: userId, kind: 'flux_credits', value_int: flux, source_purchase: purchaseId,
       });
+      await sb.rpc('grant_referral_flux_once', { p_referred_uid: userId, p_purchase_id: purchaseId });
     } else {
       console.warn('unknown product', product);
     }

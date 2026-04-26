@@ -489,9 +489,10 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .market-layout{display:grid;grid-template-columns:280px 1fr;gap:14px;align-items:start}
 .market-list-form{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
 .market-form-row{display:flex;gap:7px}
-.market-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:9px}
-.market-card-item{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all var(--tr)}
-.market-card-item:hover{border-color:var(--acc);transform:translateY(-2px)}
+.market-filterbar{display:grid;grid-template-columns:1.4fr repeat(4,minmax(120px,.8fr));gap:8px;margin:0 0 12px}
+.market-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.market-card-item{background:linear-gradient(180deg,rgba(17,21,32,.96),rgba(8,10,14,.98));border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all var(--tr);box-shadow:0 8px 26px rgba(0,0,0,.22)}
+.market-card-item:hover{border-color:var(--cc,var(--acc));transform:translateY(-3px);box-shadow:0 14px 32px rgba(0,0,0,.36),0 0 18px color-mix(in srgb,var(--cc,var(--acc)) 25%,transparent)}
 .mcard-art{height:95px;overflow:hidden;background:var(--bg3)}
 .mcard-art img{width:100%;height:100%;object-fit:cover;object-position:top}
 .mcard-info{padding:8px 9px}
@@ -678,10 +679,25 @@ textarea.input-dark{resize:vertical;min-height:68px}
   display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
   max-width:900px;
 }
+.pack-reveal-item{display:flex;flex-direction:column;align-items:center;gap:9px}
 .pack-reveal-row .tcg-card{
   opacity:0;
   animation:pack-card-flip .6s cubic-bezier(.2,.9,.2,1) forwards;
 }
+.pack-result-badge{
+  min-width:94px;text-align:center;padding:7px 12px;border-radius:5px;
+  font-family:var(--font-head);font-size:.7rem;font-weight:900;letter-spacing:.12em;
+  border:1px solid currentColor;animation:pack-badge-pop .58s cubic-bezier(.2,1.2,.2,1) both;
+}
+.pack-result-badge.is-new{
+  color:var(--acc);background:rgba(0,255,198,.1);
+  box-shadow:0 0 20px rgba(0,255,198,.35),inset 0 0 18px rgba(0,255,198,.08);
+}
+.pack-result-badge.is-dupe{
+  color:#c8d8ff;background:rgba(107,92,231,.14);
+  box-shadow:0 0 16px rgba(107,92,231,.26),inset 0 0 14px rgba(107,92,231,.08);
+}
+@keyframes pack-badge-pop{0%{opacity:0;transform:translateY(-6px) scale(.86)}70%{opacity:1;transform:translateY(0) scale(1.06)}100%{opacity:1;transform:scale(1)}}
 @keyframes pack-card-flip{
   0%{opacity:0;transform:rotateY(90deg) scale(.8)}
   50%{opacity:1;transform:rotateY(-8deg) scale(1.05)}
@@ -784,14 +800,16 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .tcg-clan-icon{font-size:0.75rem;flex-shrink:0}
 
 /* ── MARKET CARD GRID ITEM ───────────────────────────────── */
-.mcard-art-wrap{position:relative;height:95px;overflow:hidden;background:var(--bg3)}
+.mcard-art-wrap{position:relative;height:150px;overflow:hidden;background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--cc) 22%,transparent),transparent 55%),var(--bg3)}
 .mcard-clan-bar{position:absolute;top:0;left:0;right:0;padding:3px 7px;font-size:0.58rem;font-weight:700;letter-spacing:0.07em;color:rgba(0,0,0,0.9);font-family:var(--font-head)}
 .mcard-img{width:100%;height:100%;object-fit:cover;object-position:top}
 .mcard-art-wrap.no-img .mcard-img{display:none}
 .mcard-art-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;opacity:0.3}
 .mcard-art-wrap.no-img .mcard-art-fallback{opacity:0.6}
 .mcard-stats{font-size:0.65rem;color:var(--text2);margin:3px 0 6px}
-.mcard-price{font-family:var(--font-head);font-size:0.82rem;font-weight:900;color:var(--acc);margin-bottom:8px}
+.mcard-meta{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.mcard-chip{border:1px solid var(--border2);border-radius:3px;padding:2px 6px;font-size:.58rem;color:var(--text2);font-family:var(--font-head);letter-spacing:.06em}
+.mcard-price{font-family:var(--font-head);font-size:1rem;font-weight:900;color:var(--acc);margin-bottom:8px}
 
 /* ── ELO ─────────────────────────────────────────────────── */
 .elo-astilla{color:var(--gr)}
@@ -836,6 +854,7 @@ textarea.input-dark{resize:vertical;min-height:68px}
   .nav-play-btn{padding:10px;margin:6px 4px}
   .nav-play-btn span{display:none}
   .coll-layout,.market-layout,.guilds-layout,.community-layout,.profile-layout{grid-template-columns:1fr}
+  .market-filterbar{grid-template-columns:1fr 1fr}
   .missions-grid,.two-col,.history-layout{grid-template-columns:1fr}
   .play-modes-grid{grid-template-columns:1fr}
 }
