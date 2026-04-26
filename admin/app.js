@@ -191,7 +191,7 @@ function syncCard(){
   const pow2     = parseInt($('f-pow2').value) || 1;
   const dmg1     = parseInt($('f-dmg1').value) || 1;
   const dmg2     = parseInt($('f-dmg2').value) || 1;
-  const logoUrl  = $('f-logo-url').value.trim() || blobLogo || '';
+  const logoUrl  = blobLogo || $('f-logo-url').value.trim() || '';
 
   // If clan changed, repopulate ability dropdown so titans-only filter applies.
   const sel = $('f-ability-id');
@@ -221,8 +221,8 @@ function syncCard(){
   const showDmg = interpolateStat(dmg1, dmg2, previewLv, stars);
 
   const artUrl = previewLv >= stars
-    ? ($('f-art2-url').value.trim() || blobArt2 || $('f-art1-url').value.trim() || blobArt1 || '')
-    : ($('f-art1-url').value.trim() || blobArt1 || $('f-art2-url').value.trim() || blobArt2 || '');
+    ? (blobArt2 || $('f-art2-url').value.trim() || blobArt1 || $('f-art1-url').value.trim() || '')
+    : (blobArt1 || $('f-art1-url').value.trim() || blobArt2 || $('f-art2-url').value.trim() || '');
 
   const unlockAt   = abilityUnlockLv(stars);
   const abilLocked = previewLv < unlockAt;
@@ -286,9 +286,9 @@ function buildCard(){
   const bonusId   = (window.CLAN_BONUS_MAP || {})[clan] || null;
   const abilText  = cat[abilityId]?.label || '';
   const bonusText = bonusId ? (cat[bonusId]?.label || '') : (clan === 'titans' ? 'Cancela TITANS rival' : '');
-  const art1   = $('f-art1-url').value.trim() || blobArt1 || '';
-  const art2   = $('f-art2-url').value.trim() || blobArt2 || '';
-  const logo   = $('f-logo-url').value.trim() || blobLogo || '';
+  const art1   = blobArt1 || $('f-art1-url').value.trim() || '';
+  const art2   = blobArt2 || $('f-art2-url').value.trim() || '';
+  const logo   = blobLogo || $('f-logo-url').value.trim() || '';
   const cc     = (CLAN_DATA[clan]?.color) || '#6B5CE7';
 
   return {
