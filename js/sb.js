@@ -216,6 +216,13 @@
       if (error) return [];
       return data || [];
     },
+    async loadMarketPurchases(uid){
+      const sb = await ensureClient();
+      const { data, error } = await sb.from('market_listings').select('*')
+        .eq('buyer_uid', uid).eq('status','sold').order('sold_at', { ascending:false }).limit(200);
+      if (error) return [];
+      return data || [];
+    },
     async listCardForSale(cardId, price){
       const sb = await ensureClient();
       const { data, error } = await sb.rpc('list_card_for_sale', { p_card_id:cardId, p_price:price|0 });
@@ -236,6 +243,89 @@
     },
 
     // ── Battle pass ─────────────────────────────────────────────
+    async searchProfiles(query){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('search_profiles', { p_query:String(query||'') });
+      if (error) return { error, data:[] };
+      return { data:data || [] };
+    },
+    async getProfileCard(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('profile_card', { p_uid:userId });
+      if (error) return { error };
+      return { data:data || null };
+    },
+    async loadSocialState(){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('load_social_state');
+      if (error) return { error, data:{ friends:[], incoming:[], sent:[] } };
+      return { data:data || { friends:[], incoming:[], sent:[] } };
+    },
+    async sendFriendRequest(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('send_friend_request', { p_target:userId });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async respondFriendRequest(requestId, accept){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('respond_friend_request', { p_request_id:requestId, p_accept:!!accept });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async removeFriend(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('remove_friend', { p_friend:userId });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async loadDmThread(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('load_dm_thread', { p_friend:userId });
+      if (error) return { error, data:[] };
+      return { data:(data || []).reverse() };
+    },
+    async sendDm(userId, body, gifUrl){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('send_dm', { p_friend:userId, p_body:String(body||''), p_gif_url:gifUrl ? String(gifUrl) : null });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async loadGuildState(query){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('load_guild_state', { p_query:String(query||'') });
+      if (error) return { error, data:{ my_guild:null, guilds:[] } };
+      return { data:data || { my_guild:null, guilds:[] } };
+    },
+    async createGuild(payload){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('create_guild', {
+        p_name:String(payload?.name||''),
+        p_bio:String(payload?.bio||''),
+        p_emoji:String(payload?.emoji||''),
+        p_icon_url:String(payload?.icon_url||''),
+        p_country:String(payload?.country||''),
+      });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async applyGuild(guildId, message){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('apply_guild', { p_guild:guildId, p_message:String(message||'') });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async respondGuildApplication(applicationId, accept, response){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('respond_guild_application', {
+        p_application:applicationId,
+        p_accept:!!accept,
+        p_response:String(response||''),
+      });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+
     async loadBattlePass(uid){
       const sb = await ensureClient();
       const { data } = await sb.from('battle_pass').select('*').eq('user_id', uid).maybeSingle();

@@ -278,7 +278,7 @@ function renderLearnContent() {
     <div class="rule-card"><div class="rule-card-num">POWER / PODER</div><h3>${L?'Base Combat Stat':'Estadística Base de Combate'}</h3><p>${L?'<strong>ATQ = Power × (1 + Pulsos)</strong>. Higher ATQ wins. Modified by Weaken, Stop, and other abilities.':'<strong>ATQ = Poder × (1 + Pulsos)</strong>. Mayor ATQ gana. Modificado por Debilitar, Stop y otras habilidades.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">DAMAGE / DAÑO</div><h3>${L?'HP Dealt on Win':'HP Infligido al Ganar'}</h3><p>${L?'When you win a round, your card\'s <strong>Damage</strong> is deducted from the opponent\'s HP. Some abilities modify damage on trigger.':'Al ganar una ronda, el <strong>Daño</strong> de tu carta se resta al HP del oponente. Algunas habilidades lo modifican al activarse.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">${L?'STARS':'ESTRELLAS'}</div><h3>${L?'Card Strength Rating':'Clasificación de Fuerza'}</h3><p>${L?'1–5 stars indicate overall power. Higher star cards are rarer. <strong>No deck restrictions</strong> by star count.':'1–5 estrellas indican potencia general. Cartas de más estrellas son más raras. <strong>Sin restricciones de mazo</strong> por estrellas.'}</p></div>
-    <div class="rule-card"><div class="rule-card-num">${L?'RARITY':'RAREZA'}</div><h3>C / U / R / M</h3><p>${L?'<strong>Common, Uncommon, Rare, Mythic.</strong> Rarity affects pack drop rate and market value.':'<strong>Común, Infrecuente, Rara, Mítica.</strong> La rareza afecta la tasa de aparición en packs y el valor de mercado.'}</p></div>
+    <div class="rule-card"><div class="rule-card-num">${L?'RARITY':'RAREZA'}</div><h3>C / U / R / M / GD</h3><p>${L?'<strong>Common, Uncommon, Rare, Mythic, Grand.</strong> Rarity affects pack drop rate and market value.':'<strong>Común, Infrecuente, Rara, Mítica, Grand.</strong> La rareza afecta la tasa de aparición en packs y el valor de mercado.'}</p></div>
   </div>`;
 
   // ── CLANS — reset cache so it re-renders with correct lang ──
@@ -298,6 +298,12 @@ function clanColor(clanKey){
 function clanEmoji(clanKey){
   const c = CLANS_DATA[clanKey];
   return c ? c.emoji : '⚡';
+}
+function escHtml(v){
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function jsLit(v){
+  return JSON.stringify(String(v ?? ''));
 }
 
 // ── TOAST ─────────────────────────────────────────────────────
@@ -475,8 +481,8 @@ async function showPendingAdminNotifications(){
   modal.innerHTML = `
     <div class="admin-reward-panel">
       <div class="admin-reward-kicker">PROTOCOL</div>
-      <div class="admin-reward-title">${note.title || 'Recompensa de Admin'}</div>
-      <div class="admin-reward-body">${note.body || 'El Admin te concedio una recompensa.'}</div>
+      <div class="admin-reward-title">${escHtml(note.title || 'Recompensa de Admin')}</div>
+      <div class="admin-reward-body">${escHtml(note.body || 'El Admin te concedio una recompensa.')}</div>
       <button class="admin-reward-btn">${currentLang === 'es' ? 'ACEPTAR' : 'ACCEPT'}</button>
     </div>`;
   modal.querySelector('button').onclick = async () => {
@@ -563,7 +569,7 @@ function starsHtml(filled, total) {
 }
 
 function rarLabel(rar) {
-  const map = { C:'Common', U:'Uncommon', R:'Rare', M:'Mythic' };
+  const map = { C:'Common', U:'Uncommon', R:'Rare', M:'Mythic', GD:'Grand' };
   return map[rar] || rar;
 }
 
@@ -600,6 +606,7 @@ function renderCard(id, opts = {}) {
   const bonusText = typeof card.bonus === 'object' ? card.bonus.text : (card.bonus || '');
   const condText = card.abilityData?.condition || '';
   const cardType = card.type || 'normal';
+  const displayRar = cardType === 'grand' ? 'GD' : (card.rar || 'C');
 
   const imgSrc = (typeof getCardArt === 'function')
     ? (getCardArt(card, cardLv) || '')
@@ -619,19 +626,19 @@ function renderCard(id, opts = {}) {
   ].filter(Boolean).join(' ');
 
   return `
-<div class="${cls}" style="--cc:${cc}" data-id="${id}" onclick="openCardDetail('${id}')">
+<div class="${cls}" style="--cc:${cc}" data-id="${id}" data-name="${escHtml(card.name)}" title="${escHtml(card.name)}" onclick="openCardDetail('${id}')">
   ${inDeck ? `<div class="shs-indeck-badge">${t('in_deck_label')}</div>` : ''}
   <div class="card-art${imgSrc ? ' has-img' : ''}">
-    ${imgSrc ? `<img src="${imgSrc}" alt="${card.name}" loading="lazy" onerror="this.parentNode.classList.remove('has-img')"/>` : ''}
+    ${imgSrc ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(card.name)}" loading="lazy" onerror="this.parentNode.classList.remove('has-img')"/>` : ''}
     <div class="card-art-placeholder">${ce}</div>
     ${opts.missing ? '<div class="card-missing-lock">🔒</div>' : ''}
   </div>
   <div class="card-vignette"></div>
-  ${(cardType==='grand'||cardType==='eco') ? `<div class="card-type-badge type-${cardType}">${typeLabel(cardType)}</div>` : ''}
+  ${cardType==='eco' ? `<div class="card-type-badge type-${cardType}">${typeLabel(cardType)}</div>` : ''}
   <div class="card-top">
-    ${logoSrc ? `<img class="card-logo show" src="${logoSrc}" alt="" onerror="this.classList.remove('show')"/>` : ''}
-    <span class="card-name">${card.name}</span>
-    <span class="card-rar rar-${card.rar}">${card.rar}</span>
+    ${logoSrc ? `<img class="card-logo show" src="${escHtml(logoSrc)}" alt="" onerror="this.classList.remove('show')"/>` : ''}
+    <span class="card-name">${escHtml(card.name)}</span>
+    <span class="card-rar rar-${displayRar}">${displayRar}</span>
   </div>
   <div class="card-stats">
     <div class="stat-pill"><span class="stat-pill-num pow">${pow}</span><span class="stat-pill-label">POW</span></div>
@@ -639,9 +646,9 @@ function renderCard(id, opts = {}) {
   </div>
   <div class="card-bottom">
     <div class="card-ability" style="${!abilityActive ? 'opacity:.4' : ''}">
-      ${!abilityActive ? `🔒 LV${unlockAt}` : (condText ? `<span class="ability-condition">${condText}:</span> ` : '') + abilText}
+      ${!abilityActive ? `🔒 LV${unlockAt}` : (condText ? `<span class="ability-condition">${escHtml(condText)}:</span> ` : '') + escHtml(abilText)}
     </div>
-    ${bonusText ? `<div class="card-bonus"><span class="bonus-label">Bonus</span><span class="bonus-text">${bonusText}</span></div>` : ''}
+    ${bonusText ? `<div class="card-bonus"><span class="bonus-label">Bonus</span><span class="bonus-text">${escHtml(bonusText)}</span></div>` : ''}
   </div>
   <div class="card-stars">${starsStr}</div>
 </div>`;
@@ -717,8 +724,8 @@ function _renderCardDetailModal(card, owned) {
   const abilText = typeof card.ability === 'object' ? card.ability?.text : (card.ability || '');
   const condText = card.abilityData?.condition || '';
   const bonusText = typeof card.bonus === 'object' ? card.bonus?.text : (card.bonus || clanBonus || '');
-  const rar      = card.rar || 'C';
-  const rarNames = {C:'Common',U:'Uncommon',R:'Rare',M:'Mythic'};
+  const rar      = (card.type === 'grand') ? 'GD' : (card.rar || 'C');
+  const rarNames = {C:'Common',U:'Uncommon',R:'Rare',M:'Mythic',GD:'Grand'};
   const cardType = card.type || 'normal';
   const inDeck   = view.state?.deck?.includes(id);
 
@@ -745,7 +752,7 @@ function _renderCardDetailModal(card, owned) {
   const artSide = `
     <div class="cdm-art-wrap" style="--cc:${cc}">
       <div class="cdm-art${imgSrc?' has-img':''}">
-        ${imgSrc?`<img src="${imgSrc}" alt="${card.name}" onerror="this.parentNode.classList.remove('has-img')"/>`:''}
+        ${imgSrc?`<img src="${escHtml(imgSrc)}" alt="${escHtml(card.name)}" onerror="this.parentNode.classList.remove('has-img')"/>`:''}
         <div class="cdm-art-ph">${ce}</div>
         ${!owned?'<div class="cdm-locked">🔒</div>':''}
       </div>
@@ -757,13 +764,13 @@ function _renderCardDetailModal(card, owned) {
   const infoSide = `
     <div class="cdm-info">
       <div class="cdm-header">
-        <div class="cdm-name">${card.name}</div>
+        <div class="cdm-name">${escHtml(card.name)}</div>
         <div class="cdm-rar rar-${rar}">${rarNames[rar]}</div>
       </div>
       <div class="cdm-clan-row">
         <span class="cdm-clan-dot" style="background:${cc}"></span>
-        <span class="cdm-clan-name" style="color:${cc}">${ce} ${clanName}</span>
-        ${(cardType==='grand'||cardType==='eco')?`<span class="cdm-type-badge type-${cardType}">${typeLabel(cardType)}</span>`:''}
+        <span class="cdm-clan-name" style="color:${cc}">${ce} ${escHtml(clanName)}</span>
+        ${cardType==='eco'?`<span class="cdm-type-badge type-${cardType}">${typeLabel(cardType)}</span>`:''}
       </div>
       <div class="cdm-stars-row">${starsHtml}</div>
 
@@ -791,11 +798,11 @@ function _renderCardDetailModal(card, owned) {
       <div class="cdm-ability-box${abilActive?'':' locked'}">
         ${!abilActive
           ? `<span class="cdm-lock-icon">🔒</span> ${currentLang==='es'?'Se desbloquea en':'Unlocks at'} LV${unlockAt}`
-          : (condText?`<span class="cdm-cond">${condText}:</span> `:'') + (abilText || '—')}
+          : (condText?`<span class="cdm-cond">${escHtml(condText)}:</span> `:'') + escHtml(abilText || '—')}
       </div>
 
       <div class="cdm-section-lbl">${currentLang==='es'?'BONUS DE CLAN':'CLAN BONUS'}</div>
-      <div class="cdm-bonus-box">${bonusText || '—'}</div>
+      <div class="cdm-bonus-box">${escHtml(bonusText || '—')}</div>
 
       ${owned ? `<div class="cdm-actions">
         <button class="cdm-btn${inDeck?' cdm-btn-remove':''}" onclick="cdmToggleDeck('${id}')">
@@ -1003,6 +1010,175 @@ function removeFriend(uid) {
   renderFriends();
 }
 
+// Server-authoritative social graph overrides. Kept below the legacy helpers so
+// older localStorage social state is ignored once Supabase RPCs are available.
+async function renderFriends() {
+  const el = byId('friends-section');
+  if (!el) return;
+  if (!window.SB || !SB.loadSocialState) {
+    el.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Social requiere conexion.':'Social requires connection.'}</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Cargando red social...':'Loading social graph...'}</div>`;
+  const r = await SB.loadSocialState();
+  const data = r.data || {};
+  const friends = data.friends || [];
+  const received = data.incoming || [];
+  const sent = data.sent || [];
+  el.innerHTML = `
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="friend-search-input" class="input-dark" style="flex:1;font-size:0.78rem" placeholder="${currentLang==='es'?'Buscar por username...':'Search by username...'}"/>
+      <button class="btn btn-primary btn-sm" onclick="searchAndAddFriend()">+</button>
+    </div>
+    <div id="friend-search-results" class="friend-search-results"></div>
+    ${received.length ? `<div class="block-sub" style="margin-bottom:4px">${currentLang==='es'?'Solicitudes recibidas':'Incoming requests'}</div>
+      ${received.map(req => { const p=req.from||{}; return `<div class="feed-row">
+        <span class="feed-label clickable" onclick="openUserProfile('${p.user_id}')">USER ${escHtml(p.username)}</span>
+        <button class="btn-mini" onclick="respondFriend('${req.id}', true)">OK</button>
+        <button class="btn-danger" onclick="respondFriend('${req.id}', false)">NO</button>
+      </div>`; }).join('')}` : ''}
+    <div class="block-sub" style="margin:6px 0 4px">${currentLang==='es'?'Amigos':'Friends'} (${friends.length})</div>
+    ${friends.length ? friends.map(f => `<div class="feed-row">
+        <span class="feed-label clickable" onclick="openUserProfile('${f.user_id}')">USER ${escHtml(f.username)}</span>
+        <button class="btn-mini" onclick="openDm('${f.user_id}', ${jsLit(f.username || 'friend')})">MSG</button>
+        <button class="btn-danger" onclick="removeFriend('${f.user_id}')">X</button>
+      </div>`).join('') : `<div class="feed-muted">${currentLang==='es'?'Sin amigos aun.':'No friends yet.'}</div>`}
+    ${sent.length ? `<div class="block-sub" style="margin-top:8px">${currentLang==='es'?'Enviadas':'Sent'}</div>
+      ${sent.map(req => { const p=req.to||{}; return `<div class="feed-row"><span class="feed-label clickable" onclick="openUserProfile('${p.user_id}')">USER ${escHtml(p.username)}</span><span style="font-size:0.65rem;color:var(--text2)">pending</span></div>`; }).join('')}` : ''}`;
+}
+async function searchAndAddFriend() {
+  const q = (byId('friend-search-input')?.value || '').trim().toLowerCase();
+  if (!q) return toast('Ingresa un username.');
+  const res = await SB.searchProfiles(q);
+  const rows = res.data || [];
+  const host = byId('friend-search-results');
+  if (!rows.length) { if(host) host.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Usuario no encontrado.':'User not found.'}</div>`; return; }
+  host.innerHTML = rows.map(p => `<div class="feed-row">
+    <span class="feed-label clickable" onclick="openUserProfile('${p.user_id}')">USER ${escHtml(p.username)} - LV ${p.level||1} - ELO ${p.elo||0}</span>
+    <button class="btn-mini" onclick="sendFriend('${p.user_id}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar':'Add'}</button>
+  </div>`).join('');
+}
+async function sendFriend(uid, username) {
+  const r = await SB.sendFriendRequest(uid);
+  if (r.error) return toast(r.error.message || r.error);
+  toast(`${currentLang==='es'?'Solicitud enviada a':'Request sent to'} ${username}.`);
+  renderFriends();
+}
+async function respondFriend(requestId, accept) {
+  const r = await SB.respondFriendRequest(requestId, accept);
+  if (r.error) return toast(r.error.message || r.error);
+  toast(accept ? (currentLang==='es'?'Amigo agregado.':'Friend added.') : (currentLang==='es'?'Solicitud rechazada.':'Request declined.'));
+  renderFriends();
+}
+async function removeFriend(uid) {
+  const r = await SB.removeFriend(uid);
+  if (r.error) return toast(r.error.message || r.error);
+  renderFriends();
+}
+
+async function openUserProfile(uid) {
+  if (!window.SB || !SB.getProfileCard) return;
+  const r = await SB.getProfileCard(uid);
+  if (r.error || !r.data) return toast('Perfil no disponible.');
+  const p = r.data;
+  const deck = Array.isArray(p.deck) ? p.deck : [];
+  const guild = p.guild || null;
+  const modal = document.createElement('div');
+  modal.className = 'social-modal';
+  modal.innerHTML = `
+    <div class="social-panel">
+      <button class="social-close" onclick="this.closest('.social-modal').remove()">x</button>
+      <div class="social-title">USER ${escHtml(p.username)}</div>
+      <div class="social-grid">
+        <div><span>LV</span>${p.level || 1}</div>
+        <div><span>ELO</span>${p.elo || 0}</div>
+        <div><span>Cartas</span>${p.cards_count || 0}</div>
+        <div><span>Presets</span>${p.presets_count || 0}</div>
+      </div>
+      <div class="social-sub">Guild</div>
+      <div class="feed-row"><span class="feed-label">${guild ? `${escHtml(guild.emoji || 'G')} ${escHtml(guild.name)} - ${escHtml(guild.role)}` : 'Sin guild'}</span></div>
+      <div class="social-sub">Deck actual</div>
+      <div class="social-deck">${deck.length ? deck.map(id => `<button class="mini-card-link" onclick="openCardDetail('${id}')">${cardName(id)}</button>`).join('') : '<span class="feed-muted">Sin deck publico.</span>'}</div>
+      <div class="social-actions">
+        <button class="btn-mini" onclick="sendFriend('${uid}', ${jsLit(p.username || 'player')})">Friend</button>
+        <button class="btn-mini" onclick="openDm('${uid}', ${jsLit(p.username || 'friend')})">Mensaje</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function openDm(uid, username) {
+  if (!window.SB || !SB.loadDmThread) return;
+  document.querySelector('.dm-modal')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'dm-modal';
+  const emojis = [':)', ':D', '<3', 'GG', 'WP', '!', '?', '100'];
+  modal.innerHTML = `
+    <div class="dm-panel">
+      <div class="dm-head"><span>${escHtml(username)}</span><button onclick="this.closest('.dm-modal').remove()">x</button></div>
+      <div class="dm-thread" id="dm-thread"></div>
+      <div class="dm-emoji-row">
+        ${emojis.map(e => `<button onclick="byId('dm-input').value += '${e}'">${e}</button>`).join('')}
+        <input id="dm-gif" class="input-dark" placeholder="GIF/GIPHY URL opcional"/>
+        <button onclick="openGiphySearch()" title="GIPHY">GIPHY</button>
+      </div>
+      <div class="dm-compose">
+        <input id="dm-input" class="input-dark" maxlength="800" placeholder="${currentLang==='es'?'Mensaje...':'Message...'}"/>
+        <button class="btn btn-primary btn-sm" onclick="sendDmMessage('${uid}')">Send</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  await renderDmThread(uid);
+}
+function openGiphySearch() {
+  const q = encodeURIComponent(byId('dm-input')?.value || 'shardstate');
+  window.open(`https://giphy.com/search/${q || 'shardstate'}`, '_blank', 'noopener');
+}
+function askTextModal(title, placeholder, confirmText='OK') {
+  return new Promise(resolve => {
+    document.querySelector('.text-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.className = 'social-modal text-modal';
+    modal.innerHTML = `
+      <div class="social-panel text-panel">
+        <button class="social-close" data-text-cancel>x</button>
+        <div class="social-title">${escHtml(title)}</div>
+        <textarea id="text-modal-input" class="input-dark" maxlength="240" placeholder="${escHtml(placeholder || '')}"></textarea>
+        <div class="social-actions">
+          <button class="btn-mini" data-text-cancel>${currentLang==='es'?'Cancelar':'Cancel'}</button>
+          <button class="btn btn-primary btn-sm" data-text-ok>${escHtml(confirmText)}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = value => { modal.remove(); resolve(value); };
+    modal.querySelector('[data-text-ok]').addEventListener('click', () => close(byId('text-modal-input')?.value || ''));
+    modal.querySelectorAll('[data-text-cancel]').forEach(btn => btn.addEventListener('click', () => close(null)));
+    modal.addEventListener('click', e => { if (e.target === modal) close(null); });
+    setTimeout(() => byId('text-modal-input')?.focus(), 0);
+  });
+}
+async function renderDmThread(uid) {
+  const host = byId('dm-thread');
+  if (!host) return;
+  const r = await SB.loadDmThread(uid);
+  const rows = r.data || [];
+  host.innerHTML = rows.length ? rows.map(m => `
+    <div class="dm-msg ${m.sender_uid === view.user.uid ? 'mine' : ''}">
+      <div>${escHtml(m.body)}</div>
+      ${m.gif_url ? `<img src="${escHtml(m.gif_url)}" alt="gif" loading="lazy"/>` : ''}
+    </div>`).join('') : `<div class="feed-muted">${currentLang==='es'?'Sin mensajes.':'No messages.'}</div>`;
+  host.scrollTop = host.scrollHeight;
+}
+async function sendDmMessage(uid) {
+  const body = byId('dm-input')?.value || '';
+  const gif = byId('dm-gif')?.value || '';
+  const r = await SB.sendDm(uid, body, gif);
+  if (r.error) return toast(r.error.message || r.error);
+  byId('dm-input').value = '';
+  byId('dm-gif').value = '';
+  await renderDmThread(uid);
+}
+
 // ── RENDER: COLECCIÓN ──────────────────────────────────────────
 function renderColeccion() {
   // Deck slots
@@ -1045,21 +1221,17 @@ function renderColeccion() {
   } else {
     owned.forEach(id => {
       const entry = view.state.collection[id];
-      const qty   = (typeof entry === 'number') ? entry : (entry?.qty | 0) || 1;
-      let html    = renderCard(id, { size: 'sm' });
-      // Inject data-qty so filterCollection can hide non-duplicates,
-      // and a x[N] badge in the corner when the player owns more than one.
-      html = html.replace('class="tcg-card', `data-qty="${qty}" class="tcg-card`);
-      if (qty > 1) {
-        html = html.replace('</div>', `<div class="shs-dup-badge">×${qty}</div></div>`);
+      const qty = Math.max(1, (typeof entry === 'number') ? entry : (entry?.qty | 0) || 1);
+      for (let copy = 0; copy < qty; copy++) {
+        let html = renderCard(id, { size: 'sm' });
+        html = html.replace('class="shs-card', `data-qty="${qty}" data-dup-copy="${copy}" class="shs-card`);
+        if (copy > 0) html = html.replace('class="shs-card', 'style="display:none" class="shs-card');
+        ownedEl.insertAdjacentHTML('beforeend', html);
       }
-      ownedEl.insertAdjacentHTML('beforeend', html);
     });
   }
   missing.forEach(id => missingEl.insertAdjacentHTML('beforeend', renderCard(id, { missing: true, size: 'sm' })));
-  // Re-apply active search/filter if any
-  const q = byId('coll-search')?.value || '';
-  if (q) filterCollection();
+  filterCollection();
 }
 
 // ── RENDER: MERCADO — server-authoritative ─────────────────────
@@ -1086,11 +1258,11 @@ async function renderMercado() {
     sellSel.innerHTML = `<option value="">Sin cartas vendibles</option>`;
   } else {
     sellable.forEach(id => {
-      const qty = (typeof owned[id] === 'number') ? owned[id] : 1;
-      const lbl = qty > 1 ? `${cardName(id)} (×${qty})` : cardName(id);
-      sellSel.insertAdjacentHTML('beforeend', `<option value="${id}">${lbl}</option>`);
+      sellSel.insertAdjacentHTML('beforeend', `<option value="${id}">${cardName(id)}</option>`);
     });
   }
+  renderSellCardPreview();
+  renderSellCardPicker(sellable);
 
   const mList  = byId('market-list');
   const msEl   = byId('my-sales');
@@ -1115,7 +1287,8 @@ async function renderMercado() {
     if (!card) return !q;
     if (q && !String(card.name || l.card_id).toLowerCase().includes(q)) return false;
     if (clanQ && card.clan !== clanQ) return false;
-    if (rarQ && card.rar !== rarQ) return false;
+    const displayRar = card.type === 'grand' ? 'GD' : card.rar;
+    if (rarQ && displayRar !== rarQ) return false;
     if (starsQ && (card.stars|0) !== starsQ) return false;
     return true;
   });
@@ -1147,7 +1320,7 @@ async function renderMercado() {
             <div class="mcard-name">${name}</div>
             <div class="mcard-stats">POW ${pow} · DMG ${dmg}</div>
             <div class="mcard-meta">
-              <span class="mcard-chip">${card?.rar || '?'}</span>
+              <span class="mcard-chip">${card?.type === 'grand' ? 'GD' : (card?.rar || '?')}</span>
               <span class="mcard-chip">${card?.stars || '?'}★</span>
               <span class="mcard-chip">${card?.clan?.toUpperCase() || ''}</span>
             </div>
@@ -1163,12 +1336,10 @@ async function renderMercado() {
   const myActive = mine.filter(l => l.status === 'active');
   if (msEl){
     msEl.innerHTML = myActive.length ? '' : `<div class="feed-muted">${t('no_sales')}</div>`;
-    myActive.forEach(l => msEl.insertAdjacentHTML('beforeend', `
-      <div class="feed-row">
-        <span class="feed-label">${cardName(l.card_id)}</span>
-        <span class="feed-price">${l.price} SHARDS</span>
-        <button class="btn-danger btn-sm" onclick="delistMarketCard('${l.id}')">✕ ${currentLang==='es'?'Retirar':'Delist'}</button>
-      </div>`));
+    myActive.forEach(l => msEl.insertAdjacentHTML('beforeend', renderMiniMarketRow(l, {
+      action:`<button class="btn-danger btn-sm" data-delist="${l.id}">${currentLang==='es'?'Retirar':'Delist'}</button>`,
+      pricePrefix:'',
+    })));
   }
 
   // History from closed listings (bought + sold).
@@ -1177,12 +1348,81 @@ async function renderMercado() {
   const sold = mine.filter(l => l.status === 'sold');
   if (shEl){
     shEl.innerHTML = sold.length ? '' : `<div class="feed-muted">${t('no_sell_hist')}</div>`;
-    sold.forEach(l => shEl.insertAdjacentHTML('beforeend',
-      `<div class="feed-row"><span class="feed-label">${cardName(l.card_id)}</span><span class="feed-price">+${l.price} SHARDS</span></div>`));
+    sold.forEach(l => shEl.insertAdjacentHTML('beforeend', renderMiniMarketRow(l, { pricePrefix:'+', tone:'sold' })));
   }
-  // Buy history requires a query for listings where buyer_uid = me. RLS blocks generic select on closed
-  // rows, so we skip for now — comment for followup.
-  if (bhEl) bhEl.innerHTML = `<div class="feed-muted">${t('no_buy_hist')}</div>`;
+  const bought = SB.loadMarketPurchases ? await SB.loadMarketPurchases(view.user.uid) : [];
+  if (bhEl){
+    bhEl.innerHTML = bought.length ? '' : `<div class="feed-muted">${t('no_buy_hist')}</div>`;
+    bought.forEach(l => bhEl.insertAdjacentHTML('beforeend', renderMiniMarketRow(l, { pricePrefix:'-', tone:'bought' })));
+  }
+}
+
+function renderSellCardPreview() {
+  const host = byId('sell-card-preview');
+  const sel = byId('sell-card-id');
+  if (!host || !sel) return;
+  const id = sel.value;
+  const card = id ? getCard(id) : null;
+  if (!card) {
+    host.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Elegí una carta para ver el preview.':'Choose a card to preview it.'}</div>`;
+    return;
+  }
+  const qtyRaw = view.state.collection?.[id];
+  const qty = (typeof qtyRaw === 'number') ? qtyRaw : (qtyRaw?.qty | 0) || 1;
+  const cc = clanColor(card.clan);
+  const ce = clanEmoji(card.clan);
+  const rar = card.type === 'grand' ? 'GD' : (card.rar || '?');
+  host.innerHTML = `
+    <div class="sell-preview-card" style="--cc:${cc}">
+      <button class="sell-preview-art" onclick="openCardDetail('${id}')">${ce}</button>
+      <div>
+        <div class="sell-preview-name">${card.name}</div>
+        <div class="sell-preview-meta">${card.clan?.toUpperCase() || ''} - ${rar} - ${card.stars || '?'}★</div>
+        <div class="sell-preview-stats">POW ${card.pow?.[1] || '?'} - DMG ${card.dmg?.[1] || '?'}</div>
+      </div>
+    </div>`;
+}
+
+function renderSellCardPicker(ids) {
+  const host = byId('sell-card-picker');
+  if (!host) return;
+  if (!ids || !ids.length) {
+    host.innerHTML = `<div class="feed-muted">${currentLang==='es'?'No hay cartas vendibles.':'No sellable cards.'}</div>`;
+    return;
+  }
+  host.innerHTML = ids.map(id => {
+    const card = getCard(id);
+    if (!card) return '';
+    const qtyRaw = view.state.collection?.[id];
+    const qty = (typeof qtyRaw === 'number') ? qtyRaw : (qtyRaw?.qty | 0) || 1;
+    const img = (typeof getCardArt === 'function') ? (getCardArt(card, qtyRaw?.lv || 1) || '') : '';
+    const cc = clanColor(card.clan);
+    const rar = card.type === 'grand' ? 'GD' : (card.rar || '?');
+    return `
+      <button class="sell-picker-card" data-pick-sell="${id}" style="--cc:${cc}">
+        ${img ? `<img src="${img}" alt="" loading="lazy"/>` : `<span>${clanEmoji(card.clan)}</span>`}
+        <b>${escHtml(card.name)}</b>
+        <em>${rar}</em>
+      </button>`;
+  }).join('');
+}
+
+function renderMiniMarketRow(l, opts={}) {
+  const card = getCard(l.card_id) || {};
+  const cc = card.clan ? clanColor(card.clan) : '#00ffc6';
+  const ce = card.clan ? clanEmoji(card.clan) : 'G';
+  const pricePrefix = opts.pricePrefix || '';
+  const rar = card.type === 'grand' ? 'GD' : (card.rar || '?');
+  return `
+    <div class="market-mini-row ${opts.tone || ''}" style="--cc:${cc}">
+      <button class="market-mini-art" onclick="openCardDetail('${l.card_id}')">${ce}</button>
+      <div class="market-mini-main">
+        <div class="market-mini-name">${card.name || l.card_id}</div>
+        <div class="market-mini-meta">${card.clan?.toUpperCase() || ''} - ${rar} - ${card.stars || '?'}★</div>
+      </div>
+      <div class="market-mini-price">${pricePrefix}${l.price} SHARDS</div>
+      ${opts.action || ''}
+    </div>`;
 }
 
 // ── RENDER: GUILDS ─────────────────────────────────────────────
@@ -1257,6 +1497,117 @@ function renderGuilds() {
 }
 
 // ── RENDER: LEARN CLANS ────────────────────────────────────────
+async function renderGuildsServer() {
+  const u = view.user;
+  const mgEl = byId('my-guild');
+  const reqEl = byId('guild-requests');
+  const list = byId('guild-directory');
+  if (!mgEl || !reqEl || !list) return;
+  mgEl.innerHTML = '';
+  reqEl.innerHTML = '';
+  list.innerHTML = '';
+
+  if (!window.SB || !SB.loadGuildState) {
+    mgEl.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Gremios requieren conexion.':'Guilds require connection.'}</div>`;
+    reqEl.innerHTML = `<div class="feed-muted">${t('leader_only')}</div>`;
+    list.innerHTML = `<div class="feed-muted">${t('no_guilds')}</div>`;
+    return;
+  }
+
+  mgEl.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Cargando gremios...':'Loading guilds...'}</div>`;
+  const q = String(byId('guild-search')?.value || '').trim();
+  const r = await SB.loadGuildState(q);
+  if (r.error) {
+    mgEl.innerHTML = `<div class="feed-muted">${escHtml(r.error.message || r.error)}</div>`;
+    reqEl.innerHTML = `<div class="feed-muted">${t('leader_only')}</div>`;
+    return;
+  }
+
+  const data = r.data || {};
+  const myGuild = data.my_guild || null;
+  const guilds = data.guilds || [];
+  const myApplications = data.my_applications || [];
+  mgEl.innerHTML = '';
+
+  if (!myGuild) {
+    u.guildId = null;
+    mgEl.innerHTML = `<div class="feed-muted">${t('no_guild')}</div>`;
+    if (myApplications.length) {
+      mgEl.insertAdjacentHTML('beforeend', myApplications.map(app => `
+        <div class="feed-row">
+          <span class="feed-label">${escHtml(app.guild_name)} - ${escHtml(app.status)}</span>
+          ${app.response ? `<span class="feed-label">${escHtml(app.response)}</span>` : ''}
+        </div>`).join(''));
+    }
+    reqEl.innerHTML = `<div class="feed-muted">${t('leader_only')}</div>`;
+  } else {
+    u.guildId = myGuild.id;
+    const members = myGuild.members || [];
+    const applications = myGuild.applications || [];
+    mgEl.insertAdjacentHTML('beforeend', `
+      <div class="guild-card">
+        <div class="guild-card-header">
+          <div class="guild-avatar">${myGuild.icon_url ? `<img class="guild-icon-img" src="${escHtml(myGuild.icon_url)}" alt=""/>` : escHtml(myGuild.emoji || 'G')}</div>
+          <div>
+            <div class="guild-name">${escHtml(myGuild.name)}</div>
+            <div class="guild-members">${members.length} ${t('members_label')}${myGuild.country ? ` - ${escHtml(myGuild.country)}` : ''}</div>
+          </div>
+        </div>
+        ${myGuild.bio ? `<div class="guild-bio">${escHtml(myGuild.bio)}</div>` : ''}
+        <div class="guild-member-list">
+          ${members.map(m => `<button class="mini-card-link" onclick="openUserProfile('${m.user_id}')">${escHtml(m.username)} - ${escHtml(m.role || 'member')}</button>`).join('')}
+        </div>
+      </div>`);
+
+    if (myGuild.role === 'leader') {
+      if (!applications.length) {
+        reqEl.innerHTML = `<div class="feed-muted">${t('no_requests')}</div>`;
+      } else {
+        applications.forEach(app => {
+          const ru = app.user || {};
+          reqEl.insertAdjacentHTML('beforeend', `
+            <div class="feed-row">
+              <span class="feed-label clickable" onclick="openUserProfile('${ru.user_id}')">USER ${escHtml(ru.username || 'player')}</span>
+              <span class="feed-label">${escHtml(app.message || '')}</span>
+              <button class="btn-mini" data-approve-guild="${app.id}">${t('guild_approve_btn')}</button>
+              <button class="btn-danger" data-deny-guild="${app.id}">${t('guild_deny_btn')}</button>
+            </div>`);
+        });
+      }
+    } else {
+      reqEl.innerHTML = `<div class="feed-muted">${t('leader_only')}</div>`;
+    }
+  }
+
+  if (!guilds.length) {
+    list.innerHTML = `<div class="feed-muted">${t('no_guilds')}</div>`;
+  } else {
+    guilds.forEach(g => {
+      const isMember = myGuild && myGuild.id === g.id;
+      const requested = !!g.requested;
+      const canReq = !isMember && !requested;
+      list.insertAdjacentHTML('beforeend', `
+        <div class="guild-card">
+          <div class="guild-card-header">
+            <div class="guild-avatar">${g.icon_url ? `<img class="guild-icon-img" src="${escHtml(g.icon_url)}" alt=""/>` : escHtml(g.emoji || 'G')}</div>
+            <div>
+              <div class="guild-name">${escHtml(g.name)}</div>
+              <div class="guild-members">${g.members_count || 0} ${t('members_label')}${g.country ? ` - ${escHtml(g.country)}` : ''}</div>
+            </div>
+          </div>
+          ${g.bio ? `<div class="guild-bio">${escHtml(g.bio)}</div>` : ''}
+          <div class="guild-members">Leader: <span class="clickable" onclick="openUserProfile('${g.leader_uid}')">${escHtml(g.leader?.username || 'player')}</span></div>
+          <div class="guild-actions">
+            ${canReq ? `<button class="btn-mini" data-join-guild="${g.id}">${t('guild_join_btn')}</button>` : ''}
+            ${isMember ? `<span class="chip-rar R">${t('member_badge')}</span>` : ''}
+            ${requested ? `<span class="chip-rar U">${t('requested_badge')}</span>` : ''}
+          </div>
+        </div>`);
+    });
+  }
+}
+renderGuilds = renderGuildsServer;
+
 function renderLearnClans() {
   const el = byId('clans-learn-grid');
   if (!el || el.dataset.rendered) return;
@@ -2103,11 +2454,13 @@ function toggleLang() {
 }
 
 // ── FILTER COLLECTION ──────────────────────────────────────────
+let currentCollectionFilter = 'all';
 function filterCollection(filter) {
   const query = (byId('coll-search')?.value || '').toLowerCase();
   const owned   = byId('collection-section-owned');
   const missing = byId('collection-section-missing');
-  if (!filter) filter = 'all';
+  if (filter) currentCollectionFilter = filter;
+  filter = currentCollectionFilter;
   if (filter === 'owned')   { owned && (owned.style.display=''); missing && (missing.style.display='none'); }
   else if (filter === 'missing') { owned && (owned.style.display='none'); missing && (missing.style.display=''); }
   else if (filter === 'duplicates') {
@@ -2116,15 +2469,17 @@ function filterCollection(filter) {
   else { owned && (owned.style.display=''); missing && (missing.style.display=''); }
   // Filter by search query and duplicates flag
   const dupOnly = (filter === 'duplicates');
-  document.querySelectorAll('#owned-cards .tcg-card').forEach(el => {
-    const name = (el.getAttribute('title') || '').toLowerCase();
+  document.querySelectorAll('#owned-cards .shs-card').forEach(el => {
+    const name = (el.getAttribute('data-name') || el.getAttribute('title') || '').toLowerCase();
     const qty  = parseInt(el.getAttribute('data-qty') || '1', 10);
+    const dupCopy = parseInt(el.getAttribute('data-dup-copy') || '0', 10);
     const passQuery = !query || name.includes(query);
     const passDup   = !dupOnly || qty > 1;
-    el.style.display = (passQuery && passDup) ? '' : 'none';
+    const passCopy  = dupOnly || dupCopy === 0;
+    el.style.display = (passQuery && passDup && passCopy) ? '' : 'none';
   });
-  document.querySelectorAll('#missing-cards .tcg-card').forEach(el => {
-    const name = (el.getAttribute('title') || '').toLowerCase();
+  document.querySelectorAll('#missing-cards .shs-card').forEach(el => {
+    const name = (el.getAttribute('data-name') || el.getAttribute('title') || '').toLowerCase();
     el.style.display = (!query || name.includes(query)) ? '' : 'none';
   });
 }
@@ -2195,6 +2550,64 @@ window.delistMarketCard = delistMarketCard;
 
 // ── EVENT BINDINGS ─────────────────────────────────────────────
 function bindEvents() {
+  const createGuildBtn = byId('create-guild-btn');
+  if (createGuildBtn) {
+    createGuildBtn.addEventListener('click', async e => {
+      if (!window.SB || !SB.createGuild) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const name = String(byId('guild-name')?.value || '').trim();
+      const emoji = String(byId('guild-avatar')?.value || 'G').trim() || 'G';
+      const bio = String(byId('guild-bio')?.value || '').trim();
+      const iconUrl = String(byId('guild-icon-url')?.value || '').trim();
+      const country = String(byId('guild-country')?.value || '').trim();
+      if (!name) return toast('Nombre de gremio requerido.');
+      const r = await SB.createGuild({ name, bio, emoji, icon_url:iconUrl, country });
+      if (r.error) return toast(r.error.message || r.error);
+      toast(`Guild "${name}" creada.`);
+      await refreshFromSupabase();
+      syncTopbar();
+      renderGuilds();
+      renderPerfil();
+    }, true);
+  }
+
+  const guildPanel = byId('panel-guilds');
+  if (guildPanel) {
+    guildPanel.addEventListener('click', async e => {
+      const join = e.target.closest('[data-join-guild]');
+      const approve = e.target.closest('[data-approve-guild]');
+      const deny = e.target.closest('[data-deny-guild]');
+      if (!join && !approve && !deny) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (!window.SB) return toast('Sin conexion al servidor.');
+      if (join) {
+        const msg = await askTextModal(
+          currentLang === 'es' ? 'Solicitud de ingreso' : 'Guild application',
+          currentLang === 'es' ? 'Mensaje para el lider...' : 'Message for the leader...',
+          currentLang === 'es' ? 'Enviar' : 'Send'
+        );
+        if (msg === null) return;
+        const r = await SB.applyGuild(join.getAttribute('data-join-guild'), msg);
+        if (r.error) return toast(r.error.message || r.error);
+        toast('Solicitud enviada.');
+      } else {
+        const id = (approve || deny).getAttribute(approve ? 'data-approve-guild' : 'data-deny-guild');
+        const response = await askTextModal(
+          approve ? (currentLang === 'es' ? 'Aceptar solicitud' : 'Accept request') : (currentLang === 'es' ? 'Rechazar solicitud' : 'Decline request'),
+          currentLang === 'es' ? 'Mensaje para el jugador...' : 'Message for the player...',
+          approve ? (currentLang === 'es' ? 'Aceptar' : 'Accept') : (currentLang === 'es' ? 'Rechazar' : 'Decline')
+        );
+        if (response === null) return;
+        const r = await SB.respondGuildApplication(id, !!approve, response);
+        if (r.error) return toast(r.error.message || r.error);
+        toast(approve ? 'Miembro aceptado.' : 'Solicitud rechazada.');
+      }
+      renderGuilds();
+    }, true);
+  }
+
   // Nav
   navItems.forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
 
@@ -2294,6 +2707,16 @@ function bindEvents() {
   });
 
   // Sell card
+  const sellCardSelect = byId('sell-card-id');
+  if (sellCardSelect) sellCardSelect.addEventListener('change', renderSellCardPreview);
+  const sellPicker = byId('sell-card-picker');
+  if (sellPicker) sellPicker.addEventListener('click', e => {
+    const pick = e.target.closest('[data-pick-sell]');
+    if (!pick) return;
+    const sel = byId('sell-card-id');
+    if (sel) sel.value = pick.getAttribute('data-pick-sell');
+    renderSellCardPreview();
+  });
   byId('sell-card-btn').addEventListener('click', () => {
     const id    = byId('sell-card-id').value;
     const price = Math.max(1, Number(byId('sell-card-price').value || 0));
@@ -2580,7 +3003,8 @@ async function start() {
   loadCustomCards();
   loadDb();
 
-  // Try Supabase session first; fall back to legacy local session.
+  // Try Supabase session first. If Supabase is available, localStorage alone is
+  // not enough to enter the app; server auth/RLS must be present.
   if (window.SB) {
     try {
       const sess = await SB.getSession();
@@ -2591,7 +3015,7 @@ async function start() {
     // Always attempt to pull admin-published custom cards (read is open).
     loadCustomCardsRemote().catch(()=>{});
   }
-  if (!view.user) view.user = resolveCurrentUser();
+  if (!view.user && !window.SB) view.user = resolveCurrentUser();
 
   if (!view.user) {
     window.location.replace('../index.html');

@@ -7,7 +7,7 @@ Last updated: 2026-04-25
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=31`.
+- Current asset cache version: `v=35`.
 
 ## Live URLs
 
@@ -108,6 +108,20 @@ Future modes are intentionally not enabled yet:
 - Admin emails: `faxie.contact@gmail.com`, `shardstate.game@gmail.com`.
 - Usernames are normalized to lowercase `[a-z0-9_]` and enforced unique case-insensitively in Supabase.
 - Referral ledger scaffold exists: a sponsor can receive `+1 FLUX` once when a referred account buys any FLUX bundle.
+- Server-authoritative friends/guilds/DM scaffold exists:
+  - Players can search profiles, send/respond friend requests, open public profile cards, and DM friends.
+  - Guilds cost `2 FLUX` to create through Supabase RPC, support search/applications, and leaders can accept/reject with a response message.
+  - Friend DMs support emoji shortcuts and GIF/GIPHY URLs.
+- Collection duplicates filter now renders each duplicate copy as an individual card and does not overlay quantity badges on card art.
+- GRAND cards are represented as `GD` rarity with a special aura/glow instead of a large `GRAND` label.
+- Market listing UX has a visual sell-card picker and preview in addition to the fallback select.
+- Security hardening:
+  - Admin email allowlist includes `faxie.contact@gmail.com` and `shardstate.game@gmail.com` in both UI and Supabase `is_shardstate_admin()`.
+  - Admin Card Editor now blocks non-admin clients before rendering tools.
+  - Supabase-authenticated sessions are required when Supabase is available; localStorage-only auth fallback is disabled in production paths.
+  - User/admin rendered server data is HTML-escaped in the most exposed modal/list surfaces.
+  - `custom_cards` has admin-only RLS for insert/update/delete and published/admin read policy.
+  - Guild icon and DM GIF URLs are constrained to HTTPS image/GIF sources in RPCs.
 
 ### Phase 4 - Payments Scaffold
 

@@ -977,8 +977,8 @@ const RAR_COLORS = { C:'#6B7280', U:'#3498DB', R:'#F7B731', M:'#B5179E' };
     }
   } catch(_){}
 
-  // Legacy localStorage fallback.
-  const uid = localStorage.getItem(AUTH_SESSION_KEY);
+  // Legacy localStorage fallback only when Supabase is unavailable.
+  const uid = !window.SB ? localStorage.getItem(AUTH_SESSION_KEY) : '';
   if(uid && AUTH.db.users[uid]){
     window.location.replace('gamehub/index.html');
   }
@@ -1202,7 +1202,11 @@ async function beginOAuth(provider){
     if (error) authFeedback(error.message || 'Google sign-in failed.');
     return;
   }
-  // Apple (and offline) keep the legacy inline-email step until wired.
+  if (window.SB) {
+    authFeedback(provider === 'apple' ? 'Apple sign-in is not configured yet.' : 'OAuth provider unavailable.');
+    return;
+  }
+  // Offline legacy fallback only.
   const inline = document.getElementById('oauth-inline');
   inline.style.display='flex';
   document.getElementById('oauth-helper-text').textContent = `Enter your ${provider==='google'?'Google':'Apple'} email to continue.`;
@@ -1213,6 +1217,7 @@ async function completeOAuth(){
   const provider = AUTH.provider;
   const email    = normalizeEmail(document.getElementById('oauth-email').value);
   if(!provider){ authFeedback('Pick Google or Apple first.'); return; }
+  if(window.SB){ authFeedback('OAuth fallback disabled while server auth is available.'); return; }
   if(!validEmail(email)){ authFeedback('Enter a valid provider email.'); return; }
   const linkedUid = AUTH.db.emailToUid[email];
   if(linkedUid){
@@ -1294,13 +1299,21 @@ async function saveUsername(){
   AUTH.currentUser.username = username;
   if (window.SB) {
     try {
-      await SB.upsertProfile(AUTH.currentUser.uid, {
+      const r = await SB.upsertProfile(AUTH.currentUser.uid, {
         username,
         language: landingLang || 'es',
         referral_code: me.referralCode || '',
         referred_by: me.referredByUid || null,
       });
-    } catch(e){ console.warn('upsertProfile failed:', e); }
+      if (r && r.error) {
+        usernameFeedback(r.error.message || 'Username could not be saved.');
+        return;
+      }
+    } catch(e){
+      console.warn('upsertProfile failed:', e);
+      usernameFeedback('Username could not be saved. Try again.');
+      return;
+    }
   }
   me.updatedAt = Date.now();
   saveAuthDb();

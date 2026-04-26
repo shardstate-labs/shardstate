@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=31"/>
+<link rel="stylesheet" href="./styles.css?v=35"/>
 </head>
 <body>
 
@@ -257,6 +257,8 @@
                 <div class="block-title" data-i18n="market_list_title">List a Card</div>
                 <div class="market-list-form">
                   <select id="sell-card-id" class="select-dark"></select>
+                  <div id="sell-card-preview" class="sell-card-preview"></div>
+                  <div id="sell-card-picker" class="sell-card-picker"></div>
                   <div class="market-form-row">
                     <input id="sell-card-price" class="input-dark" type="number" min="1" value="50" placeholder="Price in SHARDS" style="flex:1"/>
                     <button id="sell-card-btn" class="btn btn-primary" data-i18n="market_list_btn">List</button>
@@ -280,6 +282,7 @@
                     <option value="U">Inusual</option>
                     <option value="R">Rara</option>
                     <option value="M">Mítica</option>
+                    <option value="GD">Grand</option>
                   </select>
                   <select id="market-stars-filter" class="select-dark" onchange="renderMercado()">
                     <option value="">Estrellas</option>
@@ -361,6 +364,8 @@
                   <input id="guild-avatar" class="input-dark" style="width:72px" placeholder="Emoji" value="🛡"/>
                   <textarea id="guild-bio" class="input-dark" style="flex:1" maxlength="200" placeholder="Guild description…" data-i18n-ph="guild_bio_ph"></textarea>
                 </div>
+                <input id="guild-icon-url" class="input-dark" maxlength="240" placeholder="Icon image URL"/>
+                <input id="guild-country" class="input-dark" maxlength="48" placeholder="Country"/>
                 <button id="create-guild-btn" class="btn btn-primary btn-full" data-i18n="guild_create_btn">Create Guild</button>
               </div>
             </div>
@@ -505,15 +510,15 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=31"></script>
-<script src="../engine/ability_catalog.js?v=31"></script>
-<script src="../engine/round_engine.js?v=31"></script>
-<script src="../engine/utils.js?v=31"></script>
-<script src="../js/config.js?v=31"></script>
-<script src="../js/sb.js?v=31"></script>
-<script src="../js/sync.js?v=31"></script>
-<script src="../js/pvp.js?v=31"></script>
-<script src="../js/payments.js?v=31"></script>
-<script src="./app.js?v=31"></script>
+<script src="../engine/cards.js?v=35"></script>
+<script src="../engine/ability_catalog.js?v=35"></script>
+<script src="../engine/round_engine.js?v=35"></script>
+<script src="../engine/utils.js?v=35"></script>
+<script src="../js/config.js?v=35"></script>
+<script src="../js/sb.js?v=35"></script>
+<script src="../js/sync.js?v=35"></script>
+<script src="../js/pvp.js?v=35"></script>
+<script src="../js/payments.js?v=35"></script>
+<script src="./app.js?v=35"></script>
 </body>
 </html>

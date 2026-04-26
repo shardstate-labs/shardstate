@@ -29,7 +29,8 @@ const RAR_MAP = { common:'C', uncommon:'U', rare:'R', mythic:'M' };
 // Produces an object compatible with the game engine (pow[], dmg[], rar, lv, lv_max)
 // plus the full rich schema for collection/deck-builder UI.
 function createCard(cfg) {
-  const rarChar = RAR_MAP[cfg.rarity] || cfg.rarity;
+  const normalizedRarity = cfg.type === 'grand' ? 'grand' : cfg.rarity;
+  const rarChar = cfg.type === 'grand' ? 'GD' : (RAR_MAP[normalizedRarity] || normalizedRarity);
   return {
     // === ENGINE FIELDS (backward-compat) ===
     id:      cfg.id,
@@ -45,7 +46,7 @@ function createCard(cfg) {
     lore:    cfg.lore,
     // === RICH SCHEMA ===
     type:        cfg.type    || 'normal',   // 'normal' | 'nexus' | 'echo'
-    rarity:      cfg.rarity,
+    rarity:      normalizedRarity,
     abilityData: cfg.ability,              // { type, text, condition? }
     bonus:       cfg.bonus,
     tags:        cfg.tags    || [],

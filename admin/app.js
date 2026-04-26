@@ -5,6 +5,7 @@
 const CLAN_DATA   = (typeof CLANS !== 'undefined') ? CLANS : {};
 const RAR_TO_FULL = { C:'common', U:'uncommon', R:'rare', M:'mythic' };
 const INV_RAR     = { common:'C', uncommon:'U', rare:'R', mythic:'M' };
+const ADMIN_EMAILS = new Set(['faxie.contact@gmail.com', 'shardstate.game@gmail.com']);
 
 let blobArt1 = null, blobArt2 = null, blobLogo = null;
 let previewLv = 2;
@@ -12,8 +13,12 @@ let selectedCardId = null;
 let adminFilter = '';
 let selectedUser = null;
 let userSearchTimer = null;
+let adminAccess = false;
 
 function $(id){ return document.getElementById(id); }
+function escHtml(v){
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 
 function abilityUnlockLv(stars){ return (stars >= 5) ? 4 : 2; }
 function pool_size_for(isTitans){
@@ -51,8 +56,8 @@ function renderAdminList(){
     const sel = c.id === selectedCardId ? ' selected' : '';
     return `<div class="admin-card-row${sel}" onclick="loadCard('${c.id}')">
       <div class="admin-card-dot" style="background:${cc}"></div>
-      <span class="admin-card-name">${c.name || c.id}</span>
-      <span class="admin-card-clan">${(c.clan||'').toUpperCase()}</span>
+      <span class="admin-card-name">${escHtml(c.name || c.id)}</span>
+      <span class="admin-card-clan">${escHtml((c.clan||'').toUpperCase())}</span>
       ${c.isCustom?'<span class="admin-card-custom">CUSTOM</span>':''}
     </div>`;
   }).join('');
@@ -306,6 +311,7 @@ function buildCard(){
 }
 
 async function addToGame(){
+  if (!adminAccess) { showMsg('Admin access required.', 'err'); return; }
   const card = buildCard();
   if(!card.id || card.id === 'custom_card'){ showMsg('Give the card a unique ID before saving.', 'warn'); return; }
   let customs = [];
@@ -356,6 +362,7 @@ function exportJS(){
 }
 
 function clearCustomCards(){
+  if (!adminAccess) { showMsg('Admin access required.', 'err'); return; }
   if(!confirm('Remove all custom card overrides from localStorage?\nBase game cards are not affected.')) return;
   localStorage.removeItem('shs_custom_cards');
   selectedCardId = null;
@@ -405,8 +412,8 @@ async function searchAdminUsers(){
   const rows = r.data || [];
   host.innerHTML = rows.length ? rows.map(u => `
     <div class="user-row" onclick="selectAdminUser('${u.user_id}')">
-      <div class="user-row-main"><div class="user-row-email">${u.email || u.user_id}</div>
-      <div class="user-row-meta">${u.username || 'no username'} · cards ${u.cards_count || 0} · deck rows ${u.deck_count || 0}</div></div>
+      <div class="user-row-main"><div class="user-row-email">${escHtml(u.email || u.user_id)}</div>
+      <div class="user-row-meta">${escHtml(u.username || 'no username')} · cards ${u.cards_count || 0} · deck rows ${u.deck_count || 0}</div></div>
       ${statusPill(u.status)}
     </div>`).join('') : '<div class="admin-empty">No users found.</div>';
 }
@@ -423,16 +430,16 @@ function renderSelectedUser(){
   const cards = Array.isArray(d.cards) ? d.cards : [];
   const decks = Array.isArray(d.decks) ? d.decks : [];
   box.classList.remove('empty');
-  box.innerHTML = `<div class="user-detail-title">${p.username || 'No username'} ${statusPill(flag.status || 'active')}</div>
-    <div class="user-detail-meta">${selectedUser.user_id}</div>
+  box.innerHTML = `<div class="user-detail-title">${escHtml(p.username || 'No username')} ${statusPill(flag.status || 'active')}</div>
+    <div class="user-detail-meta">${escHtml(selectedUser.user_id)}</div>
     <div class="user-kv"><div><span>SHARDS</span>${gs.shards || 0}</div><div><span>FLUX</span>${gs.flux || 0}</div>
     <div><span>ELO</span>${gs.elo || 0}</div><div><span>Cards</span>${cards.length}</div>
     <div><span>Deck rows</span>${decks.length}</div><div><span>Welcome</span>${gs.welcome_pack_claimed ? 'claimed' : 'available'}</div></div>`;
   const actions = Array.isArray(d.recent_actions) ? d.recent_actions : [];
-  panel.innerHTML = `<div class="user-log-title">${p.username || 'Selected user'}</div>
-    <div class="user-detail-meta">Cards: ${cards.map(c => `${c.card_id} x${c.qty}`).join(', ') || 'none'}</div>
-    <div class="user-detail-meta">Decks: ${decks.map(x => `${x.name}: ${(x.card_ids || []).join(', ')}`).join(' · ') || 'none'}</div>
-    ${actions.length ? actions.map(a => `<div class="user-log-entry"><strong>${a.action}</strong><div>${new Date(a.created_at).toLocaleString()}</div><code>${JSON.stringify(a.details || {}, null, 2)}</code></div>`).join('') : '<div class="admin-empty">No recent admin actions.</div>'}`;
+  panel.innerHTML = `<div class="user-log-title">${escHtml(p.username || 'Selected user')}</div>
+    <div class="user-detail-meta">Cards: ${escHtml(cards.map(c => `${c.card_id} x${c.qty}`).join(', ') || 'none')}</div>
+    <div class="user-detail-meta">Decks: ${escHtml(decks.map(x => `${x.name}: ${(x.card_ids || []).join(', ')}`).join(' · ') || 'none')}</div>
+    ${actions.length ? actions.map(a => `<div class="user-log-entry"><strong>${escHtml(a.action)}</strong><div>${new Date(a.created_at).toLocaleString()}</div><code>${escHtml(JSON.stringify(a.details || {}, null, 2))}</code></div>`).join('') : '<div class="admin-empty">No recent admin actions.</div>'}`;
 }
 async function refreshSelectedUser(){ if (selectedUser) await selectAdminUser(selectedUser.user_id); }
 function requireSelectedUser(){ if (!selectedUser?.user_id) { userMsg('Select a user first.', 'warn'); return null; } return selectedUser.user_id; }
@@ -467,5 +474,33 @@ async function grantSelectedCurrency(currency){
   userMsg(`Granted +${amount} ${currency.toUpperCase()}.`, 'ok'); $(id).value = ''; await refreshSelectedUser();
 }
 
-renderAdminList();
-newCard();
+async function verifyAdminAccess(){
+  if (!window.SB || !SB.getUser) return false;
+  try {
+    const user = await SB.getUser();
+    return !!user && ADMIN_EMAILS.has(String(user.email || '').toLowerCase());
+  } catch(_) {
+    return false;
+  }
+}
+
+async function initAdmin(){
+  const ok = await verifyAdminAccess();
+  if (!ok) {
+    document.body.innerHTML = `
+      <div class="admin-shell">
+        <main class="editor">
+          <div class="panel" style="max-width:560px;margin:48px auto">
+            <h1>ADMIN ONLY</h1>
+            <p class="muted">Sign in as an authorized SHARDSTATE admin to use Card Editor.</p>
+            <a class="btn" href="../index.html">Return</a>
+          </div>
+        </main>
+      </div>`;
+    return;
+  }
+  adminAccess = true;
+  renderAdminList();
+  newCard();
+}
+initAdmin();
