@@ -165,8 +165,8 @@ function resolveRound(B, pCardId, pPulses, pColapso, oCardId, oPulses, oColapso)
 
     const result = {
       round: B.round, winner: r.winner, dmg: r.dmg,
-      p: { cardId:pCardId, pow:r.p.pow, atk:r.p.atk, pulses:pPulses, colapso:pColapso, bonus:r.p.bonus },
-      o: { cardId:oCardId, pow:r.o.pow, atk:r.o.atk, pulses:oPulses, colapso:oColapso, bonus:r.o.bonus },
+      p: { cardId:pCardId, pow:r.p.pow, dmg:r.p.dmg, atk:r.p.atk, pulses:pPulses, colapso:pColapso, bonus:r.p.bonus },
+      o: { cardId:oCardId, pow:r.o.pow, dmg:r.o.dmg, atk:r.o.atk, pulses:oPulses, colapso:oColapso, bonus:r.o.bonus },
     };
     B.history.push(result);
     B.pHand = B.pHand.filter(id=>id!==pCardId);
@@ -213,8 +213,8 @@ function resolveRound(B, pCardId, pPulses, pColapso, oCardId, oPulses, oColapso)
   if(winner==='p'){ B.oHP = Math.max(0, B.oHP - dmg); B.pPulses += W.pulseWin||0; }
   else            { B.pHP = Math.max(0, B.pHP - dmg); B.oPulses += W.pulseWin||0; }
   const result = { round: B.round, winner, dmg,
-    p: { cardId:pCardId, pow:P.pow, atk:P.atk, pulses:pPulses, colapso:pColapso, bonus:P.hasBonus },
-    o: { cardId:oCardId, pow:O.pow, atk:O.atk, pulses:oPulses, colapso:oColapso, bonus:O.hasBonus } };
+    p: { cardId:pCardId, pow:P.pow, dmg:P.dmg, atk:P.atk, pulses:pPulses, colapso:pColapso, bonus:P.hasBonus },
+    o: { cardId:oCardId, pow:O.pow, dmg:O.dmg, atk:O.atk, pulses:oPulses, colapso:oColapso, bonus:O.hasBonus } };
   B.history.push(result);
   B.pHand = B.pHand.filter(id=>id!==pCardId);
   B.oHand = B.oHand.filter(id=>id!==oCardId);

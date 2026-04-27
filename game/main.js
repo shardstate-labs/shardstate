@@ -606,6 +606,10 @@ function renderHud(){
   document.getElementById('p-pulse-num').textContent  = B.pPulses;
   document.getElementById('o-pulse-num').textContent  = B.oPulses;
   document.getElementById('round-n').textContent      = Math.min(4, B.round + 1);
+  const pPoisoned = !!B._status?.poisons?.p?.length;
+  const oPoisoned = !!B._status?.poisons?.o?.length;
+  document.querySelector('.battle-hud.bot .bar.hp')?.classList.toggle('poisoned', pPoisoned);
+  document.querySelector('.battle-hud.top .bar.hp')?.classList.toggle('poisoned', oPoisoned);
 
   const dots = document.querySelectorAll('#round-dots .round-dot');
   dots.forEach((d, i) => {
@@ -1005,6 +1009,8 @@ function runCombatPhase(result, done){
   setTimeout(()=>{
     if(result.p.bonus) bmEl.classList.add('show');
     if(result.o.bonus) boEl.classList.add('show');
+    animateCombatCardStats(meHolder, pCard, result.p);
+    animateCombatCardStats(oppHolder, oCard, result.o);
     tickNumber('cs-atk-me',  pCard.pow, result.p.atk, 600);
     tickNumber('cs-atk-opp', oCard.pow, result.o.atk, 600);
   }, 1200);
@@ -1075,6 +1081,21 @@ function buildPulseVizBar(elId, pulses, colapso){
     else if(colapso && i < pulses + 3) pip.dataset.kind = 'fury';
     bar.appendChild(pip);
   }
+}
+
+function animateCombatCardStats(holder, baseCard, sideResult){
+  if(!holder || !baseCard || !sideResult) return;
+  const powEl = holder.querySelector('.stat-pill.pow b');
+  const dmgEl = holder.querySelector('.stat-pill.dmg b');
+  const apply = (el, baseVal, nextVal, cls) => {
+    if(!el || nextVal == null || Number(nextVal) === Number(baseVal)) return;
+    el.textContent = nextVal;
+    const pill = el.closest('.stat-pill');
+    pill?.classList.add(cls, 'stat-changed');
+    setTimeout(()=> pill?.classList.remove('stat-changed'), 900);
+  };
+  apply(powEl, baseCard.pow, sideResult.pow, Number(sideResult.pow) > Number(baseCard.pow) ? 'buffed' : 'debuffed');
+  apply(dmgEl, baseCard.dmg, sideResult.dmg, Number(sideResult.dmg) > Number(baseCard.dmg) ? 'buffed' : 'debuffed');
 }
 
 function animatePulsePips(elId, total){

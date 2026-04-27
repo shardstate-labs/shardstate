@@ -256,8 +256,8 @@
 
     return {
       winner, dmg, collapse,
-      p: { atk: atkP, pow: stack.resolve(match.p, match.p.card.pow, 'PWR'), bonus: ClanBonusManager.eligible(match.p) },
-      o: { atk: atkO, pow: stack.resolve(match.o, match.o.card.pow, 'PWR'), bonus: ClanBonusManager.eligible(match.o) },
+      p: { atk: atkP, pow: stack.resolve(match.p, match.p.card.pow, 'PWR'), dmg: stack.resolve(match.p, match.p.card.dmg, 'DMG'), bonus: ClanBonusManager.eligible(match.p) },
+      o: { atk: atkO, pow: stack.resolve(match.o, match.o.card.pow, 'PWR'), dmg: stack.resolve(match.o, match.o.card.dmg, 'DMG'), bonus: ClanBonusManager.eligible(match.o) },
     };
 
     // ── helpers (closure) ────────────────────────────────────

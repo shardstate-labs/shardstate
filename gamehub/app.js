@@ -1029,25 +1029,35 @@ async function renderFriends() {
   const received = data.incoming || [];
   const sent = data.sent || [];
   el.innerHTML = `
-    <div style="display:flex;gap:6px;margin-bottom:8px">
-      <input id="friend-search-input" class="input-dark" style="flex:1;font-size:0.78rem" placeholder="${currentLang==='es'?'Buscar por username...':'Search by username...'}"/>
+    <div class="friend-search-row">
+      <input id="friend-search-input" class="input-dark" placeholder="${currentLang==='es'?'Buscar por username...':'Search by username...'}"/>
       <button class="btn btn-primary btn-sm" onclick="searchAndAddFriend()">+</button>
     </div>
     <div id="friend-search-results" class="friend-search-results"></div>
     ${received.length ? `<div class="block-sub" style="margin-bottom:4px">${currentLang==='es'?'Solicitudes recibidas':'Incoming requests'}</div>
-      ${received.map(req => { const p=req.from||{}; return `<div class="feed-row">
-        <span class="feed-label clickable" onclick="openUserProfile('${p.user_id}')">USER ${escHtml(p.username)}</span>
+      <div class="friend-list">${received.map(req => { const p=req.from||{}; return renderFriendRow(p, `
         <button class="btn-mini" onclick="respondFriend('${req.id}', true)">OK</button>
         <button class="btn-danger" onclick="respondFriend('${req.id}', false)">NO</button>
-      </div>`; }).join('')}` : ''}
+      `); }).join('')}</div>` : ''}
     <div class="block-sub" style="margin:6px 0 4px">${currentLang==='es'?'Amigos':'Friends'} (${friends.length})</div>
-    ${friends.length ? friends.map(f => `<div class="feed-row">
-        <span class="feed-label clickable" onclick="openUserProfile('${f.user_id}')">USER ${escHtml(f.username)}</span>
+    ${friends.length ? `<div class="friend-list">${friends.map(f => renderFriendRow(f, `
         <button class="btn-mini" onclick="openDm('${f.user_id}', ${jsLit(f.username || 'friend')})">MSG</button>
         <button class="btn-danger" onclick="removeFriend('${f.user_id}')">X</button>
-      </div>`).join('') : `<div class="feed-muted">${currentLang==='es'?'Sin amigos aun.':'No friends yet.'}</div>`}
+      `)).join('')}</div>` : `<div class="feed-muted">${currentLang==='es'?'Sin amigos aun.':'No friends yet.'}</div>`}
     ${sent.length ? `<div class="block-sub" style="margin-top:8px">${currentLang==='es'?'Enviadas':'Sent'}</div>
-      ${sent.map(req => { const p=req.to||{}; return `<div class="feed-row"><span class="feed-label clickable" onclick="openUserProfile('${p.user_id}')">USER ${escHtml(p.username)}</span><span style="font-size:0.65rem;color:var(--text2)">pending</span></div>`; }).join('')}` : ''}`;
+      <div class="friend-list">${sent.map(req => renderFriendRow(req.to||{}, `<span style="font-size:0.65rem;color:var(--text2)">pending</span>`)).join('')}</div>` : ''}`;
+}
+function renderFriendRow(p, actions='') {
+  const name = p.username || 'player';
+  const initial = String(name).charAt(0).toUpperCase() || '?';
+  return `<div class="friend-card">
+    <button class="friend-avatar" onclick="openUserProfile('${p.user_id}')">${escHtml(initial)}</button>
+    <div class="clickable" onclick="openUserProfile('${p.user_id}')">
+      <div class="friend-name">${escHtml(name)}</div>
+      <div class="friend-meta">LV ${p.level || 1} - ELO ${p.elo || 0}</div>
+    </div>
+    <div class="friend-actions">${actions}</div>
+  </div>`;
 }
 async function searchAndAddFriend() {
   const q = (byId('friend-search-input')?.value || '').trim().toLowerCase();
@@ -1056,10 +1066,7 @@ async function searchAndAddFriend() {
   const rows = res.data || [];
   const host = byId('friend-search-results');
   if (!rows.length) { if(host) host.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Usuario no encontrado.':'User not found.'}</div>`; return; }
-  host.innerHTML = rows.map(p => `<div class="feed-row">
-    <span class="feed-label clickable" onclick="openUserProfile('${p.user_id}')">USER ${escHtml(p.username)} - LV ${p.level||1} - ELO ${p.elo||0}</span>
-    <button class="btn-mini" onclick="sendFriend('${p.user_id}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar':'Add'}</button>
-  </div>`).join('');
+  host.innerHTML = rows.map(p => renderFriendRow(p, `<button class="btn-mini" onclick="sendFriend('${p.user_id}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar':'Add'}</button>`)).join('');
 }
 async function sendFriend(uid, username) {
   const r = await SB.sendFriendRequest(uid);
@@ -2453,24 +2460,25 @@ function getFilteredCollectionIds() {
   const allIds = ((typeof ALL_CARDS !== 'undefined' ? ALL_CARDS : [])).map(c => c.id);
   let ids;
   if (currentCollectionFilter === 'missing') {
-    ids = allIds.filter(id => !collection[id]);
+    ids = allIds.filter(id => !collection[id]).map(id => ({ id, copy: 0, missing: true }));
   } else if (currentCollectionFilter === 'duplicates') {
-    ids = Object.keys(collection).filter(id => collectionQty(id) > 1);
+    ids = Object.keys(collection)
+      .filter(id => collectionQty(id) > 1)
+      .flatMap(id => Array.from({ length: collectionQty(id) }, (_, copy) => ({ id, copy, missing: false })));
   } else {
-    ids = Object.keys(collection);
+    ids = Object.keys(collection)
+      .flatMap(id => Array.from({ length: collectionQty(id) }, (_, copy) => ({ id, copy, missing: false })));
   }
   if (!query) return ids;
-  return ids.filter(id => collectionSearchHaystack(id).includes(query));
+  return ids.filter(item => collectionSearchHaystack(item.id).includes(query));
 }
-function renderCollectionCard(id) {
-  const isMissing = currentCollectionFilter === 'missing';
+function renderCollectionCard(item) {
+  const id = typeof item === 'string' ? item : item.id;
+  const copy = typeof item === 'string' ? 0 : item.copy || 0;
+  const isMissing = !!(typeof item !== 'string' && item.missing);
   const qty = collectionQty(id);
   let html = renderCard(id, { missing: isMissing, size: 'md' });
-  html = html.replace('class="shs-card', `data-qty="${qty}" class="shs-card`);
-  if (!isMissing && qty > 1) {
-    const at = html.lastIndexOf('</div>');
-    if (at >= 0) html = `${html.slice(0, at)}<div class="shs-dup-badge">x${qty}</div>${html.slice(at)}`;
-  }
+  html = html.replace('class="shs-card', `data-qty="${qty}" data-copy-index="${copy}" class="shs-card`);
   return html;
 }
 function renderCollectionPage() {
