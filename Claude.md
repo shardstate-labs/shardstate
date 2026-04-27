@@ -7,7 +7,7 @@ Last updated: 2026-04-27
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=40`.
+- Current asset cache version: `v=41`.
 
 ## Live URLs
 
@@ -173,6 +173,7 @@ Future modes are intentionally not enabled yet:
 - Add a code comment explaining why `applyCustomCardsToCollection()` must not auto-gift custom cards.
 - Add automated smoke tests for Gamehub boot, deck handoff, PvP matchmaking, and finalization.
 - Deck slots and market listings now preserve `card_instance_id`; keep future evolution/selling logic per-copy, not only per `card_id`.
+- Social notifications are lightweight: friend requests and DMs create `user_notifications`; the client shows a small actionable notice and opens chat only when the player chooses it.
 
 ## Critical Rules
 

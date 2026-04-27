@@ -52,6 +52,8 @@ const I18N = {
     panel_jugar_title:'Jugar', panel_perfil_title:'Perfil',
     panel_coleccion_title:'Colección', panel_mercado_title:'Mercado',
     panel_guilds_title:'Guilds', panel_shop_title:'Pack Shop',
+    profile_account:'Cuenta', profile_username:'Username', profile_email:'Email',
+    profile_password:'Nueva contraseña', profile_save:'Guardar',
     panel_perfil_sub:'Estadísticas de cuenta, padrino y referidos',
     panel_coleccion_sub:'Deck activo, presets y cartas',
     panel_mercado_sub:'Listar cartas y revisar historial de transacciones',
@@ -146,6 +148,8 @@ const I18N = {
     panel_jugar_title:'Play', panel_perfil_title:'Profile',
     panel_coleccion_title:'Collection', panel_mercado_title:'Market',
     panel_guilds_title:'Guilds', panel_shop_title:'Pack Shop',
+    profile_account:'Account', profile_username:'Username', profile_email:'Email',
+    profile_password:'New password', profile_save:'Save',
     panel_perfil_sub:'Account stats, sponsor and referrals',
     panel_coleccion_sub:'Active deck, presets and cards',
     panel_mercado_sub:'List cards and review transaction history',
@@ -483,6 +487,7 @@ async function showPendingAdminNotifications(){
   const list = await SB.loadMyNotifications().catch(() => []);
   if (!Array.isArray(list) || !list.length) return;
   const note = list[0];
+  if (note.kind === 'dm' || note.kind === 'friend_request') return showSocialNotification(note);
   const modal = document.createElement('div');
   modal.className = 'admin-reward-modal';
   modal.innerHTML = `
@@ -499,6 +504,34 @@ async function showPendingAdminNotifications(){
     showPendingAdminNotifications();
   };
   document.body.appendChild(modal);
+}
+
+function showSocialNotification(note){
+  if (!note || document.querySelector(`[data-social-note="${note.id}"]`)) return;
+  const payload = note.payload || {};
+  const fromUid = payload.from_user_id || payload.fromUserId || '';
+  const fromName = payload.from_username || payload.fromUsername || note.title || 'player';
+  const isDm = note.kind === 'dm';
+  const wrap = document.createElement('div');
+  wrap.className = 'social-note';
+  wrap.dataset.socialNote = note.id;
+  wrap.innerHTML = `
+    <button class="social-note-x" aria-label="close">x</button>
+    <div class="social-note-kicker">${isDm ? 'CHAT' : (currentLang === 'es' ? 'AMISTAD' : 'FRIEND')}</div>
+    <div class="social-note-title">${escHtml(note.title || fromName)}</div>
+    <div class="social-note-body">${escHtml(note.body || '')}</div>
+    <button class="social-note-open">${isDm ? (currentLang === 'es' ? 'ABRIR CHAT' : 'OPEN CHAT') : (currentLang === 'es' ? 'VER SOLICITUD' : 'VIEW REQUEST')}</button>`;
+  async function ack(){
+    await SB.acknowledgeNotification(note.id).catch(()=>{});
+    wrap.remove();
+  }
+  wrap.querySelector('.social-note-x').onclick = ack;
+  wrap.querySelector('.social-note-open').onclick = async () => {
+    await ack();
+    if (isDm && fromUid) openDm(fromUid, fromName);
+    else { setTab('perfil'); renderFriends(); }
+  };
+  document.body.appendChild(wrap);
 }
 
 // ── TOPBAR / SIDEBAR SYNC ──────────────────────────────────────
@@ -1090,7 +1123,7 @@ async function renderFriends() {
   el.innerHTML = `
     <div class="friend-search-row">
       <input id="friend-search-input" class="input-dark" placeholder="${currentLang==='es'?'Buscar por username...':'Search by username...'}"/>
-      <button class="btn btn-primary btn-sm" onclick="searchAndAddFriend()">+</button>
+      <button class="friend-search-btn" onclick="searchAndAddFriend()" aria-label="${currentLang==='es'?'Buscar usuarios':'Search users'}">+</button>
     </div>
     <div id="friend-search-results" class="friend-search-results"></div>
     ${received.length ? `<div class="block-sub" style="margin-bottom:4px">${currentLang==='es'?'Solicitudes recibidas':'Incoming requests'}</div>
@@ -1100,7 +1133,7 @@ async function renderFriends() {
       `); }).join('')}</div>` : ''}
     <div class="block-sub" style="margin:6px 0 4px">${currentLang==='es'?'Amigos':'Friends'} (${friends.length})</div>
     ${friends.length ? `<div class="friend-list">${friends.map(f => renderFriendRow(f, `
-        <button class="btn-mini" onclick="openDm('${f.user_id}', ${jsLit(f.username || 'friend')})">MSG</button>
+        <button class="btn-mini" onclick="openDm('${f.user_id}', ${jsLit(f.username || 'friend')})">Chat</button>
         <button class="btn-danger" onclick="removeFriend('${f.user_id}')">X</button>
       `)).join('')}</div>` : `<div class="feed-muted">${currentLang==='es'?'Sin amigos aun.':'No friends yet.'}</div>`}
     ${sent.length ? `<div class="block-sub" style="margin-top:8px">${currentLang==='es'?'Enviadas':'Sent'}</div>
@@ -1129,19 +1162,19 @@ async function searchAndAddFriend() {
 }
 async function sendFriend(uid, username) {
   const r = await SB.sendFriendRequest(uid);
-  if (r.error) return toast(r.error.message || r.error);
+  if (r.error) return toast(socialError(r.error));
   toast(`${currentLang==='es'?'Solicitud enviada a':'Request sent to'} ${username}.`);
   renderFriends();
 }
 async function respondFriend(requestId, accept) {
   const r = await SB.respondFriendRequest(requestId, accept);
-  if (r.error) return toast(r.error.message || r.error);
+  if (r.error) return toast(socialError(r.error));
   toast(accept ? (currentLang==='es'?'Amigo agregado.':'Friend added.') : (currentLang==='es'?'Solicitud rechazada.':'Request declined.'));
   renderFriends();
 }
 async function removeFriend(uid) {
   const r = await SB.removeFriend(uid);
-  if (r.error) return toast(r.error.message || r.error);
+  if (r.error) return toast(socialError(r.error));
   renderFriends();
 }
 
@@ -1152,6 +1185,20 @@ async function openUserProfile(uid) {
   const p = r.data;
   const deck = Array.isArray(p.deck) ? p.deck : [];
   const guild = p.guild || null;
+  const social = window.SB && SB.loadSocialState ? (await SB.loadSocialState()).data || {} : {};
+  const friends = social.friends || [];
+  const sent = social.sent || [];
+  const incoming = social.incoming || [];
+  const isFriend = friends.some(f => f.user_id === uid);
+  const sentReq = sent.find(req => req.to?.user_id === uid);
+  const incomingReq = incoming.find(req => req.from?.user_id === uid);
+  const socialAction = isFriend
+    ? `<button class="btn-mini" onclick="openDm('${uid}', ${jsLit(p.username || 'friend')})">Chat</button>`
+    : incomingReq
+      ? `<button class="btn-mini" onclick="respondFriend('${incomingReq.id}', true); this.closest('.social-modal').remove();">${currentLang==='es'?'Aceptar amistad':'Accept friend'}</button>`
+      : sentReq
+        ? `<span class="social-pending">${currentLang==='es'?'Solicitud enviada':'Request sent'}</span>`
+        : `<button class="btn-mini" onclick="sendFriend('${uid}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar amigo':'Add friend'}</button>`;
   const modal = document.createElement('div');
   modal.className = 'social-modal';
   modal.innerHTML = `
@@ -1169,8 +1216,7 @@ async function openUserProfile(uid) {
       <div class="social-sub">Deck actual</div>
       <div class="social-deck">${deck.length ? deck.map(id => `<button class="mini-card-link" onclick="openCardDetail('${id}')">${cardName(id)}</button>`).join('') : '<span class="feed-muted">Sin deck publico.</span>'}</div>
       <div class="social-actions">
-        <button class="btn-mini" onclick="sendFriend('${uid}', ${jsLit(p.username || 'player')})">Friend</button>
-        <button class="btn-mini" onclick="openDm('${uid}', ${jsLit(p.username || 'friend')})">Mensaje</button>
+        ${socialAction}
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -1230,6 +1276,7 @@ async function renderDmThread(uid) {
   const host = byId('dm-thread');
   if (!host) return;
   const r = await SB.loadDmThread(uid);
+  if (r.error) { host.innerHTML = `<div class="feed-muted">${escHtml(socialError(r.error))}</div>`; return; }
   const rows = r.data || [];
   host.innerHTML = rows.length ? rows.map(m => `
     <div class="dm-msg ${m.sender_uid === view.user.uid ? 'mine' : ''}">
@@ -1242,10 +1289,26 @@ async function sendDmMessage(uid) {
   const body = byId('dm-input')?.value || '';
   const gif = byId('dm-gif')?.value || '';
   const r = await SB.sendDm(uid, body, gif);
-  if (r.error) return toast(r.error.message || r.error);
+  if (r.error) return toast(socialError(r.error));
   byId('dm-input').value = '';
   byId('dm-gif').value = '';
   await renderDmThread(uid);
+}
+
+function socialError(error){
+  const raw = String(error?.message || error || '');
+  const key = raw.split(/\s|:/)[0];
+  const es = currentLang === 'es';
+  const map = {
+    self_request: es ? 'No podés agregarte a vos mismo.' : 'You cannot add yourself.',
+    already_friends: es ? 'Ya son amigos.' : 'Already friends.',
+    incoming_request_exists: es ? 'Ese jugador ya te envió una solicitud. Revisá solicitudes recibidas.' : 'That player already sent you a request.',
+    request_not_found: es ? 'La solicitud ya no está disponible.' : 'Request no longer available.',
+    not_friends: es ? 'Solo podés chatear con amigos.' : 'You can only chat with friends.',
+    invalid_gif_url: es ? 'URL de GIF inválida.' : 'Invalid GIF URL.',
+    not_authenticated: es ? 'Iniciá sesión.' : 'Sign in first.',
+  };
+  return map[key] || raw || (es ? 'Error social.' : 'Social error.');
 }
 
 // ── RENDER: COLECCIÓN ──────────────────────────────────────────
@@ -3183,6 +3246,9 @@ async function start() {
   renderPacks();
   setTab('coleccion');
   showPendingAdminNotifications();
+  setInterval(() => {
+    if (document.visibilityState === 'visible') showPendingAdminNotifications();
+  }, 20000);
 
   // Re-pull from Supabase whenever the gamehub tab regains focus,
   // so rewards earned in /game (other tab) appear right away.

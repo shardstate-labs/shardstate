@@ -817,7 +817,9 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .dm-emoji-row button{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:5px;cursor:pointer}
 .dm-emoji-row input{max-width:220px}
 .dm-compose{display:flex;gap:8px}
-.friend-search-row{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:8px;margin-bottom:12px}
+.friend-search-row{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:8px;margin-bottom:12px;align-items:stretch}
+.friend-search-btn{width:44px;height:44px;border-radius:7px;background:var(--acc);color:#00110d;font-family:var(--font-head);font-size:1rem;font-weight:900;display:grid;place-items:center;line-height:1;border:1px solid rgba(0,255,198,.32);box-shadow:0 0 14px rgba(0,255,198,.16);transition:all var(--tr)}
+.friend-search-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
 .friend-search-results,.friend-list{display:flex;flex-direction:column;gap:8px}
 .friend-card{
   display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:10px;align-items:center;
@@ -828,8 +830,17 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .friend-avatar{width:42px;height:42px;border-radius:8px;display:grid;place-items:center;background:var(--bg3);border:1px solid var(--border2);font-family:var(--font-head);font-weight:900;color:var(--acc)}
 .friend-name{font-family:var(--font-head);font-size:.72rem;font-weight:900;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .friend-meta{font-size:.66rem;color:var(--text2);margin-top:2px}
-.friend-actions{display:flex;gap:6px;align-items:center}
+.friend-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}
 .friend-actions .btn-mini,.friend-actions .btn-danger{min-width:42px;text-align:center}
+.social-pending{font-family:var(--font-head);font-size:.62rem;color:var(--text2);letter-spacing:.08em;border:1px solid var(--border);border-radius:4px;padding:5px 8px}
+.social-note{position:fixed;right:18px;bottom:18px;width:min(360px,calc(100vw - 28px));z-index:6500;background:linear-gradient(180deg,rgba(17,21,32,.98),rgba(7,10,16,.98));border:1px solid rgba(0,255,198,.22);border-left:3px solid var(--acc);border-radius:9px;padding:14px 14px 13px;box-shadow:0 18px 60px rgba(0,0,0,.48),0 0 22px rgba(0,255,198,.1);animation:socialNoteIn .22s ease both}
+.social-note-x{position:absolute;right:8px;top:8px;width:24px;height:24px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text2);display:grid;place-items:center}
+.social-note-kicker{font-family:var(--font-head);font-size:.56rem;letter-spacing:.16em;color:var(--acc);margin-bottom:5px}
+.social-note-title{font-family:var(--font-head);font-size:.82rem;font-weight:900;color:var(--text);padding-right:26px}
+.social-note-body{font-size:.76rem;color:var(--text2);margin:5px 0 10px;line-height:1.35}
+.social-note-open{width:100%;height:34px;border-radius:5px;background:rgba(0,255,198,.12);border:1px solid rgba(0,255,198,.28);color:var(--acc);font-family:var(--font-head);font-size:.65rem;font-weight:900;letter-spacing:.08em}
+.social-note-open:hover{background:rgba(0,255,198,.2)}
+@keyframes socialNoteIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .guild-info{flex:1;min-width:0}
 .guild-name{font-family:var(--font-head);font-size:0.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
 .guild-stats-text{font-size:0.68rem;color:var(--text2)}
@@ -869,8 +880,11 @@ textarea.input-dark{resize:vertical;min-height:68px}
 /* ══════════════════════════════════════════════════════════
    PANEL: PROFILE
 ══════════════════════════════════════════════════════════ */
-.profile-layout{display:grid;grid-template-columns:260px 1fr;gap:14px;align-items:start}
-.profile-main-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px;text-align:center}
+.profile-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+.profile-layout > div:nth-child(2){display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;align-items:start}
+.profile-layout > div:nth-child(2) .card-block{margin-bottom:0!important;min-height:190px}
+.profile-layout > div:nth-child(2) .card-block:first-child{grid-column:span 2}
+.profile-main-card{background:linear-gradient(180deg,rgba(17,21,32,.94),rgba(8,10,14,.98));border:1px solid var(--border);border-radius:8px;padding:24px;text-align:center}
 .profile-avatar-xl{font-size:2.8rem;margin-bottom:14px;display:block;line-height:1}
 .profile-name{font-family:var(--font-head);font-size:1rem;font-weight:900;margin-bottom:5px}
 .profile-elo-badge{display:inline-block;padding:3px 10px;border-radius:3px;font-family:var(--font-head);font-size:0.68rem;font-weight:700;letter-spacing:0.08em;border:1px solid}
@@ -960,6 +974,8 @@ textarea.input-dark{resize:vertical;min-height:68px}
   .nav-play-btn{padding:10px;margin:6px 4px}
   .nav-play-btn span{display:none}
   .coll-layout,.market-layout,.guilds-layout,.community-layout,.profile-layout{grid-template-columns:1fr}
+  .profile-layout > div:nth-child(2){grid-template-columns:1fr}
+  .profile-layout > div:nth-child(2) .card-block:first-child{grid-column:auto}
   .deck-builder-panel{position:relative}
   .collection-page-grid{grid-template-columns:repeat(2,minmax(155px,1fr))}
   .collection-results-head{align-items:flex-start;flex-direction:column}
