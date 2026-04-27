@@ -73,7 +73,7 @@
       }
       // Ensure played card is also counted if not already in hand list:
       if (player.card && !(player.hand || []).includes(player.card.id)) count++;
-      return count >= 2;
+      return count >= 3;
     }
     static bonusFor(player){
       const id = CLAN_BONUS[player.card.clan];
@@ -314,12 +314,12 @@
     const basePow = player.card.pow|0;
     const baseDmg = player.card.dmg|0;
     const pow = stack.resolve(player, basePow, 'PWR');
-    const dmg = stack.resolve(player, baseDmg, 'DMG');
-    // ATQ formula preserved from legacy engine. `spend` = pulsos paid this round (NOT pool).
+    stack.resolve(player, baseDmg, 'DMG');
+    // ATQ = final PWR * (pulsos spent + 1) + ATK modifiers. DMG resolves separately after the winner is known.
     // `player.pulsos` is the remaining pool (read by PWR_PER_PULSO etc.).
     const spend = (player.spend != null ? player.spend : player.pulsos) | 0;
     const atkMod = stack.resolve(player, 0, 'ATK');
-    return Math.max(0, pow * (spend + 1) + dmg + atkMod);
+    return Math.max(0, pow * (spend + 1) + atkMod);
   }
   function earlyEnd(match){
     const winner = match.p.hp > match.o.hp ? 'p' : (match.o.hp > match.p.hp ? 'o' : (match.starter||'p'));

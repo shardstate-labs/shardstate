@@ -35,6 +35,12 @@
   function saveQueue(q){ try{ localStorage.setItem(QKEY, JSON.stringify(q)); } catch(_){} }
   function loadColSnap(uid){ try{ return JSON.parse(localStorage.getItem(COL_SNAP_KEY+':'+uid)||'{}'); } catch(_){ return {}; } }
   function saveColSnap(uid, snap){ try{ localStorage.setItem(COL_SNAP_KEY+':'+uid, JSON.stringify(snap)); } catch(_){} }
+  function collectionQtyOf(v){
+    if (v == null) return 0;
+    if (typeof v === 'number') return v | 0;
+    if (Array.isArray(v.instances)) return v.instances.length | 0;
+    return (v.qty | 0) || 1;
+  }
 
   function ensureBucket(q, uid){
     if(!q[uid]) q[uid] = { gameState:null, profile:null, decks:{}, collection:null };
@@ -103,8 +109,8 @@
         const deletes = [];
         const allIds = new Set([...desiredIds, ...snapIds]);
         for (const cid of allIds){
-          const want = desired[cid] || 0;
-          const have = snap[cid]    || 0;
+          const want = collectionQtyOf(desired[cid]);
+          const have = collectionQtyOf(snap[cid]);
           if (want > 0 && want !== have){
             upserts.push({ user_id: uid, card_id: cid, qty: want });
           } else if (allowDeletes && want === 0 && have > 0){

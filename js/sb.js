@@ -154,9 +154,43 @@
       return data || [];
     },
 
-    /** Load the user's owned collection as a {cardId: qty} map. */
+    /** Load the user's owned collection. New shape:
+     *  { cardId: { qty, lv, xp, instances:[{id,card_id,lv,xp,...}] } }
+     *  Falls back to the legacy {cardId: qty} map if the RPC is not present.
+     */
     async loadCollection(uid){
       const sb = await ensureClient();
+      try {
+        const { data: inst, error: instErr } = await sb.rpc('load_my_card_instances');
+        if (!instErr && Array.isArray(inst) && inst.length) {
+          const out = {};
+          inst.forEach(r => {
+            const cid = r.card_id;
+            if (!cid) return;
+            const item = {
+              id: r.id,
+              instance_id: r.id,
+              card_id: cid,
+              lv: r.level || 1,
+              level: r.level || 1,
+              xp: r.xp || 0,
+              locked: !!r.locked,
+              source: r.source || '',
+              acquired_at: r.acquired_at || null,
+              updated_at: r.updated_at || null,
+            };
+            if (!out[cid]) out[cid] = { qty:0, lv:item.lv, level:item.level, xp:item.xp, instances:[] };
+            out[cid].qty += 1;
+            out[cid].instances.push(item);
+            if ((item.lv || 1) > (out[cid].lv || 1) || ((item.lv || 1) === (out[cid].lv || 1) && (item.xp || 0) > (out[cid].xp || 0))) {
+              out[cid].lv = item.lv;
+              out[cid].level = item.level;
+              out[cid].xp = item.xp;
+            }
+          });
+          return out;
+        }
+      } catch(_){}
       const { data, error } = await sb.from('cards_owned').select('card_id,qty').eq('user_id', uid);
       if (error) return {};
       const out = {};

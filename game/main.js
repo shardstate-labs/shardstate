@@ -1445,7 +1445,7 @@ function showEnd(){
       mode: B.mode || 'casual',
       result,
       opponent_name: B.opponent && B.opponent.name,
-      rounds: B.roundLog || [],
+      rounds: B.roundLog || B.history || [],
     }).then(rsp => {
       if (!rsp) return;
       try {

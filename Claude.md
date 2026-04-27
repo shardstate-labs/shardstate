@@ -1,20 +1,20 @@
 # SHARDSTATE - Project Handoff
 
-Last updated: 2026-04-25
+Last updated: 2026-04-27
 
 ## Stack
 
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=38`.
+- Current asset cache version: `v=39`.
 
 ## Live URLs
 
 - `https://shardstate.vercel.app/` - landing page.
 - `https://shardstate.vercel.app/gamehub/` - collection, market, packs, profile, Battle Pass.
 - `https://shardstate.vercel.app/game/` - combat PWA.
-- `https://shardstate.vercel.app/admin/` - card editor, gated to `faxie.contact@gmail.com`.
+- `https://shardstate.vercel.app/admin/` - card editor, gated to `faxie.contact@gmail.com` and `shardstate.game@gmail.com`.
 
 ## Core Concept
 
@@ -46,6 +46,7 @@ Future modes are intentionally not enabled yet:
 - TITANS-only ability pool gated by `clan === 'titans'`.
 - Locked combat constants: `HP_MAX = 12`, `PULSO_MAX = 12`, `ROUNDS = 4`, `COLLAPSE_BONUS_DMG = 2`.
 - Edge cases documented in code: ties, cancel flow, copy snapshot, poison stacks, cancelled onWin/onLose.
+- Current attack formula: `ATQ = final PWR * (pulsos spent + 1) + ATK modifiers`; DMG no longer inflates ATQ and resolves only after the winner is known.
 
 ### Plan B - Admin + Custom Cards + Clan Migration
 
@@ -91,6 +92,17 @@ Future modes are intentionally not enabled yet:
   - Random GRAND card at level 30.
 - Premium purchase is server-authoritative through `buy_battle_pass_with_flux()`.
 - Battle Pass claims are server-authoritative through `claim_battle_pass()`.
+- Premium filler levels now grant SHARDS (`100`, `200`, or `250`) instead of empty claim slots.
+
+### Card Instances + Card XP
+
+- `public.card_instances` exists as the per-copy ownership table (`id`, `card_id`, `level`, `xp`, `locked`, timestamps).
+- `cards_owned` remains the aggregate compatibility table; trigger `trg_sync_card_instances_from_owned` keeps instances aligned with aggregate qty.
+- Existing ownership was backfilled into `card_instances`.
+- `load_my_card_instances()` returns per-copy data to Gamehub.
+- `finalize_battle()` awards persistent card XP to played player cards through `award_card_xp()`.
+- Card XP curve: LV1 `180`, LV2 `420`, LV3 `800`, LV4 `1400`; max database level is 5, UI clamps to each card's star cap.
+- Collection views render duplicate copies as individual cards and use instance level/XP where available.
 
 ### UX / Polish
 
@@ -160,6 +172,7 @@ Future modes are intentionally not enabled yet:
 - Sweep legacy free-text ability labels in old card instances and rebuild through `assignAbilities()`.
 - Add a code comment explaining why `applyCustomCardsToCollection()` must not auto-gift custom cards.
 - Add automated smoke tests for Gamehub boot, deck handoff, PvP matchmaking, and finalization.
+- Migrate deck slots and market listings from `card_id` to `card_instance_id` once per-copy selling/evolution rules are fully surfaced.
 
 ## Critical Rules
 

@@ -412,7 +412,7 @@ function persistToUser() {
     Object.keys(view.state.collection || {}).forEach(id => {
       const v = view.state.collection[id];
       if (typeof v === 'number') colMap[id] = v;
-      else if (v && typeof v === 'object') colMap[id] = (v.qty | 0) || 1;
+      else if (v && typeof v === 'object') colMap[id] = collectionQty(id);
     });
     SHS_SYNC.queueCollection(u.uid, colMap);
     if (Array.isArray(view.state.deck) && view.state.deck.length === 8) {
@@ -593,10 +593,13 @@ function renderCard(id, opts = {}) {
 
   const cc      = clanColor(card.clan);
   const ce      = clanEmoji(card.clan);
+  const inst    = opts.instance || null;
+  const instId  = inst?.id || inst?.instance_id || '';
   const inDeck  = view.state?.deck?.includes(id);
   const stars   = card.stars || 2;
-  const cardEntry = view.state?.collection?.[id] || {lv:1};
-  const cardLv  = opts.missing ? 1 : (cardEntry.lv || 1);
+  const cardEntry = inst || view.state?.collection?.[id] || {lv:1};
+  const cardLvRaw = cardEntry.level || cardEntry.lv || 1;
+  const cardLv  = opts.missing ? 1 : Math.max(1, Math.min(stars, cardLvRaw));
   const stats   = (typeof getCardStatsAtLevel === 'function')
     ? getCardStatsAtLevel(card, cardLv)
     : {pow: card.pow ? card.pow[card.pow.length-1] : '?', dmg: card.dmg ? card.dmg[card.dmg.length-1] : '?'};
@@ -629,7 +632,7 @@ function renderCard(id, opts = {}) {
   ].filter(Boolean).join(' ');
 
   return `
-<div class="${cls}" style="--cc:${cc}" data-id="${id}" data-name="${escHtml(card.name)}" title="${escHtml(card.name)}" onclick="openCardDetail('${id}')">
+<div class="${cls}" style="--cc:${cc}" data-id="${id}" data-instance-id="${escHtml(instId)}" data-name="${escHtml(card.name)}" title="${escHtml(card.name)}" onclick="openCardDetail('${id}','${escHtml(instId)}')">
   ${inDeck ? `<div class="shs-indeck-badge">${t('in_deck_label')}</div>` : ''}
   <div class="card-art${imgSrc ? ' has-img' : ''}">
     ${imgSrc ? `<img src="${escHtml(imgSrc)}" alt="${escHtml(card.name)}" loading="lazy" onerror="this.parentNode.classList.remove('has-img')"/>` : ''}
@@ -687,13 +690,42 @@ function renderEmptyDeckSlot(index) {
 // ════════════════════════════════════════════════════════════
 let _cdModalLv = 1;
 let _cdModalId = null;
+let _cdModalInstanceId = null;
 
-function openCardDetail(id) {
+function cardInstances(cardId) {
+  const entry = view.state?.collection?.[cardId];
+  if (!entry) return [];
+  if (Array.isArray(entry.instances)) return entry.instances;
+  const qty = collectionQty(cardId);
+  return Array.from({ length: qty }, (_, i) => ({
+    id: `legacy-${cardId}-${i}`,
+    instance_id: `legacy-${cardId}-${i}`,
+    card_id: cardId,
+    lv: entry.lv || entry.level || 1,
+    level: entry.level || entry.lv || 1,
+    xp: entry.xp || 0,
+  }));
+}
+function cardInstanceById(cardId, instanceId) {
+  const inst = cardInstances(cardId);
+  return inst.find(x => String(x.id || x.instance_id) === String(instanceId)) || inst[0] || null;
+}
+function cardXpNeeded(level) {
+  if (level <= 1) return 180;
+  if (level === 2) return 420;
+  if (level === 3) return 800;
+  if (level === 4) return 1400;
+  return 999999;
+}
+
+function openCardDetail(id, instanceId) {
   const card = (typeof getCard === 'function') ? getCard(id) : null;
   if (!card) return;
   _cdModalId = id;
+  _cdModalInstanceId = instanceId || null;
   const owned = !!view.state?.collection?.[id];
-  _cdModalLv = 1;
+  const inst = cardInstanceById(id, _cdModalInstanceId);
+  _cdModalLv = owned ? Math.max(1, Math.min(card.stars || 2, inst?.level || inst?.lv || 1)) : 1;
   _renderCardDetailModal(card, owned);
   byId('card-detail-modal').classList.add('show');
 }
@@ -733,11 +765,12 @@ function _renderCardDetailModal(card, owned) {
   const inDeck   = view.state?.deck?.includes(id);
 
   // XP info
-  const XP_PER_LV = 100;
-  const entry = view.state?.collection?.[id] || {lv:1, xp:0};
+  const entry = cardInstanceById(id, _cdModalInstanceId) || view.state?.collection?.[id] || {lv:1, xp:0};
   const curXp = entry.xp || 0;
   const maxReached = lv >= stars;
-  const xpPct = maxReached ? 100 : Math.min(100, Math.round(curXp / XP_PER_LV * 100));
+  const needXp = cardXpNeeded(lv);
+  const XP_PER_LV = needXp;
+  const xpPct = maxReached ? 100 : Math.min(100, Math.round(curXp / needXp * 100));
 
   // Level toggle buttons
   const lvBtns = Array.from({length: stars}, (_, i) => {
@@ -1740,7 +1773,8 @@ function bpRewardFor(level, track){
     if (level === 30) return { kind:'grand_card', label:'1 GRAND' };
     if (level % 9 === 0) return { kind:'random_card', label: currentLang === 'es' ? 'Carta random' : 'Random card' };
     if (level % 5 === 0) return { kind:'flux', amount:1, label:'1 FLUX' };
-    return null;
+    const amount = level % 10 === 0 ? 250 : (level % 4 === 0 ? 200 : 100);
+    return { kind:'shards', amount, label:`${amount} SHARDS` };
   }
   return null;
 }
@@ -2222,19 +2256,28 @@ function randomCards(n, opts={}) {
 }
 function addCardToCollection(cardId) {
   const cur = view.state.collection[cardId];
+  const localId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const inst = { id:localId, instance_id:localId, card_id:cardId, lv:1, level:1, xp:0, source:'pack_local', acquired_at:new Date().toISOString() };
   if (cur == null) {
-    view.state.collection[cardId] = 1;
+    view.state.collection[cardId] = { qty:1, lv:1, level:1, xp:0, instances:[inst] };
   } else if (typeof cur === 'number') {
-    view.state.collection[cardId] = cur + 1;
+    const instances = Array.from({ length: cur }, (_, i) => ({ id:`legacy-${cardId}-${i}`, instance_id:`legacy-${cardId}-${i}`, card_id:cardId, lv:1, level:1, xp:0 }));
+    view.state.collection[cardId] = { qty:cur + 1, lv:1, level:1, xp:0, instances:[...instances, inst] };
   } else {
     // legacy {lv,xp} entry — promote to qty
-    view.state.collection[cardId] = ((cur.qty | 0) || 1) + 1;
+    cur.instances = Array.isArray(cur.instances) ? cur.instances : cardInstances(cardId);
+    cur.instances.push(inst);
+    cur.qty = cur.instances.length;
+    cur.lv = cur.lv || cur.level || 1;
+    cur.level = cur.level || cur.lv || 1;
+    cur.xp = cur.xp || 0;
   }
 }
 function collectionQty(cardId){
   const c = view.state.collection?.[cardId];
   if (c == null) return 0;
   if (typeof c === 'number') return c;
+  if (Array.isArray(c.instances)) return c.instances.length;
   return (c.qty | 0) || 1;
 }
 function openPackById(packId, payWith) {
@@ -2464,10 +2507,10 @@ function getFilteredCollectionIds() {
   } else if (currentCollectionFilter === 'duplicates') {
     ids = Object.keys(collection)
       .filter(id => collectionQty(id) > 1)
-      .flatMap(id => Array.from({ length: collectionQty(id) }, (_, copy) => ({ id, copy, missing: false })));
+      .flatMap(id => cardInstances(id).map((instance, copy) => ({ id, copy, instance, missing: false })));
   } else {
     ids = Object.keys(collection)
-      .flatMap(id => Array.from({ length: collectionQty(id) }, (_, copy) => ({ id, copy, missing: false })));
+      .flatMap(id => cardInstances(id).map((instance, copy) => ({ id, copy, instance, missing: false })));
   }
   if (!query) return ids;
   return ids.filter(item => collectionSearchHaystack(item.id).includes(query));
@@ -2476,8 +2519,10 @@ function renderCollectionCard(item) {
   const id = typeof item === 'string' ? item : item.id;
   const copy = typeof item === 'string' ? 0 : item.copy || 0;
   const isMissing = !!(typeof item !== 'string' && item.missing);
+  const instance = typeof item === 'string' ? null : item.instance || null;
+  const instId = instance?.id || instance?.instance_id || '';
   const qty = collectionQty(id);
-  let html = renderCard(id, { missing: isMissing, size: 'md' });
+  let html = renderCard(id, { missing: isMissing, size: 'md', instance });
   html = html.replace('class="shs-card', `data-qty="${qty}" data-copy-index="${copy}" class="shs-card`);
   return html;
 }
