@@ -315,11 +315,11 @@
     const baseDmg = player.card.dmg|0;
     const pow = stack.resolve(player, basePow, 'PWR');
     stack.resolve(player, baseDmg, 'DMG');
-    // ATQ = final PWR * (pulsos spent + 1) + ATK modifiers. DMG resolves separately after the winner is known.
+    // ATQ = final PWR * pulsos spent + ATK modifiers. DMG resolves separately after the winner is known.
     // `player.pulsos` is the remaining pool (read by PWR_PER_PULSO etc.).
     const spend = (player.spend != null ? player.spend : player.pulsos) | 0;
     const atkMod = stack.resolve(player, 0, 'ATK');
-    return Math.max(0, pow * (spend + 1) + atkMod);
+    return Math.max(0, pow * spend + atkMod);
   }
   function earlyEnd(match){
     const winner = match.p.hp > match.o.hp ? 'p' : (match.o.hp > match.p.hp ? 'o' : (match.starter||'p'));

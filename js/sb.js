@@ -236,7 +236,7 @@
     /** Active listings from OTHER players (RLS exposes status='active' to all). */
     async loadMarketActive(excludeUid){
       const sb = await ensureClient();
-      let q = sb.from('market_listings').select('id,seller_uid,card_id,price,currency,listed_at')
+      let q = sb.from('market_listings').select('id,seller_uid,card_id,card_instance_id,price,currency,listed_at')
         .eq('status','active').order('listed_at', { ascending:false }).limit(200);
       if (excludeUid) q = q.neq('seller_uid', excludeUid);
       const { data, error } = await q;
@@ -257,9 +257,13 @@
       if (error) return [];
       return data || [];
     },
-    async listCardForSale(cardId, price){
+    async listCardForSale(cardId, price, instanceId){
       const sb = await ensureClient();
-      const { data, error } = await sb.rpc('list_card_for_sale', { p_card_id:cardId, p_price:price|0 });
+      const rpc = instanceId ? 'list_card_instance_for_sale' : 'list_card_for_sale';
+      const args = instanceId
+        ? { p_card_instance_id:instanceId, p_price:price|0 }
+        : { p_card_id:cardId, p_price:price|0 };
+      const { data, error } = await sb.rpc(rpc, args);
       if (error) return { error };
       return data || { error:'unknown' };
     },

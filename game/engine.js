@@ -202,8 +202,8 @@ function resolveRound(B, pCardId, pPulses, pColapso, oCardId, oPulses, oColapso)
   applyCopyEffects(P,O); applyCopyEffects(O,P);
   P.pow = Math.max(1, P.pow + P.powD);
   O.pow = Math.max(1, O.pow + O.powD);
-  P.atk = Math.max(0, P.pow * (P.pulses+1) + P.atkD);
-  O.atk = Math.max(0, O.pow * (O.pulses+1) + O.atkD);
+  P.atk = Math.max(0, P.pow * P.pulses + P.atkD);
+  O.atk = Math.max(0, O.pow * O.pulses + O.atkD);
   let winner;
   if(P.atk > O.atk) winner='p';
   else if(O.atk > P.atk) winner='o';
@@ -269,7 +269,7 @@ function aiPickAction(B){
   const round = B.round;
   const left = B.oPulses;
   let pulses = Math.min(left, Math.max(2, Math.floor(left/(4-round))));
-  const card = hand.sort((a,b)=> (b.pow*(pulses+1)+b.dmg) - (a.pow*(pulses+1)+a.dmg))[0];
+  const card = hand.sort((a,b)=> (b.pow*pulses+b.dmg) - (a.pow*pulses+a.dmg))[0];
   let colapso = false;
   if(round>=2 && left >= pulses+3 && Math.random()<0.4) colapso = true;
   if(colapso) pulses = Math.min(pulses, Math.max(0, left-3));

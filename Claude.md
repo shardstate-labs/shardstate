@@ -7,7 +7,7 @@ Last updated: 2026-04-27
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=39`.
+- Current asset cache version: `v=40`.
 
 ## Live URLs
 
@@ -46,7 +46,7 @@ Future modes are intentionally not enabled yet:
 - TITANS-only ability pool gated by `clan === 'titans'`.
 - Locked combat constants: `HP_MAX = 12`, `PULSO_MAX = 12`, `ROUNDS = 4`, `COLLAPSE_BONUS_DMG = 2`.
 - Edge cases documented in code: ties, cancel flow, copy snapshot, poison stacks, cancelled onWin/onLose.
-- Current attack formula: `ATQ = final PWR * (pulsos spent + 1) + ATK modifiers`; DMG no longer inflates ATQ and resolves only after the winner is known.
+- Current attack formula: `ATQ = final PWR * pulsos spent + ATK modifiers`; DMG no longer inflates ATQ and resolves only after the winner is known.
 
 ### Plan B - Admin + Custom Cards + Clan Migration
 
@@ -172,7 +172,7 @@ Future modes are intentionally not enabled yet:
 - Sweep legacy free-text ability labels in old card instances and rebuild through `assignAbilities()`.
 - Add a code comment explaining why `applyCustomCardsToCollection()` must not auto-gift custom cards.
 - Add automated smoke tests for Gamehub boot, deck handoff, PvP matchmaking, and finalization.
-- Migrate deck slots and market listings from `card_id` to `card_instance_id` once per-copy selling/evolution rules are fully surfaced.
+- Deck slots and market listings now preserve `card_instance_id`; keep future evolution/selling logic per-copy, not only per `card_id`.
 
 ## Critical Rules
 

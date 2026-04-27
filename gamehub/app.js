@@ -20,7 +20,7 @@ const panels   = {
 const view = {
   db:   { users:{}, emailToUid:{}, usernameToUid:{}, marketListings:[], guilds:[] },
   user: null,
-  state:{ shards:0, flux:0, shs:0, collection:{}, deck:[], deckPresets:[] },
+  state:{ shards:0, flux:0, shs:0, collection:{}, deck:[], deckInstances:[], deckPresets:[] },
   lastPack: [],
 };
 
@@ -377,6 +377,9 @@ function syncFromUser() {
   const gs = u.gameState || {};
   view.state.collection  = gs.collection  || {};
   view.state.deck        = (gs.deck || []).slice(0, 8);
+  view.state.deckInstances = (gs.deckInstances || []).slice(0, 8);
+  while (view.state.deckInstances.length < view.state.deck.length) view.state.deckInstances.push('');
+  if (view.state.deckInstances.length > view.state.deck.length) view.state.deckInstances.length = view.state.deck.length;
   view.state.deckPresets = gs.deckPresets  || [];
   view.state.welcomePackClaimed = !!gs.welcomePackClaimed;
   view.state.shards = u.shardsBalance ?? 0;
@@ -391,6 +394,7 @@ function persistToUser() {
   u.gameState = u.gameState || {};
   u.gameState.collection       = view.state.collection;
   u.gameState.deck             = view.state.deck;
+  u.gameState.deckInstances    = view.state.deckInstances || [];
   u.gameState.deckPresets      = view.state.deckPresets;
   u.gameState.welcomePackClaimed = view.state.welcomePackClaimed;
   saveDb();
@@ -416,7 +420,7 @@ function persistToUser() {
     });
     SHS_SYNC.queueCollection(u.uid, colMap);
     if (Array.isArray(view.state.deck) && view.state.deck.length === 8) {
-      SHS_SYNC.queueDeck(u.uid, 'Active', view.state.deck, true);
+      SHS_SYNC.queueDeck(u.uid, 'Active', view.state.deck, true, view.state.deckInstances || []);
       if (SHS_SYNC.flush) SHS_SYNC.flush().catch(()=>{});
     } else if (Array.isArray(view.state.deck) && view.state.deck.length === 0 && SHS_SYNC.deleteDeck) {
       // Only an intentionally empty deck deletes the server row. Partial decks
@@ -428,7 +432,7 @@ function persistToUser() {
       const ids = Array.isArray(preset?.cards) ? preset.cards : (Array.isArray(preset) ? preset : null);
       const name = preset?.name || ('Preset '+(i+1));
       if (ids && ids.length === 8) {
-        SHS_SYNC.queueDeck(u.uid, name, ids, false);
+        SHS_SYNC.queueDeck(u.uid, name, ids, false, preset.instanceIds || []);
         validPresetNames.add(name);
       }
     });
@@ -595,7 +599,7 @@ function renderCard(id, opts = {}) {
   const ce      = clanEmoji(card.clan);
   const inst    = opts.instance || null;
   const instId  = inst?.id || inst?.instance_id || '';
-  const inDeck  = view.state?.deck?.includes(id);
+  const inDeck  = instId ? isInstanceInDeck(instId) : view.state?.deck?.includes(id);
   const stars   = card.stars || 2;
   const cardEntry = inst || view.state?.collection?.[id] || {lv:1};
   const cardLvRaw = cardEntry.level || cardEntry.lv || 1;
@@ -710,6 +714,24 @@ function cardInstanceById(cardId, instanceId) {
   const inst = cardInstances(cardId);
   return inst.find(x => String(x.id || x.instance_id) === String(instanceId)) || inst[0] || null;
 }
+function instanceIdOf(instance) {
+  return instance?.id || instance?.instance_id || '';
+}
+function deckInstanceAt(index) {
+  return (view.state.deckInstances || [])[index] || '';
+}
+function isInstanceInDeck(instanceId) {
+  return !!instanceId && (view.state.deckInstances || []).includes(instanceId);
+}
+function removeDeckIndex(index) {
+  view.state.deck.splice(index, 1);
+  view.state.deckInstances = view.state.deckInstances || [];
+  view.state.deckInstances.splice(index, 1);
+}
+function removeDeckInstanceOrCard(cardId, instanceId) {
+  const idx = instanceId ? (view.state.deckInstances || []).indexOf(instanceId) : view.state.deck.indexOf(cardId);
+  if (idx >= 0) removeDeckIndex(idx);
+}
 function cardXpNeeded(level) {
   if (level <= 1) return 180;
   if (level === 2) return 420;
@@ -762,7 +784,7 @@ function _renderCardDetailModal(card, owned) {
   const rar      = (card.type === 'grand') ? 'GD' : (card.rar || 'C');
   const rarNames = {C:'Common',U:'Uncommon',R:'Rare',M:'Mythic',GD:'Grand'};
   const cardType = card.type || 'normal';
-  const inDeck   = view.state?.deck?.includes(id);
+  const inDeck   = _cdModalInstanceId ? isInstanceInDeck(_cdModalInstanceId) : view.state?.deck?.includes(id);
 
   // XP info
   const entry = cardInstanceById(id, _cdModalInstanceId) || view.state?.collection?.[id] || {lv:1, xp:0};
@@ -856,12 +878,16 @@ function _renderCardDetailModal(card, owned) {
 
 function cdmToggleDeck(id) {
   const deck = view.state.deck;
-  if (deck.includes(id)) {
-    view.state.deck = deck.filter(x => x !== id);
+  const instance = cardInstanceById(id, _cdModalInstanceId);
+  const instId = instanceIdOf(instance);
+  view.state.deckInstances = view.state.deckInstances || [];
+  if ((instId && view.state.deckInstances.includes(instId)) || (!instId && deck.includes(id))) {
+    removeDeckInstanceOrCard(id, instId);
     toast(currentLang==='es'?'Carta removida del deck.':'Card removed from deck.');
   } else {
     if (deck.length >= 8) return toast(currentLang==='es'?'Deck lleno (8/8).':'Deck is full (8/8).');
     view.state.deck.push(id);
+    view.state.deckInstances.push(instId || '');
     toast(currentLang==='es'?`Carta agregada (${deck.length}/8).`:`Card added (${deck.length}/8).`);
   }
   persistToUser();
@@ -1263,21 +1289,26 @@ async function renderMercado() {
   // Sell selector is filtered: cannot sell cards locked in the active deck (server enforces too).
   sellSel.innerHTML = '';
   const owned = view.state.collection || {};
+  const activeInstances = new Set(view.state.deckInstances || []);
   const activeDeck = new Set((view.state.deck || []));
-  const sellable = Object.keys(owned).filter(id => {
-    const qty = (typeof owned[id] === 'number') ? owned[id] : 1;
-    // Allow if you have >1 copy OR the card isn't in your active deck.
-    return qty > 1 || !activeDeck.has(id);
-  });
+  const sellableItems = Object.keys(owned).flatMap(id => cardInstances(id)
+    .filter(instance => {
+      const instId = instanceIdOf(instance);
+      return instId ? !activeInstances.has(instId) : !activeDeck.has(id);
+    })
+    .map((instance, copy) => ({ id, instance, copy })));
+  const sellable = sellableItems.map(item => item.id);
   if (!sellable.length){
     sellSel.innerHTML = `<option value="">Sin cartas vendibles</option>`;
   } else {
-    sellable.forEach(id => {
-      sellSel.insertAdjacentHTML('beforeend', `<option value="${id}">${cardName(id)}</option>`);
+    sellableItems.forEach(item => {
+      const instId = instanceIdOf(item.instance);
+      const lvl = item.instance?.level || item.instance?.lv || 1;
+      sellSel.insertAdjacentHTML('beforeend', `<option value="${item.id}" data-instance-id="${escHtml(instId)}">${cardName(item.id)} · LV${lvl}</option>`);
     });
   }
   renderSellCardPreview();
-  renderSellCardPicker(sellable);
+  renderSellCardPicker(sellableItems);
 
   const mList  = byId('market-list');
   const msEl   = byId('my-sales');
@@ -1377,13 +1408,15 @@ function renderSellCardPreview() {
   const sel = byId('sell-card-id');
   if (!host || !sel) return;
   const id = sel.value;
+  const opt = sel.selectedOptions && sel.selectedOptions[0];
+  const instanceId = opt?.dataset?.instanceId || '';
+  const instance = cardInstanceById(id, instanceId);
   const card = id ? getCard(id) : null;
   if (!card) {
     host.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Elegí una carta para ver el preview.':'Choose a card to preview it.'}</div>`;
     return;
   }
-  const qtyRaw = view.state.collection?.[id];
-  const qty = (typeof qtyRaw === 'number') ? qtyRaw : (qtyRaw?.qty | 0) || 1;
+  const lv = instance?.level || instance?.lv || 1;
   const cc = clanColor(card.clan);
   const ce = clanEmoji(card.clan);
   const rar = card.type === 'grand' ? 'GD' : (card.rar || '?');
@@ -1405,19 +1438,21 @@ function renderSellCardPicker(ids) {
     host.innerHTML = `<div class="feed-muted">${currentLang==='es'?'No hay cartas vendibles.':'No sellable cards.'}</div>`;
     return;
   }
-  host.innerHTML = ids.map(id => {
+  host.innerHTML = ids.map(item => {
+    const id = typeof item === 'string' ? item : item.id;
+    const instance = typeof item === 'string' ? cardInstanceById(id, '') : item.instance;
+    const instId = instanceIdOf(instance);
     const card = getCard(id);
     if (!card) return '';
-    const qtyRaw = view.state.collection?.[id];
-    const qty = (typeof qtyRaw === 'number') ? qtyRaw : (qtyRaw?.qty | 0) || 1;
-    const img = (typeof getCardArt === 'function') ? (getCardArt(card, qtyRaw?.lv || 1) || '') : '';
+    const lv = instance?.level || instance?.lv || 1;
+    const img = (typeof getCardArt === 'function') ? (getCardArt(card, lv) || '') : '';
     const cc = clanColor(card.clan);
     const rar = card.type === 'grand' ? 'GD' : (card.rar || '?');
     return `
-      <button class="sell-picker-card" data-pick-sell="${id}" style="--cc:${cc}">
+      <button class="sell-picker-card" data-pick-sell="${id}" data-instance-id="${escHtml(instId)}" style="--cc:${cc}">
         ${img ? `<img src="${img}" alt="" loading="lazy"/>` : `<span>${clanEmoji(card.clan)}</span>`}
         <b>${escHtml(card.name)}</b>
-        <em>${rar}</em>
+        <em>${rar} · LV${lv}</em>
       </button>`;
   }).join('');
 }
@@ -2601,7 +2636,7 @@ async function logoutWeb() {
 }
 
 // ── QUICK SELL — server-authoritative via list_card_for_sale RPC ──
-async function quickSell(id, price) {
+async function quickSell(id, price, instanceId='') {
   if (!view.user || !view.user.uid) return toast('Iniciá sesión para listar.');
   if (!view.state.collection[id]) return toast('No posees esa carta.');
   if (!price) {
@@ -2611,7 +2646,7 @@ async function quickSell(id, price) {
     if (!price) return toast('Precio inválido.');
   }
   if (!window.SB || !window.SB.listCardForSale) return toast('Sin conexión al servidor.');
-  const r = await SB.listCardForSale(id, price);
+  const r = await SB.listCardForSale(id, price, instanceId);
   if (r && r.error) return toast(marketError(r.error, id));
   toast(`📤 ${cardName(id)} listada por ${price} SHARDS.`);
   await refreshFromSupabase();
@@ -2752,7 +2787,7 @@ function bindEvents() {
     const name = String(byId('preset-name').value || '').trim();
     if (!name) return toast(t('preset_name_req'));
     if (view.state.deck.length < 8) return toast(t('preset_deck_req'));
-    view.state.deckPresets.push({ name: name.slice(0,24), cards:[...view.state.deck] });
+    view.state.deckPresets.push({ name: name.slice(0,24), cards:[...view.state.deck], instanceIds:[...(view.state.deckInstances || [])] });
     byId('preset-name').value = '';
     persistToUser();
     renderColeccion();
@@ -2765,6 +2800,8 @@ function bindEvents() {
     const p   = view.state.deckPresets[idx];
     if (!p) return toast('Selecciona un preset válido.');
     view.state.deck = [...p.cards].slice(0, 8);
+    view.state.deckInstances = Array.isArray(p.instanceIds) ? p.instanceIds.slice(0, 8) : [];
+    while (view.state.deckInstances.length < view.state.deck.length) view.state.deckInstances.push('');
     persistToUser();
     renderColeccion();
     reloadPwaFrame();
@@ -2776,7 +2813,8 @@ function bindEvents() {
     const removeBtn = e.target.closest('[data-remove]');
     if (removeBtn) {
       const id = removeBtn.getAttribute('data-remove');
-      view.state.deck = view.state.deck.filter(x => x !== id);
+      const idx = view.state.deck.indexOf(id);
+      if (idx >= 0) removeDeckIndex(idx);
       persistToUser();
       renderColeccion();
       reloadPwaFrame();
@@ -2787,11 +2825,13 @@ function bindEvents() {
       const id = addBtn.getAttribute('data-adddeck');
       const idx = view.state.deck.indexOf(id);
       if (idx >= 0) {
-        view.state.deck.splice(idx, 1);
+        removeDeckIndex(idx);
         toast(t('removed_deck'));
       } else {
         if (view.state.deck.length >= 8) return toast(t('deck_full'));
         view.state.deck.push(id);
+        view.state.deckInstances = view.state.deckInstances || [];
+        view.state.deckInstances.push('');
         toast(`✓ ${cardName(id)} ${t('added_deck')}`);
       }
       persistToUser();
@@ -2812,14 +2852,22 @@ function bindEvents() {
     const pick = e.target.closest('[data-pick-sell]');
     if (!pick) return;
     const sel = byId('sell-card-id');
-    if (sel) sel.value = pick.getAttribute('data-pick-sell');
+    if (sel) {
+      const id = pick.getAttribute('data-pick-sell');
+      const instanceId = pick.getAttribute('data-instance-id') || '';
+      Array.from(sel.options).forEach(opt => {
+        opt.selected = opt.value === id && (opt.dataset.instanceId || '') === instanceId;
+      });
+    }
     renderSellCardPreview();
   });
   byId('sell-card-btn').addEventListener('click', () => {
     const id    = byId('sell-card-id').value;
+    const opt   = byId('sell-card-id').selectedOptions && byId('sell-card-id').selectedOptions[0];
+    const instanceId = opt?.dataset?.instanceId || '';
     const price = Math.max(1, Number(byId('sell-card-price').value || 0));
     if (!id || !view.state.collection[id]) return toast('Selecciona una carta obtenida.');
-    quickSell(id, price);
+    quickSell(id, price, instanceId);
   });
 
   // Market buy / delist (server RPC)
@@ -3047,18 +3095,22 @@ async function hydrateFromSupabase(authUser){
     const pendingActive = window.SHS_SYNC && SHS_SYNC.pendingDeck ? SHS_SYNC.pendingDeck(uid, 'Active') : null;
     if (pendingActive) {
       u.gameState.deck = pendingActive;
+      u.gameState.deckInstances = Array.isArray(u.gameState.deckInstances) ? u.gameState.deckInstances.slice(0, 8) : [];
     } else if (active && Array.isArray(active.card_ids) && active.card_ids.length === 8){
       u.gameState.deck = active.card_ids.slice(0, 8);
+      u.gameState.deckInstances = Array.isArray(active.card_instance_ids) ? active.card_instance_ids.slice(0, 8).map(x => x || '') : [];
     }
+    while ((u.gameState.deckInstances || []).length < (u.gameState.deck || []).length) u.gameState.deckInstances.push('');
     u.gameState.deckPresets = decks
       .filter(d => d !== active && Array.isArray(d.card_ids) && d.card_ids.length === 8)
-      .map(d => ({ name: d.name, cards: d.card_ids.slice(0, 8) }));
+      .map(d => ({ name: d.name, cards: d.card_ids.slice(0, 8), instanceIds: Array.isArray(d.card_instance_ids) ? d.card_instance_ids.slice(0, 8).map(x => x || '') : [] }));
     // Track server-known preset names so persistToUser can hard-delete removed ones.
     view._knownServerPresets = decks.map(d => d.name).filter(Boolean);
   } else {
     // No server deck row yet. Preserve the locally saved deck instead of
     // clobbering it during reloads before the debounced deck sync completes.
     u.gameState.deck = Array.isArray(u.gameState.deck) ? u.gameState.deck.slice(0, 8) : [];
+    u.gameState.deckInstances = Array.isArray(u.gameState.deckInstances) ? u.gameState.deckInstances.slice(0, 8) : [];
     u.gameState.deckPresets = [];
     view._knownServerPresets = [];
   }

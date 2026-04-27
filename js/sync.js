@@ -86,6 +86,7 @@
             card_ids: d.cardIds, is_active: !!d.isActive,
             updated_at: new Date().toISOString(),
           };
+          if (Array.isArray(d.instanceIds)) row.card_instance_ids = d.instanceIds.slice(0, 8).map(x => x || null);
           if (existing && existing.id) row.id = existing.id;
           const { error } = await sb.from('decks').upsert(row);
           if (!error) delete bucket.decks[name];
@@ -153,11 +154,11 @@
       b.profile = Object.assign(b.profile || {}, patch);
       saveQueue(q); schedule();
     },
-    queueDeck(uid, name, cardIds, isActive){
+    queueDeck(uid, name, cardIds, isActive, instanceIds){
       if (!uid || !name || !Array.isArray(cardIds)) return;
       const q = loadQueue();
       const b = ensureBucket(q, uid);
-      b.decks[name] = { name, cardIds: cardIds.slice(0, 8), isActive: !!isActive };
+      b.decks[name] = { name, cardIds: cardIds.slice(0, 8), instanceIds:Array.isArray(instanceIds) ? instanceIds.slice(0, 8) : [], isActive: !!isActive };
       saveQueue(q); schedule();
     },
     /** Hard-delete a deck row by name (server-side). Removes from queue too. */
