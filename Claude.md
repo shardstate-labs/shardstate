@@ -7,7 +7,7 @@ Last updated: 2026-04-27
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=52`.
+- Current asset cache version: `v=53`.
 
 ## Supabase Access Rule
 

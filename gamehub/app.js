@@ -296,6 +296,21 @@ function renderLearnContent() {
   </div>`;
 
   // ── CARDS (MECHANICS) ──
+  if (ranksEl) ranksEl.innerHTML = `<div class="rank-learn">
+    <div class="rank-explainer">
+      <div class="rule-card-num">RANKING</div>
+      <h3>${L?'How ELO Works':'Como funciona el ELO'}</h3>
+      <p>${L?'Ranked PvP changes your off-chain ELO. Wins raise it, losses reduce it, and the current bracket is shown in profile/leaderboard surfaces. Weekly ranking uses your current ELO snapshot for competition rewards and bragging rights.':'El PvP ranked modifica tu ELO off-chain. Las victorias lo suben, las derrotas lo bajan y el rango actual se refleja en perfil/leaderboard. El ranking semanal usa tu ELO actual como corte competitivo para recompensas y prestigio.'}</p>
+    </div>
+    <div class="ranks-list">
+      <div class="rank-row" style="--rc:#6B7280"><div class="rank-dot"></div><div class="rank-name">Astilla</div><div class="rank-range">0 - 799 ELO</div><div class="rank-note">${L?'Entry bracket':'Rango inicial'}</div></div>
+      <div class="rank-row" style="--rc:#9B59B6"><div class="rank-dot"></div><div class="rank-name">Grieta</div><div class="rank-range">800 - 1199 ELO</div><div class="rank-note">${L?'Stable climb':'Subida estable'}</div></div>
+      <div class="rank-row" style="--rc:#F59E0B"><div class="rank-dot"></div><div class="rank-name">Fractura</div><div class="rank-range">1200 - 1599 ELO</div><div class="rank-note">${L?'Competitive':'Competitivo'}</div></div>
+      <div class="rank-row" style="--rc:#FF3B3B"><div class="rank-dot"></div><div class="rank-name">Abismo</div><div class="rank-range">1600 - 1999 ELO</div><div class="rank-note">${L?'Elite bracket':'Rango elite'}</div></div>
+      <div class="rank-row" style="--rc:#00FFC6"><div class="rank-dot"></div><div class="rank-name">Singularidad</div><div class="rank-range">2000+ ELO</div><div class="rank-note">${L?'Top contenders':'Top competitivo'}</div></div>
+    </div>
+  </div>`;
+
   const cardsEl = document.getElementById('ltab-cards');
   if (cardsEl) cardsEl.innerHTML = `<div class="rules-grid">
     <div class="rule-card"><div class="rule-card-num">POWER / PODER</div><h3>${L?'Base Combat Stat':'Estadística Base de Combate'}</h3><p>${L?'<strong>ATQ = Power × (1 + Pulsos)</strong>. Higher ATQ wins. Modified by Weaken, Stop, and other abilities.':'<strong>ATQ = Poder × (1 + Pulsos)</strong>. Mayor ATQ gana. Modificado por Debilitar, Stop y otras habilidades.'}</p></div>
