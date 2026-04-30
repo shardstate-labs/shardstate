@@ -42,16 +42,16 @@ const I18N = {
     bp_reward_shards:'SHARDS', bp_reward_flux:'FLUX', bp_reward_grand:'1 carta GRAND', bp_reward_card:'Carta random',
     nav_community:'COMUNIDAD', coll_search_ph:'Buscar cartas…',
     nav_jugar:'JUGAR', nav_perfil:'PERFIL', nav_coleccion:'COLECCIÓN',
-    nav_mercado:'MERCADO', nav_guilds:'GUILDS', nav_shop:'LA TIENDA',
+    nav_mercado:'MERCADO', nav_guilds:'GREMIOS', nav_shop:'LA TIENDA',
     tab_jugar:'JUGAR', tab_perfil:'PERFIL', tab_coleccion:'COLECCIÓN',
-    tab_mercado:'MERCADO', tab_guilds:'GUILDS', tab_shop:'LA TIENDA',
+    tab_mercado:'MERCADO', tab_guilds:'GREMIOS', tab_shop:'LA TIENDA',
     topbar_wallet:'Conectar Wallet', topbar_logout:'Cerrar sesión',
     panel_learn_title:'Aprender', panel_learn_sub:'Reglas, modos, rangos, clanes y mecánicas de cartas',
     panel_missions_title:'Misiones', panel_missions_sub:'Completa objetivos para ganar SHARDS y desbloquear cartas TITAN/ECO',
     panel_community_title:'Comunidad', panel_community_sub:'Foro, Discord y presets compartidos',
     panel_jugar_title:'Jugar', panel_perfil_title:'Perfil',
     panel_coleccion_title:'Colección', panel_mercado_title:'Mercado',
-    panel_guilds_title:'Guilds', panel_shop_title:'La Tienda',
+    panel_guilds_title:'Gremios', panel_shop_title:'La Tienda',
     profile_account:'Cuenta', profile_username:'Nombre de usuario', profile_email:'Correo',
     profile_password:'Nueva contraseña', profile_save:'Guardar',
     panel_perfil_sub:'Estadísticas de cuenta, padrino y referidos',
@@ -1229,8 +1229,8 @@ async function openUserProfile(uid) {
         <div><span>Cartas</span>${p.cards_count || 0}</div>
         <div><span>Presets</span>${p.presets_count || 0}</div>
       </div>
-      <div class="social-sub">Guild</div>
-      <div class="feed-row"><span class="feed-label">${guild ? `${escHtml(guild.emoji || 'G')} ${escHtml(guild.name)} - ${escHtml(guild.role)}` : 'Sin guild'}</span></div>
+      <div class="social-sub">${currentLang==='es'?'Gremio':'Guild'}</div>
+      <div class="feed-row"><span class="feed-label">${guild ? `${escHtml(guild.emoji || 'G')} ${escHtml(guild.name)} - ${escHtml(guild.role)}` : (currentLang==='es'?'Sin gremio':'No guild')}</span></div>
       <div class="social-sub">Deck actual</div>
       <div class="social-deck">${deck.length ? deck.map(id => `<button class="mini-card-link" onclick="openCardDetail('${id}')">${cardName(id)}</button>`).join('') : '<span class="feed-muted">Sin deck publico.</span>'}</div>
       <div class="social-actions">
@@ -1790,7 +1790,7 @@ async function renderGuildsServer() {
             </div>
           </div>
           ${g.bio ? `<div class="guild-bio">${escHtml(g.bio)}</div>` : ''}
-          <div class="guild-members">Leader: <span class="clickable" onclick="openUserProfile('${g.leader_uid}')">${escHtml(g.leader?.username || 'player')}</span></div>
+          <div class="guild-members">${currentLang==='es'?'Lider':'Leader'}: <span class="clickable" onclick="openUserProfile('${g.leader_uid}')">${escHtml(g.leader?.username || 'player')}</span></div>
           <div class="guild-actions">
             ${canReq ? `<button class="btn-mini" data-join-guild="${g.id}">${t('guild_join_btn')}</button>` : ''}
             ${isMember ? `<span class="chip-rar R">${t('member_badge')}</span>` : ''}
