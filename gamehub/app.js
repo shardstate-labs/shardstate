@@ -2918,6 +2918,11 @@ function renderCollectionCard(item) {
   html = html.replace('class="shs-card', `data-qty="${qty}" data-copy-index="${copy}" class="shs-card`);
   return html;
 }
+function getCollectionPageSize() {
+  if (window.matchMedia('(max-width: 520px)').matches) return 6;
+  if (window.matchMedia('(max-width: 900px)').matches) return 8;
+  return COLLECTION_PAGE_SIZE;
+}
 function renderCollectionPage() {
   const grid = byId('owned-cards');
   if (!grid) return;
@@ -2926,11 +2931,12 @@ function renderCollectionPage() {
   if (missingSection) missingSection.style.display = 'none';
 
   const ids = getFilteredCollectionIds();
-  const totalPages = Math.max(1, Math.ceil(ids.length / COLLECTION_PAGE_SIZE));
+  const pageSize = getCollectionPageSize();
+  const totalPages = Math.max(1, Math.ceil(ids.length / pageSize));
   currentCollectionPage = Math.min(Math.max(1, currentCollectionPage), totalPages);
 
-  const start = (currentCollectionPage - 1) * COLLECTION_PAGE_SIZE;
-  const pageIds = ids.slice(start, start + COLLECTION_PAGE_SIZE);
+  const start = (currentCollectionPage - 1) * pageSize;
+  const pageIds = ids.slice(start, start + pageSize);
   const titleEl = byId('collection-results-title');
   const countEl = byId('owned-count');
   const missingCountEl = byId('missing-count');
@@ -2943,7 +2949,7 @@ function renderCollectionPage() {
   if (missingCountEl) missingCountEl.textContent = missingCount;
   if (infoEl) {
     const from = ids.length ? start + 1 : 0;
-    const to = Math.min(start + COLLECTION_PAGE_SIZE, ids.length);
+    const to = Math.min(start + pageSize, ids.length);
     infoEl.textContent = currentLang === 'es'
       ? `Pagina ${currentCollectionPage}/${totalPages} - ${from}-${to} de ${ids.length}`
       : `Page ${currentCollectionPage}/${totalPages} - ${from}-${to} of ${ids.length}`;
@@ -2971,6 +2977,11 @@ function filterCollection(filter) {
 function setCollectionPage(page) {
   currentCollectionPage = Number(page) || 1;
   renderCollectionPage();
+  const panel = byId('panel-coleccion');
+  const results = byId('collection-section-owned');
+  if (panel && results && window.matchMedia('(max-width: 900px)').matches) {
+    panel.scrollTo({ top: Math.max(0, results.offsetTop - 12), behavior: 'smooth' });
+  }
 }
 window.filterCollection = filterCollection;
 window.setCollectionPage = setCollectionPage;
