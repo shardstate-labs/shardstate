@@ -1200,6 +1200,13 @@ async function respondFriend(requestId, accept) {
   renderFriends();
 }
 async function removeFriend(uid) {
+  const ok = await askConfirmModal(
+    currentLang === 'es' ? 'Eliminar amigo' : 'Remove friend',
+    currentLang === 'es' ? 'Vas a eliminar este jugador de tu lista de amigos.' : 'This player will be removed from your friends list.',
+    currentLang === 'es' ? 'Eliminar' : 'Remove',
+    true
+  );
+  if (!ok) return;
   const r = await SB.removeFriend(uid);
   if (r.error) return toast(socialError(r.error));
   renderFriends();
