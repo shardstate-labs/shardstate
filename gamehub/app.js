@@ -79,7 +79,7 @@ const I18N = {
     guild_sent_applications:'Solicitudes enviadas',
     guild_requests:'Solicitudes recibidas', guild_directory:'Directorio de Gremios',
     guild_create_btn:'Crear Gremio', guild_search_ph:'Buscar gremios…',
-    guild_name_ph:'Nombre del gremio', guild_bio_ph:'Descripción del gremio…', guild_emoji_ph:'Emoji',
+    guild_name_ph:'Nombre del gremio', guild_bio_ph:'Descripción del gremio…', guild_logo_ph:'Logo: emoji o URL de imagen',
     profile_sponsor:'Padrino', profile_no_sponsor:'Sin padrino.',
     profile_friends:'Amigos', profile_ref_title:'Enlace de referido',
     profile_ref_ph:'Genera tu link…', profile_copy:'Copiar', profile_referrals:'Referidos',
@@ -183,7 +183,7 @@ const I18N = {
     guild_sent_applications:'Sent Requests',
     guild_requests:'Incoming requests', guild_directory:'Guild Directory',
     guild_create_btn:'Create Guild', guild_search_ph:'Search guilds…',
-    guild_name_ph:'Guild name', guild_bio_ph:'Guild description…', guild_emoji_ph:'Emoji',
+    guild_name_ph:'Guild name', guild_bio_ph:'Guild description…', guild_logo_ph:'Logo: emoji or image URL',
     profile_sponsor:'Sponsor', profile_no_sponsor:'No sponsor.',
     profile_friends:'Friends', profile_ref_title:'Referral Link',
     profile_ref_ph:'Generate your link…', profile_copy:'Copy', profile_referrals:'Referrals',
@@ -622,6 +622,12 @@ function guildRoleLabel(role) {
     ? { leader:'Lider', subleader:'Sublider', member:'Integrante' }
     : { leader:'Leader', subleader:'Subleader', member:'Member' };
   return labels[role] || labels.member;
+}
+
+function parseGuildLogo(raw) {
+  const value = String(raw || '').trim();
+  if (/^https?:\/\//i.test(value)) return { emoji:'G', icon_url:value };
+  return { emoji:(value || 'G').slice(0, 4), icon_url:'' };
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1845,7 +1851,7 @@ async function renderGuildsServer() {
 renderGuilds = renderGuildsServer;
 
 function setGuildCreateEnabled(enabled){
-  const ids = ['guild-name','guild-avatar','guild-bio','guild-icon-url','guild-country','create-guild-btn'];
+  const ids = ['guild-name','guild-logo','guild-bio','guild-country','create-guild-btn'];
   ids.forEach(id => {
     const el = byId(id);
     if (!el) return;
@@ -2903,13 +2909,12 @@ function bindEvents() {
       e.preventDefault();
       e.stopImmediatePropagation();
       const name = String(byId('guild-name')?.value || '').trim();
-      const emoji = String(byId('guild-avatar')?.value || 'G').trim() || 'G';
+      const logo = parseGuildLogo(byId('guild-logo')?.value);
       const bio = String(byId('guild-bio')?.value || '').trim();
-      const iconUrl = String(byId('guild-icon-url')?.value || '').trim();
       const country = String(byId('guild-country')?.value || '').trim();
       if (view.user?.guildId) return toast(currentLang==='es'?'Ya perteneces a un gremio.':'You already belong to a guild.');
       if (!name) return toast('Nombre de gremio requerido.');
-      const r = await SB.createGuild({ name, bio, emoji, icon_url:iconUrl, country });
+      const r = await SB.createGuild({ name, bio, emoji:logo.emoji, icon_url:logo.icon_url, country });
       if (r.error) return toast(r.error.message || r.error);
       toast(`Guild "${name}" creada.`);
       await refreshFromSupabase();
@@ -3176,7 +3181,7 @@ function bindEvents() {
   // Create guild
   byId('create-guild-btn').addEventListener('click', () => {
     const name   = String(byId('guild-name').value || '').trim();
-    const avatar = String(byId('guild-avatar').value || '🛡').trim() || '🛡';
+    const logo   = parseGuildLogo(byId('guild-logo')?.value);
     const bio    = String(byId('guild-bio').value || '').trim();
     if (!name)               return toast('Nombre de gremio requerido.');
     if (view.user.guildId)   return toast('Ya perteneces a un gremio.');
@@ -3185,7 +3190,8 @@ function bindEvents() {
     const guild = {
       id:        `g_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
       name:      name.slice(0,24),
-      avatar:    avatar.slice(0,4),
+      avatar:    logo.emoji,
+      icon_url:  logo.icon_url,
       bio:       bio.slice(0,200),
       leaderUid: view.user.uid,
       members:   [view.user.uid],
