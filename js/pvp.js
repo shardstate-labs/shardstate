@@ -14,9 +14,9 @@
  *   3) Both players call SHS_PVP.openMatch(matchId, side) which:
  *        - subscribes to broadcast channel `match:{id}`
  *        - returns send(action) / onMove(cb) / close()
- *   4) On end, the LOSER (or whoever detects end first) calls
+ *   4) On end, each client calls
  *        SHS_PVP.finalize(matchId, winnerUid, rounds).
- *        finalize_battle is invoked server-side for both players.
+ *        finalize_battle is invoked server-side once per player.
  */
 (function(){
   if (window.SHS_PVP) return;

@@ -76,6 +76,7 @@ const GAME_I18N = {
     rivalAction:'Rival listo', sendFailed:'Falló envío PvP · reintenta',
     timeoutAuto:'Tiempo agotado · jugada automática', doubleTimeout:'Doble timeout · rendición forzada',
     rivalTimeout:'Rival sin respuesta · esperando cierre',
+    rivalForfeit:'Rival desconectado - victoria por abandono',
     aiBoot:'INICIANDO ENTRENAMIENTO IA', scanOpponent:'BUSCANDO RIVAL EN LA RED',
     waitingLink:'ESPERANDO LINK RIVAL', pvpOpenFailed:'No se pudo abrir la partida PvP.',
     pvpUnavailable:'PvP no disponible.', signinPvp:'Inicia sesión para jugar PvP.',
@@ -100,6 +101,7 @@ const GAME_I18N = {
     rivalAction:'Rival action locked', sendFailed:'PvP send failed · retry',
     timeoutAuto:'Time expired · automatic move', doubleTimeout:'Double timeout · forced surrender',
     rivalTimeout:'Rival timeout · waiting close',
+    rivalForfeit:'Rival disconnected - forfeit win',
     aiBoot:'BOOTING AI SPARRING', scanOpponent:'SCANNING NETWORK FOR OPPONENT',
     waitingLink:'WAITING FOR RIVAL LINK', pvpOpenFailed:'Could not open PvP match.',
     pvpUnavailable:'PvP unavailable.', signinPvp:'Sign in to play PvP.',
@@ -482,7 +484,7 @@ async function beginPvpBattle(mode, row, uid){
   const channel = await SHS_PVP.openMatch(match.id, match.side);
   APP.pvp = Object.assign(APP.pvp || {}, {
     mode, uid, matchId:match.id, side:match.side, opponentId:match.opponentId,
-    channel, localMove:null, remoteMove:null, resolving:false, finalized:false,
+    channel, localMove:null, remoteMove:null, resolving:false, finalized:false, remoteFinalized:false,
   });
   channel.onMove(payload => handlePvpMove(payload));
   channel.onStatus(row => handlePvpMatchStatus(row));
@@ -576,9 +578,9 @@ function handlePvpMatchStatus(row){
   const status = String(row?.status || '').toLowerCase();
   const winnerUid = pickMatchValue(row, ['winner_uid','winner_user_id','winner','winner_id'], null);
   const finished = !!winnerUid || ['finished','finalized','completed','complete','ended','abandoned'].includes(status);
-  if(!finished || APP.pvp.finalized) return;
+  if(!finished || APP.pvp.remoteFinalized) return;
 
-  APP.pvp.finalized = true;
+  APP.pvp.remoteFinalized = true;
   if(winnerUid === APP.pvp.uid) APP.battle.winner = 'p';
   else if(winnerUid === APP.pvp.opponentId) APP.battle.winner = 'o';
   else APP.battle.winner = 'draw';
@@ -733,11 +735,20 @@ function stopRoundTimer(){
   if (APP.roundTimerId) cancelAnimationFrame(APP.roundTimerId);
   APP.roundTimerId = null;
 }
+function finishPvpByForfeit(reason){
+  if(!APP.battle?.pvp || !APP.pvp || APP.pvp.finalized || APP.screen === 'end') return;
+  APP.battle.winner = 'p';
+  APP.battle.forfeitReason = reason || 'rival_timeout';
+  appendLog(gt('rivalForfeit'), 'win');
+  setStatus(gt('rivalForfeit'), false, 'win');
+  try { clearInterval(APP.roundTimerId); APP.roundTimerId = null; } catch(_){}
+  setTimeout(()=> showEnd(), 500);
+}
 function handleRoundTimeout(){
   if (APP.battle?.pvp && APP.pvp?.localMove && !APP.pvp?.remoteMove) {
     setStatus(gt('rivalTimeout'), true, 'rivalTimeout');
-    appendLog(gt('rivalTimeout'), 'loss');
-    return;
+    appendLog(gt('rivalTimeout'), 'win');
+    return finishPvpByForfeit('rival_timeout');
   }
   if (APP.inputLocked) return;
   APP.timeoutStreak = (APP.timeoutStreak||0) + 1;
@@ -1350,20 +1361,20 @@ function closeSurrenderModal(){
 }
 function confirmSurrender(){
   closeSurrenderModal();
-  recordAbandon();
   // Mark the battle as a player loss so showEnd() renders the proper screen
   // (defeat banner + ELO/penalty info), then route through the normal
   // end-of-battle flow instead of dumping the user back to the menu.
   try {
     if (APP && APP.battle) { APP.battle.winner = 'o'; APP.battle.abandoned = true; }
   } catch(_){}
+  recordAbandon();
   showEnd();
 }
 function surrenderForced(){
-  recordAbandon();
   try {
     if (APP && APP.battle) { APP.battle.winner = 'o'; APP.battle.abandoned = true; }
   } catch(_){}
+  recordAbandon();
   setTimeout(()=> showEnd(), 600);
 }
 // Abandon penalty: 3 in a row → 5-min lockout + 2× ELO loss multiplier on next match.
@@ -1496,14 +1507,15 @@ function showEnd(){
 
 function finalizePvpBattle(reason){
   const B = APP.battle;
-  if(!B?.pvp || !window.SHS_PVP || !APP.pvp || APP.pvp.finalized) return;
-  APP.pvp.finalized = true;
+  const pvp = APP.pvp;
+  if(!B?.pvp || !window.SHS_PVP || !pvp || pvp.finalized) return;
+  pvp.finalized = true;
   const winnerUid = B.winner === 'p'
-    ? APP.pvp.uid
-    : (B.winner === 'o' ? APP.pvp.opponentId : null);
-  SHS_PVP.finalize(APP.pvp.matchId || B.matchId, winnerUid, B.roundLog || B.history || [])
+    ? pvp.uid
+    : (B.winner === 'o' ? pvp.opponentId : null);
+  SHS_PVP.finalize(pvp.matchId || B.matchId, winnerUid, B.roundLog || B.history || [])
     .then(rsp => {
-      const reward = extractPvpReward(rsp, APP.pvp.uid);
+      const reward = extractPvpReward(rsp, pvp.uid);
       if(!reward) return;
       try {
         const sd = reward.shards|0, xd = reward.xp|0, ed = reward.elo|0;
@@ -1520,7 +1532,7 @@ function finalizePvpBattle(reason){
     })
     .catch(err => {
       console.warn('finalize_pvp_match failed', reason, err);
-      APP.pvp.finalized = false;
+      pvp.finalized = false;
     });
 }
 
