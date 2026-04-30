@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=49"/>
+<link rel="stylesheet" href="./styles.css?v=50"/>
 </head>
 <body>
 
@@ -354,8 +354,23 @@
             <p data-i18n="panel_guilds_sub">Create, join, and manage your guild</p>
           </div>
         </div>
-        <div class="guilds-layout">
-          <div>
+        <div class="guild-tabs" role="tablist" aria-label="Guild sections">
+          <button class="guild-tab active" type="button" data-guild-tab="my" data-i18n="guild_my">My Guild</button>
+          <button class="guild-tab" type="button" data-guild-tab="create" data-i18n="guild_create_tab">Create Guild</button>
+        </div>
+        <div class="guild-tab-panel active" id="guild-tab-my">
+          <div class="card-block">
+            <div class="block-title" data-i18n="guild_my">My Guild</div>
+            <div id="my-guild" class="list-feed"></div>
+            <div class="guild-requests-block hidden">
+              <div class="block-sub" data-i18n="guild_pending">Pending Requests</div>
+              <div id="guild-requests" class="list-feed"></div>
+            </div>
+          </div>
+        </div>
+        <div class="guild-tab-panel" id="guild-tab-create">
+          <div class="guilds-layout">
+            <div>
             <div class="card-block" style="margin-bottom:12px">
               <div class="block-title"><span data-i18n="guild_create">Create Guild</span> <span class="cost-tag" data-i18n="guild_create_cost">2 FLUX</span></div>
               <div class="stack-form">
@@ -370,12 +385,8 @@
               </div>
             </div>
             <div class="card-block">
-              <div class="block-title" data-i18n="guild_my">My Guild</div>
-              <div id="my-guild" class="list-feed"></div>
-              <div class="guild-requests-block hidden">
-                <div class="block-sub" data-i18n="guild_pending">Pending Requests</div>
-                <div id="guild-requests" class="list-feed"></div>
-              </div>
+              <div class="block-title" data-i18n="guild_sent_applications">Sent Requests</div>
+              <div id="guild-sent-applications" class="list-feed"></div>
             </div>
           </div>
           <div>
@@ -387,6 +398,7 @@
               <div id="guild-directory" class="guilds-directory-grid" style="margin-top:14px"></div>
             </div>
           </div>
+        </div>
         </div>
       </article>
 
@@ -512,15 +524,15 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=49"></script>
-<script src="../engine/ability_catalog.js?v=49"></script>
-<script src="../engine/round_engine.js?v=49"></script>
-<script src="../engine/utils.js?v=49"></script>
-<script src="../js/config.js?v=49"></script>
-<script src="../js/sb.js?v=49"></script>
-<script src="../js/sync.js?v=49"></script>
-<script src="../js/pvp.js?v=49"></script>
-<script src="../js/payments.js?v=49"></script>
-<script src="./app.js?v=49"></script>
+<script src="../engine/cards.js?v=50"></script>
+<script src="../engine/ability_catalog.js?v=50"></script>
+<script src="../engine/round_engine.js?v=50"></script>
+<script src="../engine/utils.js?v=50"></script>
+<script src="../js/config.js?v=50"></script>
+<script src="../js/sb.js?v=50"></script>
+<script src="../js/sync.js?v=50"></script>
+<script src="../js/pvp.js?v=50"></script>
+<script src="../js/payments.js?v=50"></script>
+<script src="./app.js?v=50"></script>
 </body>
 </html>

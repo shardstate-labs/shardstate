@@ -74,8 +74,9 @@ const I18N = {
     market_onchain_btn:'Conectar Wallet',
     market_price_ph:'Precio en SHARDS',
     shop_last_opened:'Último Pack Abierto', shop_empty:'Abre un pack para ver el resultado.',
-    guild_create:'Crear Gremio', guild_create_cost:'2 FLUX',
+    guild_create:'Crear Gremio', guild_create_tab:'Crear Gremio', guild_create_cost:'2 FLUX',
     guild_my:'Mi Gremio', guild_pending:'Solicitudes Pendientes',
+    guild_sent_applications:'Solicitudes enviadas',
     guild_requests:'Solicitudes recibidas', guild_directory:'Directorio de Gremios',
     guild_create_btn:'Crear Gremio', guild_search_ph:'Buscar gremios…',
     guild_name_ph:'Nombre del gremio', guild_bio_ph:'Descripción del gremio…', guild_emoji_ph:'Emoji',
@@ -177,8 +178,9 @@ const I18N = {
     market_onchain_btn:'Connect Wallet to Trade',
     market_price_ph:'Price in SHARDS',
     shop_last_opened:'Last Opened', shop_empty:'Open a pack to see results.',
-    guild_create:'Create Guild', guild_create_cost:'2 FLUX',
+    guild_create:'Create Guild', guild_create_tab:'Create Guild', guild_create_cost:'2 FLUX',
     guild_my:'My Guild', guild_pending:'Pending Requests',
+    guild_sent_applications:'Sent Requests',
     guild_requests:'Incoming requests', guild_directory:'Guild Directory',
     guild_create_btn:'Create Guild', guild_search_ph:'Search guilds…',
     guild_name_ph:'Guild name', guild_bio_ph:'Guild description…', guild_emoji_ph:'Emoji',
@@ -607,6 +609,12 @@ function renderTab(tabId) {
   if (tabId === 'missions')  { drainBpPending(); renderMissions(); }
   if (tabId === 'battlepass'){ drainBpPending(); renderBattlePass(); }
   if (tabId === 'community') renderCommunity();
+}
+
+function setGuildTab(tabId) {
+  const next = tabId === 'create' ? 'create' : 'my';
+  document.querySelectorAll('.guild-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.guildTab === next));
+  document.querySelectorAll('.guild-tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === `guild-tab-${next}`));
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1704,15 +1712,18 @@ async function renderGuildsServer() {
   const mgEl = byId('my-guild');
   const reqEl = byId('guild-requests');
   const list = byId('guild-directory');
+  const sentEl = byId('guild-sent-applications');
   if (!mgEl || !reqEl || !list) return;
   mgEl.innerHTML = '';
   reqEl.innerHTML = '';
   list.innerHTML = '';
+  if (sentEl) sentEl.innerHTML = '';
 
   if (!window.SB || !SB.loadGuildState) {
     mgEl.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Gremios requieren conexion.':'Guilds require connection.'}</div>`;
     reqEl.innerHTML = `<div class="feed-muted">${t('leader_only')}</div>`;
     list.innerHTML = `<div class="feed-muted">${t('no_guilds')}</div>`;
+    if (sentEl) sentEl.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Sin solicitudes enviadas.':'No sent requests.'}</div>`;
     return;
   }
 
@@ -1735,16 +1746,17 @@ async function renderGuildsServer() {
   if (!myGuild) {
     u.guildId = null;
     mgEl.innerHTML = `<div class="feed-muted">${t('no_guild')}</div>`;
-    if (myApplications.length) {
-      mgEl.insertAdjacentHTML('beforeend', myApplications.map(app => `
+    if (sentEl) {
+      sentEl.innerHTML = myApplications.length ? myApplications.map(app => `
         <div class="feed-row">
           <span class="feed-label">${escHtml(app.guild_name)} - ${escHtml(app.status)}</span>
           ${app.response ? `<span class="feed-label">${escHtml(app.response)}</span>` : ''}
-        </div>`).join(''));
+        </div>`).join('') : `<div class="feed-muted">${currentLang==='es'?'Sin solicitudes enviadas.':'No sent requests.'}</div>`;
     }
     reqEl.closest('.guild-requests-block')?.classList.add('hidden');
   } else {
     u.guildId = myGuild.id;
+    if (sentEl) sentEl.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Ya perteneces a un gremio.':'Already in a guild.'}</div>`;
     const members = (myGuild.members || []).slice().sort((a, b) => {
       const rank = role => role === 'leader' ? 0 : role === 'subleader' ? 1 : 2;
       return rank(a.role) - rank(b.role);
@@ -1795,10 +1807,11 @@ async function renderGuildsServer() {
     }
   }
 
-  if (!guilds.length) {
+  const directoryGuilds = myGuild ? guilds.filter(g => g.id !== myGuild.id) : guilds;
+  if (!directoryGuilds.length) {
     list.innerHTML = `<div class="feed-muted">${t('no_guilds')}</div>`;
   } else {
-    guilds.forEach(g => {
+    directoryGuilds.forEach(g => {
       const isMember = myGuild && myGuild.id === g.id;
       const requested = !!g.requested;
       const canReq = !myGuild && !requested;
@@ -2983,6 +2996,9 @@ function bindEvents() {
 
   // Nav
   navItems.forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
+  document.querySelectorAll('.guild-tab').forEach(btn => {
+    btn.addEventListener('click', () => setGuildTab(btn.dataset.guildTab));
+  });
 
   // Lang toggle (also handles onclick="toggleLang()" from HTML)
   const langBtn = byId('lang-toggle');
