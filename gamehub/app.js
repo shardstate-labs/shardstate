@@ -332,7 +332,12 @@ let _toastTimer = null;
 function toast(msg, dur = 2800) {
   const el = byId('toast');
   if (!el) { console.warn(msg); return; }
-  el.textContent = msg;
+  const text = String(msg ?? '');
+  if (text.startsWith('[FLUX] ')) {
+    el.innerHTML = `<span class="currency-icon flux toast-currency-icon"></span><span>${escHtml(text.slice(7))}</span>`;
+  } else {
+    el.textContent = text;
+  }
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove('show'), dur);
@@ -2021,14 +2026,14 @@ async function buyBattlePass(currency){
   if (!window.SB || !SB.buyBattlePassWithFlux) return toast('Sin conexión al servidor.');
   if (!view.user || !view.user.uid) return toast('Iniciá sesión.');
   if (currency === 'flux') {
-    if ((view.state.flux||0) < p.flux) return toast(`Necesitas ${p.flux} FLUX.`);
+    if ((view.state.flux||0) < p.flux) return toast(`[FLUX] Necesitas ${p.flux} FLUX.`);
   } else { return; }
   const r = await SB.buyBattlePassWithFlux();
   if (r?.error) {
     const msg = ({
       not_authenticated:'Iniciá sesión.',
       already_premium:'Ya tenés Premium activo.',
-      not_enough_flux:`Necesitas ${p.flux} FLUX.`,
+      not_enough_flux:`[FLUX] Necesitas ${p.flux} FLUX.`,
     })[r.error] || ('Error: ' + (r.error.message || r.error));
     return toast(msg);
   }
@@ -2517,7 +2522,7 @@ function openPackById(packId, payWith) {
     paidWith = 'welcome';
   } else if (p.costType === 'flux') {
     if (payWith === 'flux') {
-      if ((view.state.flux||0) < p.cost) return toast(`⚡ Necesitas ${p.cost} FLUX.`);
+      if ((view.state.flux||0) < p.cost) return toast(`[FLUX] Necesitas ${p.cost} FLUX.`);
       view.state.flux -= p.cost;
       paidWith = 'flux'; cost = p.cost;
     } else {
@@ -3151,7 +3156,7 @@ function bindEvents() {
     const bio    = String(byId('guild-bio').value || '').trim();
     if (!name)               return toast('Nombre de gremio requerido.');
     if (view.user.guildId)   return toast('Ya perteneces a un gremio.');
-    if (view.state.flux < 2) return toast('Necesitas 2 FLUX para crear un gremio.');
+    if (view.state.flux < 2) return toast('[FLUX] Necesitas 2 FLUX para crear un gremio.');
     view.state.flux -= 2;
     const guild = {
       id:        `g_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
