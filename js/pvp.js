@@ -15,7 +15,7 @@
  *        - subscribes to broadcast channel `match:{id}`
  *        - returns send(action) / onMove(cb) / close()
  *   4) On end, each client calls
- *        SHS_PVP.finalize(matchId, winnerUid, rounds).
+ *        SHS_PVP.finalize(matchId, winnerUid, rounds, reason).
  *        finalize_battle is invoked server-side once per player.
  */
 (function(){
@@ -113,11 +113,12 @@
     },
 
     /** Server-authoritative finalize for a PvP match. */
-    async finalize(matchId, winnerUid, rounds){
+    async finalize(matchId, winnerUid, rounds, reason){
       return rpc('finalize_pvp_match', {
         p_match_id: matchId,
         p_winner_uid: winnerUid || null,
         p_rounds: rounds || [],
+        p_reason: reason || 'end',
       });
     },
 

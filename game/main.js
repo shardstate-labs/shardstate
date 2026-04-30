@@ -379,7 +379,7 @@ function seededHand(deckIds, seed){
 
 // ─── MATCHMAKING ─────────────────────────────────────────────
 function startMode(mode){
-  // Abandon-streak lockout (5 min after 3 abandons in a row).
+  // Abandon-streak lockout (server enforces: 5 min after 2 consecutive abandons).
   if (!window.SHS_SYNC) {
     try {
       const cur = JSON.parse(localStorage.getItem('shs_player') || '{}');
@@ -1513,7 +1513,7 @@ function finalizePvpBattle(reason){
   const winnerUid = B.winner === 'p'
     ? pvp.uid
     : (B.winner === 'o' ? pvp.opponentId : null);
-  SHS_PVP.finalize(pvp.matchId || B.matchId, winnerUid, B.roundLog || B.history || [])
+  SHS_PVP.finalize(pvp.matchId || B.matchId, winnerUid, B.roundLog || B.history || [], reason || 'end')
     .then(rsp => {
       const reward = extractPvpReward(rsp, pvp.uid);
       if(!reward) return;
