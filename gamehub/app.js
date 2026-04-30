@@ -1138,7 +1138,7 @@ async function renderFriends() {
   const sent = data.sent || [];
   el.innerHTML = `
     <div class="friend-search-row">
-      <input id="friend-search-input" class="input-dark" placeholder="${currentLang==='es'?'Buscar por username...':'Search by username...'}"/>
+      <input id="friend-search-input" class="input-dark" placeholder="${currentLang==='es'?'Buscar por username...':'Search by username...'}" onkeydown="if(event.key==='Enter') searchAndAddFriend()"/>
       <button class="friend-search-btn" onclick="searchAndAddFriend()" aria-label="${currentLang==='es'?'Buscar usuarios':'Search users'}">+</button>
     </div>
     <div id="friend-search-results" class="friend-search-results"></div>
@@ -1170,10 +1170,19 @@ function renderFriendRow(p, actions='') {
 async function searchAndAddFriend() {
   const q = (byId('friend-search-input')?.value || '').trim().toLowerCase();
   if (!q) return toast('Ingresa un username.');
+  if (!window.SB || !SB.searchProfiles) return toast(currentLang==='es'?'Social requiere conexion.':'Social requires connection.');
   const res = await SB.searchProfiles(q);
   const rows = res.data || [];
   const host = byId('friend-search-results');
   if (!rows.length) { if(host) host.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Usuario no encontrado.':'User not found.'}</div>`; return; }
+  const exact = rows.find(p => String(p.username || '').toLowerCase() === q);
+  if (exact || rows.length === 1) {
+    await sendFriend((exact || rows[0]).user_id, (exact || rows[0]).username || 'player');
+    if (host) host.innerHTML = '';
+    const input = byId('friend-search-input');
+    if (input) input.value = '';
+    return;
+  }
   host.innerHTML = rows.map(p => renderFriendRow(p, `<button class="btn-mini" onclick="sendFriend('${p.user_id}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar':'Add'}</button>`)).join('');
 }
 async function sendFriend(uid, username) {

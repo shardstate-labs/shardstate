@@ -676,14 +676,14 @@ textarea.input-dark{resize:vertical;min-height:68px}
 
 /* ── PACK OPENING OVERLAY ───────────────────────────────────── */
 .pack-overlay{
-  position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;
+  position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;overflow:auto;
 }
 .pack-overlay-bg{
   position:absolute;inset:0;
   background:radial-gradient(ellipse at 50% 40%,rgba(107,92,231,.35),transparent 65%),rgba(4,8,16,.96);
   backdrop-filter:blur(20px);
 }
-.pack-overlay-content{position:relative;z-index:1;text-align:center;width:100%;padding:24px}
+.pack-overlay-content{position:relative;z-index:1;text-align:center;width:100%;min-height:100%;padding:24px;display:flex;align-items:center;justify-content:center}
 .pack-anim-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;position:relative}
 .pack-anim-wrap::before{
   content:'';position:absolute;width:340px;height:340px;top:50%;left:50%;transform:translate(-50%,-58%);
@@ -738,10 +738,10 @@ textarea.input-dark{resize:vertical;min-height:68px}
 }
 .pack-anim-wrap.is-opening .pack-open-trigger{opacity:0;pointer-events:none;transform:translateY(8px)}
 @keyframes pack-btn-pulse{0%,100%{box-shadow:0 6px 28px rgba(0,212,180,.4)}50%{box-shadow:0 6px 40px rgba(0,212,180,.7),0 0 60px rgba(107,92,231,.3)}}
-.pack-cards-reveal{display:flex;flex-direction:column;align-items:center;gap:20px}
+.pack-cards-reveal{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;max-height:calc(100vh - 48px);overflow:auto;padding:12px 0}
 .pack-reveal-row{
   display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
-  max-width:900px;
+  max-width:min(1120px,100%);
 }
 .pack-reveal-item{display:flex;flex-direction:column;align-items:center;gap:9px}
 .pack-reveal-row .tcg-card{
