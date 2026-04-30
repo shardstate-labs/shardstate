@@ -1670,10 +1670,11 @@ function renderGuilds() {
   const list = byId('guild-directory');
   list.innerHTML = '';
   const guilds = (view.db.guilds || []).filter(g => !q || g.name.toLowerCase().includes(q));
-  if (!guilds.length) {
+  const directoryGuilds = myGuild ? guilds.filter(g => g.id !== myGuild.id) : guilds;
+  if (!directoryGuilds.length) {
     list.innerHTML = `<div class="feed-muted">${t('no_guilds')}</div>`;
   } else {
-    guilds.forEach(g => {
+    directoryGuilds.forEach(g => {
       const isMember  = g.members.includes(u.uid);
       const requested = (g.requests || []).includes(u.uid);
       const canReq    = !isMember && !requested;
