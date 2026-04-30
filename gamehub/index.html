@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=58"/>
+<link rel="stylesheet" href="./styles.css?v=59"/>
 </head>
 <body>
 
@@ -33,6 +33,10 @@
         <span data-i18n="nav_play">PLAY NOW</span>
       </button>
 
+      <button class="nav-item active" data-tab="home">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V11z"/></svg></span>
+        <span class="nav-label" data-i18n="nav_home">HOME</span>
+      </button>
       <button class="nav-item" data-tab="learn">
         <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></span>
         <span class="nav-label" data-i18n="nav_learn">LEARN</span>
@@ -45,7 +49,7 @@
         <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.39 4.85 5.36.78-3.88 3.78.92 5.34L12 14.27 7.21 16.75l.92-5.34L4.25 7.63l5.36-.78z"/></svg></span>
         <span class="nav-label" data-i18n="nav_battlepass">BATTLE PASS</span>
       </button>
-      <button class="nav-item active" data-tab="coleccion">
+      <button class="nav-item" data-tab="coleccion">
         <span class="nav-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg></span>
         <span class="nav-label" data-i18n="nav_coleccion">COLLECTION</span>
       </button>
@@ -113,7 +117,7 @@
 
     <header class="topbar">
       <div class="topbar-left">
-        <span class="topbar-section" id="topbar-section">COLLECTION</span>
+        <span class="topbar-section" id="topbar-section">HOME</span>
       </div>
       <div class="topbar-right">
         <button class="btn-lang" id="lang-toggle" onclick="toggleLang()">ES</button>
@@ -125,6 +129,16 @@
     </header>
 
     <div class="panels">
+
+      <article class="panel active" id="panel-home">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h1 data-i18n="panel_home_title">Home</h1>
+            <p data-i18n="panel_home_sub">News, events, and fast access to battle</p>
+          </div>
+        </div>
+        <div id="home-root"><!-- JS --></div>
+      </article>
 
       <!-- ▸ LEARN ──────────────────────────────────────── -->
       <article class="panel" id="panel-learn">
@@ -175,7 +189,7 @@
       </article>
 
       <!-- ▸ COLLECTION ──────────────────────────────────── -->
-      <article class="panel active" id="panel-coleccion">
+      <article class="panel" id="panel-coleccion">
         <div class="panel-header">
           <div class="panel-header-left">
             <h1 data-i18n="panel_coleccion_title">Collection</h1>
@@ -524,16 +538,16 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=58"></script>
-<script src="../engine/ability_catalog.js?v=58"></script>
-<script src="../engine/round_engine.js?v=58"></script>
-<script src="../engine/utils.js?v=58"></script>
-<script src="../js/config.js?v=58"></script>
-<script src="../js/sb.js?v=58"></script>
-<script src="../js/sync.js?v=58"></script>
-<script src="../js/pvp.js?v=58"></script>
-<script src="../js/payments.js?v=58"></script>
-<script src="./app.js?v=58"></script>
+<script src="../engine/cards.js?v=59"></script>
+<script src="../engine/ability_catalog.js?v=59"></script>
+<script src="../engine/round_engine.js?v=59"></script>
+<script src="../engine/utils.js?v=59"></script>
+<script src="../js/config.js?v=59"></script>
+<script src="../js/sb.js?v=59"></script>
+<script src="../js/sync.js?v=59"></script>
+<script src="../js/pvp.js?v=59"></script>
+<script src="../js/payments.js?v=59"></script>
+<script src="./app.js?v=59"></script>
 </body>
 </html>
 

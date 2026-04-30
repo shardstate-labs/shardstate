@@ -6,6 +6,7 @@ const AUTH_SESSION_KEY = "shardstate_auth_session_v1";
 
 const navItems = Array.from(document.querySelectorAll(".nav-item"));
 const panels   = {
+  home:      document.getElementById("panel-home"),
   learn:     document.getElementById("panel-learn"),
   missions:  document.getElementById("panel-missions"),
   battlepass:document.getElementById("panel-battlepass"),
@@ -34,7 +35,8 @@ let currentCollectionPage = 1;
 // ════════════════════════════════════════════════════════════
 const I18N = {
   es: {
-    nav_play:'JUGAR AHORA', nav_learn:'APRENDER', nav_missions:'MISIONES', nav_battlepass:'PASE DE BATALLA',
+    nav_play:'JUGAR AHORA', nav_home:'INICIO', nav_learn:'APRENDER', nav_missions:'MISIONES', nav_battlepass:'PASE DE BATALLA',
+    panel_home_title:'Inicio', panel_home_sub:'Noticias, eventos y acceso rapido al combate',
     panel_battlepass_title:'Pase de Batalla', panel_battlepass_sub:'30 días · 30 niveles · Premium: FLUX, cartas random y una GRAND en nivel 30',
     bp_buy_premium:'Comprar Pase Premium', bp_owned:'Pase Premium activo', bp_locked_premium:'Premium', bp_claim:'Reclamar', bp_claimed:'Reclamado', bp_buy_with:'Comprar con',
     bp_xp_label:'XP del pase', bp_level:'Nivel', bp_required:'XP requerido',
@@ -138,7 +140,8 @@ const I18N = {
     preset_saved:'guardado.',
   },
   en: {
-    nav_play:'PLAY NOW', nav_learn:'LEARN', nav_missions:'MISSIONS', nav_battlepass:'BATTLE PASS',
+    nav_play:'PLAY NOW', nav_home:'HOME', nav_learn:'LEARN', nav_missions:'MISSIONS', nav_battlepass:'BATTLE PASS',
+    panel_home_title:'Home', panel_home_sub:'News, events, and fast access to battle',
     panel_battlepass_title:'Battle Pass', panel_battlepass_sub:'30 days · 30 levels · Premium: FLUX, random cards and a GRAND at level 30',
     bp_buy_premium:'Buy Premium Pass', bp_owned:'Premium Pass active', bp_locked_premium:'Premium', bp_claim:'Claim', bp_claimed:'Claimed', bp_buy_with:'Buy with',
     bp_xp_label:'Pass XP', bp_level:'Level', bp_required:'XP required',
@@ -624,7 +627,7 @@ function syncTopbar() {
 
 // ── TAB NAVIGATION ─────────────────────────────────────────────
 const SECTION_LABELS = {
-  learn:'LEARN', missions:'MISSIONS', battlepass:'BATTLE PASS', coleccion:'COLLECTION',
+  home:'HOME', learn:'LEARN', missions:'MISSIONS', battlepass:'BATTLE PASS', coleccion:'COLLECTION',
   mercado:'MARKET', shop:'SHOP', guilds:'GUILDS',
   community:'COMMUNITY', perfil:'PROFILE'
 };
@@ -640,6 +643,7 @@ function setTab(tabId) {
 }
 function renderTab(tabId) {
   if (!view.user) return;
+  if (tabId === 'home')      renderHome();
   if (tabId === 'perfil')    renderPerfil();
   if (tabId === 'coleccion') renderColeccion();
   if (tabId === 'mercado')   renderMercado();
@@ -650,6 +654,81 @@ function renderTab(tabId) {
   if (tabId === 'battlepass'){ drainBpPending(); renderBattlePass(); }
   if (tabId === 'community') renderCommunity();
 }
+
+function renderHome() {
+  const root = byId('home-root');
+  if (!root) return;
+  const L = currentLang;
+  const u = view.user || {};
+  const collectionCount = Object.keys(view.state.collection || {}).length;
+  const deckReady = Array.isArray(view.state.deck) && view.state.deck.length === 8;
+  const news = L === 'es'
+    ? [
+        { tag:'Cartas', title:'Clan Tidecall entra al archivo', body:'Nueva tanda visual lista para poblar la coleccion y futuros packs tematicos.', meta:'Actualizacion de contenido' },
+        { tag:'PvP', title:'Abandonos ahora cierran partida', body:'Si un rival se rinde o desconecta, la partida finaliza, se asigna victoria y se aplican penalizaciones.', meta:'Balance competitivo' },
+        { tag:'Evento', title:'Torneos de temporada en preparacion', body:'El hub queda preparado para anunciar brackets, recompensas premium y ventanas de inscripcion.', meta:'Proximamente' },
+      ]
+    : [
+        { tag:'Cards', title:'Tidecall clan enters the archive', body:'A new visual batch is ready for collections and future themed packs.', meta:'Content update' },
+        { tag:'PvP', title:'Abandons now close matches', body:'When a rival surrenders or disconnects, the match resolves, rewards are paid, and penalties apply.', meta:'Competitive balance' },
+        { tag:'Event', title:'Season tournaments in preparation', body:'The hub is ready for bracket announcements, premium rewards, and registration windows.', meta:'Coming soon' },
+      ];
+  root.innerHTML = `
+    <section class="home-hero">
+      <div class="home-hero-bg"></div>
+      <div class="home-hero-copy">
+        <div class="home-kicker">${L === 'es' ? 'Centro de mando' : 'Command center'}</div>
+        <h2>${L === 'es' ? 'Entrar al Shardstate' : 'Enter the Shardstate'}</h2>
+        <p>${L === 'es' ? 'Elegí tu deck, revisá novedades y saltá directo al combate.' : 'Pick your deck, scan updates, and jump straight into combat.'}</p>
+        <div class="home-hero-actions">
+          <button class="home-play-cta" onclick="launchPWA()">
+            <span class="home-play-icon">▶</span>
+            <span>${L === 'es' ? 'JUGAR AHORA' : 'PLAY NOW'}</span>
+          </button>
+          <button class="btn btn-secondary" onclick="setTab('coleccion')">${L === 'es' ? 'Editar deck' : 'Edit deck'}</button>
+        </div>
+      </div>
+      <div class="home-status-card">
+        <div class="home-status-label">${L === 'es' ? 'Estado del jugador' : 'Player status'}</div>
+        <div class="home-status-name">${escHtml(u.username || 'Player')}</div>
+        <div class="home-status-grid">
+          <div><strong>${collectionCount}</strong><span>${L === 'es' ? 'Cartas' : 'Cards'}</span></div>
+          <div><strong>${u.elo || 0}</strong><span>ELO</span></div>
+          <div><strong>${deckReady ? '8/8' : `${(view.state.deck || []).length}/8`}</strong><span>Deck</span></div>
+        </div>
+        <div class="home-deck-state ${deckReady ? 'ready' : 'missing'}">${deckReady ? (L === 'es' ? 'Deck listo para jugar' : 'Deck ready') : (L === 'es' ? 'Completa tu deck para jugar' : 'Complete your deck to play')}</div>
+      </div>
+    </section>
+    <section class="home-grid">
+      <div class="home-news">
+        <div class="home-section-head">
+          <h3>${L === 'es' ? 'Noticias' : 'News'}</h3>
+          <span>${L === 'es' ? 'Actualizaciones del juego' : 'Game updates'}</span>
+        </div>
+        <div class="home-news-list">
+          ${news.map(n => `
+            <article class="home-news-card">
+              <div class="home-news-tag">${escHtml(n.tag)}</div>
+              <h4>${escHtml(n.title)}</h4>
+              <p>${escHtml(n.body)}</p>
+              <span>${escHtml(n.meta)}</span>
+            </article>
+          `).join('')}
+        </div>
+      </div>
+      <aside class="home-actions-card">
+        <div class="home-section-head">
+          <h3>${L === 'es' ? 'Accesos' : 'Shortcuts'}</h3>
+          <span>${L === 'es' ? 'Moverse rapido' : 'Move fast'}</span>
+        </div>
+        <button onclick="setTab('battlepass')">${L === 'es' ? 'Ver Pase de Batalla' : 'View Battle Pass'}</button>
+        <button onclick="setTab('missions')">${L === 'es' ? 'Reclamar Misiones' : 'Claim Missions'}</button>
+        <button onclick="setTab('community')">${L === 'es' ? 'Ver Comunidad' : 'Open Community'}</button>
+        <button onclick="setTab('shop')">${L === 'es' ? 'Abrir Tienda' : 'Open Shop'}</button>
+      </aside>
+    </section>`;
+}
+window.setTab = setTab;
 
 function setGuildTab(tabId) {
   const next = tabId === 'create' ? 'create' : 'my';
@@ -3612,7 +3691,7 @@ async function start() {
   bindEvents();
   setLang(currentLang);
   renderPacks();
-  setTab('coleccion');
+  setTab('home');
   showPendingAdminNotifications();
   setInterval(() => {
     if (document.visibilityState === 'visible') showPendingAdminNotifications();
