@@ -617,6 +617,13 @@ function setGuildTab(tabId) {
   document.querySelectorAll('.guild-tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === `guild-tab-${next}`));
 }
 
+function guildRoleLabel(role) {
+  const labels = currentLang === 'es'
+    ? { leader:'Lider', subleader:'Sublider', member:'Integrante' }
+    : { leader:'Leader', subleader:'Subleader', member:'Member' };
+  return labels[role] || labels.member;
+}
+
 // ════════════════════════════════════════════════════════════
 // CARD RENDERING — TCG Visual Cards
 // ════════════════════════════════════════════════════════════
@@ -1775,7 +1782,7 @@ async function renderGuildsServer() {
         ${myGuild.bio ? `<div class="guild-bio">${escHtml(myGuild.bio)}</div>` : ''}
         <div class="guild-member-list">
           ${members.map(m => `<div class="guild-member-line">
-            <button class="mini-card-link guild-member-row" onclick="openUserProfile('${m.user_id}')"><span>${escHtml(m.username)}</span><span>${escHtml(m.role || 'member')}</span></button>
+            <button class="mini-card-link guild-member-row" onclick="openUserProfile('${m.user_id}')"><span>${escHtml(m.username)}</span><span class="guild-role-badge role-${escHtml(m.role || 'member')}">${escHtml(guildRoleLabel(m.role || 'member'))}</span></button>
             ${myGuild.role === 'leader' && m.user_id !== u.uid ? `<button class="btn-danger btn-sm" data-kick-guild="${m.user_id}" data-member-name="${escHtml(m.username || 'player')}">${currentLang==='es'?'Expulsar':'Kick'}</button>` : ''}
           </div>`).join('')}
         </div>

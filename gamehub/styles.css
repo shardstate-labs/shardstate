@@ -863,6 +863,9 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .guild-member-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left}
 .guild-member-row span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .guild-member-row span:last-child{color:var(--text2);font-size:.58rem;text-transform:uppercase;letter-spacing:.08em}
+.guild-role-badge{display:inline-flex;align-items:center;justify-content:center;min-width:72px;padding:3px 7px;border-radius:3px;border:1px solid var(--border);background:rgba(255,255,255,.04);font-family:var(--font-head);font-size:.56rem;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.guild-role-badge.role-leader{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.1);color:#fbbf24}
+.guild-role-badge.role-subleader{border-color:rgba(0,255,198,.38);background:rgba(0,255,198,.08);color:var(--acc)}
 .guild-member-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
 .guild-management-actions{margin-top:10px;flex-wrap:wrap}
 .stack-form{display:flex;flex-direction:column;gap:7px}
