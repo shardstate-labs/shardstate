@@ -199,6 +199,8 @@ input,select,textarea{font-family:var(--font-body);color:var(--text);outline:non
 .home-actions-card{display:flex;flex-direction:column;gap:10px}
 .home-actions-card button{min-height:42px;border:1px solid var(--border2);border-radius:6px;background:var(--bg3);color:var(--text);font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.68rem;transition:all var(--tr)}
 .home-actions-card button:hover{border-color:var(--acc);color:var(--acc);transform:translateY(-1px)}
+.home-actions-card .home-logout-action{margin-top:4px;border-color:rgba(255,59,59,.28);background:rgba(255,59,59,.08);color:#ff8a8a}
+.home-actions-card .home-logout-action:hover{border-color:var(--red);color:var(--red)}
 
 /* ── BUTTONS ─────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);font-weight:700;font-size:0.75rem;letter-spacing:0.07em;text-transform:uppercase;transition:all var(--tr);cursor:pointer;border:none}

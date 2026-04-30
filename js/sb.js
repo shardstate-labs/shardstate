@@ -21,6 +21,10 @@
   function normalizeUsername(username){
     return String(username || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 16);
   }
+  function protocolUsernameCandidate(){
+    const n = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
+    return `human_${n}`;
+  }
   function ensureClient(){
     if (_clientPromise) return _clientPromise;
     _clientPromise = new Promise((resolve, reject) => {
@@ -550,6 +554,16 @@
         .select().maybeSingle();
       if (error) return { error };
       return { data };
+    },
+    async ensureProtocolUsername(uid){
+      for (let i = 0; i < 20; i += 1) {
+        const username = protocolUsernameCandidate();
+        const r = await SB.updateUsername(uid, username);
+        if (!r.error) return { username, data:r.data };
+        const msg = String(r.error?.message || r.error || '');
+        if (r.error !== 'username_taken' && !/duplicate|unique/i.test(msg)) return { error:r.error };
+      }
+      return { error:'username_generation_failed' };
     },
     async updateEmail(newEmail){
       const sb = await ensureClient();

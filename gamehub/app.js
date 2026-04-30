@@ -660,6 +660,7 @@ function renderHome() {
   if (!root) return;
   const L = currentLang;
   const u = view.user || {};
+  const displayName = escHtml(u.username || 'Player');
   const collectionCount = Object.keys(view.state.collection || {}).length;
   const deckReady = Array.isArray(view.state.deck) && view.state.deck.length === 8;
   const news = L === 'es'
@@ -678,7 +679,7 @@ function renderHome() {
       <div class="home-hero-bg"></div>
       <div class="home-hero-copy">
         <div class="home-kicker">${L === 'es' ? 'Centro de mando' : 'Command center'}</div>
-        <h2>${L === 'es' ? 'Entrar al Shardstate' : 'Enter the Shardstate'}</h2>
+        <h2>${L === 'es' ? `Hola, ${displayName}! Estas listo para el combate?` : `Hello, ${displayName}! Ready for combat?`}</h2>
         <p>${L === 'es' ? 'Elegí tu deck, revisá novedades y saltá directo al combate.' : 'Pick your deck, scan updates, and jump straight into combat.'}</p>
         <div class="home-hero-actions">
           <button class="home-play-cta" onclick="launchPWA()">
@@ -725,6 +726,7 @@ function renderHome() {
         <button onclick="setTab('missions')">${L === 'es' ? 'Reclamar Misiones' : 'Claim Missions'}</button>
         <button onclick="setTab('community')">${L === 'es' ? 'Ver Comunidad' : 'Open Community'}</button>
         <button onclick="setTab('shop')">${L === 'es' ? 'Abrir Tienda' : 'Open Shop'}</button>
+        <button class="home-logout-action" onclick="logoutWeb()">${L === 'es' ? 'Cerrar sesion' : 'Log out'}</button>
       </aside>
     </section>`;
 }
@@ -3554,7 +3556,7 @@ async function hydrateFromSupabase(authUser){
   const u = Object.assign({
     uid,
     email: authUser.email || existing.email || '',
-    username: profile?.username || existing.username || 'Player',
+    username: profile?.username || existing.username || '',
     avatar: existing.avatar || '⚡',
     createdAt: existing.createdAt || Date.now(),
     updatedAt: Date.now(),
@@ -3565,6 +3567,16 @@ async function hydrateFromSupabase(authUser){
     u.referredByUid = profile.referred_by || u.referredByUid || null;
     u.referralCode = profile.referral_code || u.referralCode || '';
   }
+  const providers = authUser.app_metadata?.providers || authUser.identities?.map(i => i.provider) || [];
+  if (!u.username && providers.includes('google') && window.SB && SB.ensureProtocolUsername) {
+    try {
+      const r = await SB.ensureProtocolUsername(uid);
+      if (r?.username) u.username = r.username;
+    } catch(e) {
+      console.warn('protocol username generation failed', e);
+    }
+  }
+  if (!u.username) u.username = 'Player';
   if (gs) {
     u.shardsBalance  = gs.shards ?? u.shardsBalance ?? 0;
     u.fluxBalance    = gs.flux   ?? u.fluxBalance   ?? 0;
