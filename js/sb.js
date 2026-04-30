@@ -244,6 +244,21 @@
 
     // ── Market ──────────────────────────────────────────────────
     /** Active listings from OTHER players (RLS exposes status='active' to all). */
+    async publishDeckPreset(name, cardIds){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('publish_deck_preset', {
+        p_name:String(name || 'Preset'),
+        p_card_ids:Array.isArray(cardIds) ? cardIds.slice(0, 8) : [],
+      });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async listPublicDeckPresets(){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('list_public_deck_presets');
+      if (error) return { error, data:[] };
+      return { data:data || [] };
+    },
     async loadMarketActive(excludeUid){
       const sb = await ensureClient();
       let q = sb.from('market_listings').select('id,seller_uid,card_id,card_instance_id,price,currency,listed_at')

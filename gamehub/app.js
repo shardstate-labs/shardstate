@@ -485,7 +485,32 @@ function persistToUser() {
     });
     view._knownServerPresets = Array.from(validPresetNames);
   }
+
 }
+
+document.addEventListener('click', e => {
+  const communityPanel = byId('panel-community');
+  if (!communityPanel || !communityPanel.contains(e.target)) return;
+  const presetBtn = e.target.closest('[data-public-preset]');
+  if (presetBtn) {
+    const idx = Number(presetBtn.getAttribute('data-public-preset'));
+    const preset = view.publicPresets?.[idx];
+    if (preset) renderPublicPresetDetail(preset);
+    return;
+  }
+  const copyBtn = e.target.closest('[data-copy-public-preset]');
+  if (copyBtn) {
+    const id = copyBtn.getAttribute('data-copy-public-preset');
+    const preset = (view.publicPresets || []).find(p => String(p.id || '') === id);
+    const ids = (preset?.card_ids || preset?.cards || []).slice(0, 8);
+    if (!preset || ids.length !== 8) return toast(currentLang === 'es' ? 'Preset invalido.' : 'Invalid preset.');
+    view.state.deckPresets = view.state.deckPresets || [];
+    view.state.deckPresets.push({ name:String(preset.name || 'Community').slice(0, 24), cards:ids, instanceIds:[] });
+    persistToUser();
+    renderColeccion();
+    toast(currentLang === 'es' ? 'Preset copiado a tu coleccion.' : 'Preset copied to your collection.');
+  }
+});
 
 function reloadPwaFrame() {
   const f = byId("pwa-frame");
@@ -648,6 +673,35 @@ function parseGuildLogo(raw) {
 // ════════════════════════════════════════════════════════════
 // CARD RENDERING — TCG Visual Cards
 // ════════════════════════════════════════════════════════════
+function generateReferralCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return 'REF' + Array.from({length:6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+async function ensureReferralCode(){
+  const u = view.user;
+  if (!u || !u.uid) return '';
+  const current = String(u.referralCode || '').trim();
+  if (current && current !== 'REF00000') return current;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const next = generateReferralCode();
+    try {
+      if (window.SB && SB.upsertProfile) {
+        const patch = { referral_code:next };
+        if (u.username) patch.username = u.username;
+        const r = await SB.upsertProfile(u.uid, patch);
+        if (r?.error) throw r.error;
+      }
+      u.referralCode = next;
+      persistToUser();
+      return next;
+    } catch(e) {
+      console.warn('referral code persist failed', e);
+    }
+  }
+  return '';
+}
+
 function cardName(id) {
   const c = (typeof getCard === 'function') ? getCard(id) : null;
   return c ? c.name : id;
@@ -1030,7 +1084,7 @@ async function renderPerfil() {
     byId('profile-sponsor').innerHTML = `<div class="feed-row"><span class="feed-label">${escHtml(sponsor.display_name || sponsor.username || 'player')}</span></div>`;
   }
 
-  const refCode = u.referralCode || 'REF00000';
+  const refCode = await ensureReferralCode();
   const refUrl = new URL('../', window.location.href);
   refUrl.searchParams.set('ref', refCode);
   byId('ref-link').value = refUrl.toString();
@@ -2169,7 +2223,7 @@ function renderBattlePass(){
     </div>`;
 
   // Horizontal slider: continuous bar that fills 100% per level segment, two reward rows (Free / Premium).
-  const segWidth = 96;
+  const segWidth = window.matchMedia('(max-width: 560px)').matches ? 112 : 124;
   const trackPx = BP_LEVELS * segWidth;
   const fillSegments = lvl + ((bp.xp - lvl*BP_XP_PER_LEVEL) / BP_XP_PER_LEVEL);
   const fillPx = Math.min(trackPx, fillSegments * segWidth);
@@ -2285,21 +2339,76 @@ function getForumThreads() {
 }
 function saveForumThreads(threads) { localStorage.setItem(FORUM_KEY, JSON.stringify(threads)); }
 
-function renderCommunity() {
+function ownsCardId(id){
+  const item = view.state?.collection?.[id];
+  if (!item) return false;
+  if (typeof item === 'number') return item > 0;
+  if (Array.isArray(item.instances)) return item.instances.length > 0;
+  return (item.qty || 0) > 0 || !!item;
+}
+
+function renderPublicPresetDetail(preset){
+  const el = byId('public-preset-detail');
+  if (!el || !preset) return;
+  const ids = (preset.card_ids || preset.cards || []).slice(0, 8);
+  const owned = ids.filter(ownsCardId);
+  const missing = ids.filter(id => !ownsCardId(id));
+  el.innerHTML = `
+    <div class="preset-detail-head">
+      <div>
+        <div class="preset-detail-title">${escHtml(preset.name || 'Preset')}</div>
+        <div class="preset-detail-meta">${escHtml(preset.author || 'player')} - ${owned.length}/8 ${currentLang==='es'?'cartas propias':'owned cards'}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" data-copy-public-preset="${escHtml(preset.id || '')}">${currentLang==='es'?'Copiar':'Copy'}</button>
+    </div>
+    <div class="preset-detail-grid">
+      ${ids.map(id => {
+        const c = getCard(id);
+        const have = ownsCardId(id);
+        return `<button class="preset-card-mini ${have?'owned':'missing'}" onclick="openCardDetail('${escHtml(id)}')">
+          <span class="preset-card-dot" style="--pc:${escHtml(c?.color || '#00FFC6')}"></span>
+          <span class="preset-card-name">${escHtml(cardName(id))}</span>
+          <span class="preset-card-state">${have ? (currentLang==='es'?'Tengo':'Owned') : (currentLang==='es'?'Falta':'Missing')}</span>
+        </button>`;
+      }).join('')}
+    </div>
+    <div class="preset-breakdown">
+      <div><strong>${currentLang==='es'?'Tenes':'Owned'}</strong><span>${owned.map(cardName).map(escHtml).join(', ') || '-'}</span></div>
+      <div><strong>${currentLang==='es'?'Te faltan':'Missing'}</strong><span>${missing.map(cardName).map(escHtml).join(', ') || '-'}</span></div>
+    </div>`;
+}
+
+async function renderCommunity() {
   const forumEl = byId('forum-list');
   if (forumEl) renderForumList(forumEl);
   const presetsEl = byId('public-presets');
-  if (presetsEl && !presetsEl.dataset.rendered) {
-    presetsEl.dataset.rendered = '1';
-    const shared = [];
-    Object.values(view.db.users || {}).forEach(u => {
-      (u?.gameState?.deckPresets || []).filter(p => p.public).forEach(p => {
-        shared.push({ name: p.name, author: u.username });
+  if (presetsEl) {
+    presetsEl.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Cargando presets publicos...':'Loading public presets...'}</div>`;
+    let shared = [];
+    if (window.SB && SB.listPublicDeckPresets) {
+      const r = await SB.listPublicDeckPresets();
+      shared = Array.isArray(r.data) ? r.data : [];
+    }
+    if (!shared.length) {
+      Object.values(view.db.users || {}).forEach(u => {
+        (u?.gameState?.deckPresets || []).filter(p => p.public).forEach((p, i) => {
+          shared.push({ id:`local-${u.uid}-${i}`, name:p.name, author:u.username, card_ids:p.cards || [] });
+        });
       });
-    });
+    }
+    view.publicPresets = shared;
     presetsEl.innerHTML = shared.length
-      ? shared.map(p => `<div class="feed-row"><span class="feed-label">${p.name}</span><span class="feed-meta">${p.author}</span></div>`).join('')
-      : '<div class="feed-muted">No hay presets públicos.</div>';
+      ? shared.map((p, i) => `<button class="preset-pub-card" data-public-preset="${i}">
+          <div class="preset-pub-name">${escHtml(p.name || 'Preset')}</div>
+          <div class="preset-pub-by">${escHtml(p.author || 'player')} - ${(p.card_ids || []).length}/8</div>
+        </button>`).join('')
+      : `<div class="feed-muted">${currentLang==='es'?'No hay presets publicos.':'No public presets yet.'}</div>`;
+    const detail = byId('public-preset-detail');
+    if (detail) {
+      detail.innerHTML = shared.length
+        ? `<div class="feed-muted">${currentLang==='es'?'Elegi un preset para ver cartas y faltantes.':'Choose a preset to inspect cards and gaps.'}</div>`
+        : '';
+    }
   }
 }
 
@@ -3278,12 +3387,18 @@ function bindEvents() {
   // Share preset
   const sharePre = byId('share-preset');
   if (sharePre) {
-    sharePre.addEventListener('click', () => {
+    sharePre.addEventListener('click', async () => {
       const idx = Number(byId('preset-select').value);
       const p   = view.state.deckPresets[idx];
       if (!p) return toast('Select a preset to share.');
+      if (!Array.isArray(p.cards) || p.cards.length !== 8) return toast(currentLang === 'es' ? 'El preset necesita 8 cartas.' : 'Preset needs 8 cards.');
       p.public = true;
+      if (window.SB && SB.publishDeckPreset) {
+        const r = await SB.publishDeckPreset(p.name, p.cards);
+        if (r?.error) return toast(currentLang === 'es' ? 'No se pudo publicar el preset.' : 'Could not publish preset.');
+      }
       persistToUser();
+      await renderCommunity();
       toast(`🌐 Preset "${p.name}" shared to community.`);
     });
   }

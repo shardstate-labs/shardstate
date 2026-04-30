@@ -346,6 +346,39 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
   .hero-title{font-size:2.2rem}
   .cards-showcase .showcase-card:nth-child(n+4){display:none}
 }
+@media(max-width:640px){
+  html{font-size:16px}
+  body{overflow-x:hidden}
+  .container{padding:0 14px}
+  .nav-inner{height:auto;min-height:58px;padding:8px 14px;gap:10px}
+  .nav-logo-text{font-size:0.82rem}
+  .nav-logo-img{width:34px;height:34px}
+  .nav-cta{gap:8px;flex-wrap:nowrap}
+  .nav-cta .btn{padding:8px 10px!important;font-size:0.68rem!important}
+  #hero{height:auto;min-height:100dvh;padding:88px 0 142px}
+  .hero-content{padding:0 16px}
+  .hero-title{font-size:clamp(1.85rem,8.9vw,2.35rem);line-height:1.05;max-width:100%;overflow-wrap:anywhere}
+  .hero-sub{font-size:0.98rem;max-width:100%;margin-bottom:26px}
+  .hero-actions{display:grid;grid-template-columns:1fr;gap:12px;width:100%}
+  .hero-actions .btn{width:100%;justify-content:center;padding:13px 16px}
+  .hero-stats{left:16px;right:16px;bottom:18px;transform:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .hero-stat{min-width:0;padding:10px 8px;border:1px solid var(--border);background:rgba(10,10,14,0.72);border-radius:6px}
+  .hero-stat-num{font-size:1rem}
+  .hero-stat-label{font-size:0.62rem;letter-spacing:0.04em}
+  .section{padding:58px 0}
+  .section-title{font-size:clamp(1.45rem,9vw,2.2rem)}
+  .section-sub{font-size:0.94rem}
+  .stats-row{grid-template-columns:1fr 1fr;gap:10px}
+  .stat-card{padding:18px 12px}
+  .battle-cards-area{flex-direction:column;padding:12px}
+  .battle-middle{width:auto;flex-direction:row}
+  .clans-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .clan-card{min-height:160px;padding:16px 12px}
+  .cards-showcase{gap:10px}
+  .showcase-card{width:118px}
+  .auth-modal{max-width:calc(100vw - 24px);padding:24px 18px}
+  .oauth-btns{flex-direction:column}
+}
 </style>
 </head>
 <body>
