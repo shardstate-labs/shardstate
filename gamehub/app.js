@@ -996,7 +996,7 @@ function cdmSell(id) {
 }
 
 // ── RENDER: PERFIL ─────────────────────────────────────────────
-function renderPerfil() {
+async function renderPerfil() {
   const u = view.user;
   const eb = eloBracket(u.elo || 0);
   const ep = eloProgress(u.elo || 0);
@@ -1018,20 +1018,34 @@ function renderPerfil() {
     <div class="pstat"><div class="pstat-num">${Object.keys(view.state.collection||{}).length}</div><div class="pstat-label">${t('profile_stat_cards')}</div></div>
   `;
 
-  const sponsor = u.referredByUid ? view.db.users[u.referredByUid] : null;
+  let sponsor = u.referredByUid ? view.db.users[u.referredByUid] : null;
+  if (u.referredByUid && window.SB && SB.getProfileCard) {
+    const r = await SB.getProfileCard(u.referredByUid);
+    if (!r.error && r.data) sponsor = r.data;
+  }
   byId('profile-sponsor').innerHTML = sponsor
     ? `<div class="feed-row"><span class="feed-label">${sponsor.avatar||'⚡'} ${sponsor.username}</span></div>`
     : `<div class="feed-muted">${t('profile_no_sponsor')}</div>`;
+  if (sponsor && byId('profile-sponsor')) {
+    byId('profile-sponsor').innerHTML = `<div class="feed-row"><span class="feed-label">${escHtml(sponsor.display_name || sponsor.username || 'player')}</span></div>`;
+  }
 
   const refCode = u.referralCode || 'REF00000';
   const refUrl = new URL('../', window.location.href);
   refUrl.searchParams.set('ref', refCode);
   byId('ref-link').value = refUrl.toString();
-  const refs = (u.referrals || []).map(uid => view.db.users[uid]).filter(Boolean);
+  let refs = (u.referrals || []).map(uid => view.db.users[uid]).filter(Boolean);
+  if (window.SB && SB.loadReferrals && u.uid) refs = await SB.loadReferrals(u.uid);
   const refEl = byId('referrals-list');
   refEl.innerHTML = refs.length ? '' : `<div class="feed-muted">${t('profile_no_referrals')}</div>`;
   refs.forEach(r => refEl.insertAdjacentHTML('beforeend',
     `<div class="feed-row"><span class="feed-label">${r.avatar||'⚡'} ${r.username}</span></div>`));
+
+  if (refEl) {
+    refEl.innerHTML = refs.length ? '' : `<div class="feed-muted">${t('profile_no_referrals')}</div>`;
+    refs.forEach(r => refEl.insertAdjacentHTML('beforeend',
+      `<div class="feed-row"><span class="feed-label">${escHtml(r.display_name || r.username || 'player')}</span></div>`));
+  }
 
   // Pre-fill account-edit inputs
   const un = byId('acct-username');

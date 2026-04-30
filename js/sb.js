@@ -231,6 +231,16 @@
       if (error) return null;
       return data || null;
     },
+    async loadReferrals(uid){
+      const sb = await ensureClient();
+      const { data, error } = await sb.from('profiles')
+        .select('user_id,username,display_name,avatar_url,referral_code')
+        .eq('referred_by', uid)
+        .order('created_at', { ascending:false })
+        .limit(100);
+      if (error) return [];
+      return data || [];
+    },
 
     // ── Market ──────────────────────────────────────────────────
     /** Active listings from OTHER players (RLS exposes status='active' to all). */
