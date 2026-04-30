@@ -42,19 +42,20 @@ const I18N = {
     bp_reward_shards:'SHARDS', bp_reward_flux:'FLUX', bp_reward_grand:'1 carta GRAND', bp_reward_card:'Carta random',
     nav_community:'COMUNIDAD', coll_search_ph:'Buscar cartas…',
     nav_jugar:'JUGAR', nav_perfil:'PERFIL', nav_coleccion:'COLECCIÓN',
-    nav_mercado:'MERCADO', nav_guilds:'GUILDS', nav_shop:'PACK SHOP',
+    nav_mercado:'MERCADO', nav_guilds:'GUILDS', nav_shop:'LA TIENDA',
     tab_jugar:'JUGAR', tab_perfil:'PERFIL', tab_coleccion:'COLECCIÓN',
-    tab_mercado:'MERCADO', tab_guilds:'GUILDS', tab_shop:'PACK SHOP',
+    tab_mercado:'MERCADO', tab_guilds:'GUILDS', tab_shop:'LA TIENDA',
     topbar_wallet:'Conectar Wallet', topbar_logout:'Cerrar sesión',
     panel_learn_title:'Aprender', panel_learn_sub:'Reglas, modos, rangos, clanes y mecánicas de cartas',
     panel_missions_title:'Misiones', panel_missions_sub:'Completa objetivos para ganar SHARDS y desbloquear cartas TITAN/ECO',
     panel_community_title:'Comunidad', panel_community_sub:'Foro, Discord y presets compartidos',
     panel_jugar_title:'Jugar', panel_perfil_title:'Perfil',
     panel_coleccion_title:'Colección', panel_mercado_title:'Mercado',
-    panel_guilds_title:'Guilds', panel_shop_title:'Pack Shop',
-    profile_account:'Cuenta', profile_username:'Username', profile_email:'Email',
+    panel_guilds_title:'Guilds', panel_shop_title:'La Tienda',
+    profile_account:'Cuenta', profile_username:'Nombre de usuario', profile_email:'Correo',
     profile_password:'Nueva contraseña', profile_save:'Guardar',
     panel_perfil_sub:'Estadísticas de cuenta, padrino y referidos',
+    profile_stat_battles:'Batallas', profile_stat_wins:'Victorias', profile_stat_losses:'Derrotas', profile_stat_cards:'Cartas',
     panel_coleccion_sub:'Deck activo, presets y cartas',
     panel_mercado_sub:'Listar cartas y revisar historial de transacciones',
     panel_guilds_sub:'Crea, personaliza y gestiona solicitudes',
@@ -65,7 +66,7 @@ const I18N = {
     coll_owned:'Obtenidas', coll_missing:'No Obtenidas',
     coll_filter_all:'Todas', coll_filter_owned:'Obtenidas', coll_filter_dupes:'Duplicadas', coll_filter_missing:'Faltantes',
     market_list_title:'Listar carta', market_my_sales:'Mis ventas activas',
-    market_live:'Market Listings', market_buy_history:'Historial de compras',
+    market_live:'Ofertas del mercado', market_buy_history:'Historial de compras',
     market_sell_history:'Historial de ventas',
     market_list_btn:'Listar', market_buy_btn:'Comprar',
     market_tab_offchain:'Off-Chain (SHARDS)', market_tab_onchain:'On-Chain ($SHS)', market_tab_history:'Historial',
@@ -78,9 +79,15 @@ const I18N = {
     guild_requests:'Solicitudes recibidas', guild_directory:'Directorio de Gremios',
     guild_create_btn:'Crear Gremio', guild_search_ph:'Buscar gremios…',
     guild_name_ph:'Nombre del gremio', guild_bio_ph:'Descripción del gremio…', guild_emoji_ph:'Emoji',
-    profile_sponsor:'Sponsor', profile_no_sponsor:'Sin sponsor.',
-    profile_friends:'Amigos', profile_ref_title:'Link de Referido',
+    profile_sponsor:'Padrino', profile_no_sponsor:'Sin padrino.',
+    profile_friends:'Amigos', profile_ref_title:'Enlace de referido',
     profile_ref_ph:'Genera tu link…', profile_copy:'Copiar', profile_referrals:'Referidos',
+    profile_no_referrals:'Sin referidos aun.',
+    profile_err_username_required:'Ingresa un nombre de usuario valido.', profile_err_server:'Sin conexion al servidor.', profile_err_login:'Inicia sesion.',
+    profile_err_username_invalid:'Nombre de usuario invalido.', profile_err_username_taken:'Ese nombre de usuario ya existe.',
+    profile_toast_username_saved:'Nombre de usuario actualizado.', profile_err_email_invalid:'Correo invalido.',
+    profile_toast_email_confirm:'Revisa tu nuevo correo para confirmar el cambio.', profile_err_password_short:'Minimo 6 caracteres.',
+    profile_toast_password_saved:'Contrasena actualizada.',
     sidebar_tagline:'FRACTURE NETWORK', logout:'Cerrar sesión',
     community_forum:'Foro', community_join:'Únete a la Comunidad',
     community_discord:'Servidor Discord', community_presets:'Presets Públicos',
@@ -151,6 +158,7 @@ const I18N = {
     profile_account:'Account', profile_username:'Username', profile_email:'Email',
     profile_password:'New password', profile_save:'Save',
     panel_perfil_sub:'Account stats, sponsor and referrals',
+    profile_stat_battles:'Battles', profile_stat_wins:'Wins', profile_stat_losses:'Losses', profile_stat_cards:'Cards',
     panel_coleccion_sub:'Active deck, presets and cards',
     panel_mercado_sub:'List cards and review transaction history',
     panel_guilds_sub:'Create, customize and manage guild requests',
@@ -177,6 +185,12 @@ const I18N = {
     profile_sponsor:'Sponsor', profile_no_sponsor:'No sponsor.',
     profile_friends:'Friends', profile_ref_title:'Referral Link',
     profile_ref_ph:'Generate your link…', profile_copy:'Copy', profile_referrals:'Referrals',
+    profile_no_referrals:'No referrals yet.',
+    profile_err_username_required:'Enter a valid username.', profile_err_server:'No server connection.', profile_err_login:'Log in first.',
+    profile_err_username_invalid:'Invalid username.', profile_err_username_taken:'That username is already taken.',
+    profile_toast_username_saved:'Username updated.', profile_err_email_invalid:'Invalid email.',
+    profile_toast_email_confirm:'Check your new email to confirm the change.', profile_err_password_short:'Minimum 6 characters.',
+    profile_toast_password_saved:'Password updated.',
     sidebar_tagline:'FRACTURE NETWORK', logout:'Log out',
     community_forum:'Forum', community_join:'Join the Community',
     community_discord:'Discord Server', community_presets:'Public Presets',
@@ -254,10 +268,10 @@ function renderLearnContent() {
   const rulesEl = document.getElementById('ltab-rules');
   if (rulesEl) rulesEl.innerHTML = `<div class="rules-grid">
     <div class="rule-card"><div class="rule-card-num">01 · ${L?'OBJECTIVE':'OBJETIVO'}</div><h3>${L?'Drain 12 HP':'Drenar 12 HP'}</h3><p>${L?'Each player starts with <strong>12 HP</strong>. Win rounds to deal damage equal to your card\'s Damage stat. First to zero loses.':'Cada jugador empieza con <strong>12 HP</strong>. Gana rondas para infligir daño igual al Daño de tu carta. El primero en llegar a cero pierde.'}</p></div>
-    <div class="rule-card"><div class="rule-card-num">02 · ${L?'DECK':'MAZO'}</div><h3>${L?'Build Your 8-Card Deck':'Arma tu Mazo de 8 Cartas'}</h3><p>${L?'Choose 8 cards from up to <strong>2 clans</strong>. Each battle draws 4 random cards — build depth to handle variance.':'Elige 8 cartas de hasta <strong>2 clanes</strong>. Cada batalla roba 4 cartas al azar — construye profundidad para manejar la varianza.'}</p></div>
-    <div class="rule-card"><div class="rule-card-num">03 · ${L?'PULSOS':'PULSOS'}</div><h3>${L?'Wager Pulsos Each Round':'Apuesta Pulsos Cada Ronda'}</h3><p>${L?'Start with <strong>10 Pulsos</strong>. Each allocated multiplies your card\'s attack: <strong>ATQ = Power × (1 + Pulsos)</strong>. Higher ATQ wins.':'Empiezas con <strong>10 Pulsos</strong>. Cada uno multiplicado es: <strong>ATQ = Poder × (1 + Pulsos)</strong>. Mayor ATQ gana.'}</p></div>
+    <div class="rule-card"><div class="rule-card-num">02 · ${L?'DECK':'MAZO'}</div><h3>${L?'Build Your 8-Card Deck':'Arma tu Mazo de 8 Cartas'}</h3><p>${L?'Choose <strong>8 cards</strong>. You can mix clans freely; each battle draws 4 random cards, so build depth to handle variance.':'Elige <strong>8 cartas</strong>. Puedes mezclar clanes libremente; cada batalla roba 4 cartas al azar, asi que construye profundidad para manejar la varianza.'}</p></div>
+    <div class="rule-card"><div class="rule-card-num">03 · ${L?'PULSOS':'PULSOS'}</div><h3>${L?'Wager Pulsos Each Round':'Apuesta Pulsos Cada Ronda'}</h3><p>${L?'Start with <strong>12 Pulsos</strong>. Each Pulso spent multiplies your card Power into ATQ. Higher ATQ wins the clash.':'Empiezas con <strong>12 Pulsos</strong>. Cada Pulso gastado multiplica el Poder de tu carta para formar el ATQ. El ATQ mas alto gana el choque.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">04 · ${L?'ROUNDS':'RONDAS'}</div><h3>${L?'4 Rounds Per Battle':'4 Rondas por Batalla'}</h3><p>${L?'Both players secretly choose a card and allocate Pulsos simultaneously. Reveals happen at the same time — <strong>mind games are real</strong>.':'Ambos eligen carta y Pulsos en secreto simultáneamente. Todo se revela al mismo tiempo — <strong>los juegos mentales son reales</strong>.'}</p></div>
-    <div class="rule-card"><div class="rule-card-num">05 · ${L?'CLAN BONUS':'BONUS DE CLAN'}</div><h3>${L?'Run 3+ Same-Clan Cards':'Juega 3+ Cartas del Mismo Clan'}</h3><p>${L?'Running 3+ cards of the same clan activates a <strong>passive clan bonus</strong> on all your cards.':'Usar 3+ cartas del mismo clan activa un <strong>bonus pasivo de clan</strong> en todas tus cartas.'}</p></div>
+    <div class="rule-card"><div class="rule-card-num">05 · ${L?'CLAN BONUS':'BONUS DE CLAN'}</div><h3>${L?'Hold 2+ Same-Clan Cards':'Ten 2+ Cartas del Mismo Clan'}</h3><p>${L?'If your 4-card hand contains at least 2 cards from the played card\'s clan, that card activates its <strong>passive clan bonus</strong>.':'Si tu mano de 4 cartas contiene al menos 2 cartas del clan de la carta jugada, esa carta activa su <strong>bonus pasivo de clan</strong>.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">06 · ${L?'ABILITIES':'HABILIDADES'}</div><h3>${L?'Card Abilities Trigger on Condition':'Las Habilidades se Activan por Condición'}</h3><p>${L?'Abilities like <strong>Poison, Weaken, Stop, Copy, Support</strong> can swing any round.':'Habilidades como <strong>Veneno, Debilitar, Stop, Copiar, Apoyo</strong> pueden cambiar cualquier ronda.'}</p></div>
   </div>`;
 
@@ -957,22 +971,24 @@ function renderPerfil() {
     <div class="pstat pstat-balance"><span class="currency-icon shards"></span><div class="pstat-num">${(view.state.shards||0).toLocaleString()}</div><div class="pstat-label">SHARDS</div></div>
     <div class="pstat pstat-balance"><span class="currency-icon flux"></span><div class="pstat-num">${(view.state.flux||0).toLocaleString()}</div><div class="pstat-label">FLUX</div></div>
     <div class="pstat pstat-balance"><span class="currency-icon shs"></span><div class="pstat-num">${(view.state.shs||0).toLocaleString()}</div><div class="pstat-label">$SHS</div></div>
-    <div class="pstat"><div class="pstat-num">${u.battlesTotal||0}</div><div class="pstat-label">Battles</div></div>
-    <div class="pstat"><div class="pstat-num">${u.battleWins||0}</div><div class="pstat-label">Wins</div></div>
-    <div class="pstat"><div class="pstat-num">${u.battleLosses||0}</div><div class="pstat-label">Losses</div></div>
-    <div class="pstat"><div class="pstat-num">${Object.keys(view.state.collection||{}).length}</div><div class="pstat-label">Cards</div></div>
+    <div class="pstat"><div class="pstat-num">${u.battlesTotal||0}</div><div class="pstat-label">${t('profile_stat_battles')}</div></div>
+    <div class="pstat"><div class="pstat-num">${u.battleWins||0}</div><div class="pstat-label">${t('profile_stat_wins')}</div></div>
+    <div class="pstat"><div class="pstat-num">${u.battleLosses||0}</div><div class="pstat-label">${t('profile_stat_losses')}</div></div>
+    <div class="pstat"><div class="pstat-num">${Object.keys(view.state.collection||{}).length}</div><div class="pstat-label">${t('profile_stat_cards')}</div></div>
   `;
 
   const sponsor = u.referredByUid ? view.db.users[u.referredByUid] : null;
   byId('profile-sponsor').innerHTML = sponsor
     ? `<div class="feed-row"><span class="feed-label">${sponsor.avatar||'⚡'} ${sponsor.username}</span></div>`
-    : `<div class="feed-muted">Sin padrino.</div>`;
+    : `<div class="feed-muted">${t('profile_no_sponsor')}</div>`;
 
   const refCode = u.referralCode || 'REF00000';
-  byId('ref-link').value = `https://shardstate.gg/join?ref=${refCode}`;
+  const refUrl = new URL('../', window.location.href);
+  refUrl.searchParams.set('ref', refCode);
+  byId('ref-link').value = refUrl.toString();
   const refs = (u.referrals || []).map(uid => view.db.users[uid]).filter(Boolean);
   const refEl = byId('referrals-list');
-  refEl.innerHTML = refs.length ? '' : `<div class="feed-muted">Sin referidos aún.</div>`;
+  refEl.innerHTML = refs.length ? '' : `<div class="feed-muted">${t('profile_no_referrals')}</div>`;
   refs.forEach(r => refEl.insertAdjacentHTML('beforeend',
     `<div class="feed-row"><span class="feed-label">${r.avatar||'⚡'} ${r.username}</span></div>`));
 
@@ -991,41 +1007,41 @@ async function saveUsername(){
     ? SB.normalizeUsername(byId('acct-username')?.value || '')
     : String(byId('acct-username')?.value || '').trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,16);
   if (byId('acct-username')) byId('acct-username').value = newName;
-  if (!newName) return toast('Ingresa un username válido.');
-  if (!window.SB || !SB.updateUsername) return toast('Sin conexión al servidor.');
-  if (!view.user || !view.user.uid) return toast('Iniciá sesión.');
+  if (!newName) return toast(t('profile_err_username_required'));
+  if (!window.SB || !SB.updateUsername) return toast(t('profile_err_server'));
+  if (!view.user || !view.user.uid) return toast(t('profile_err_login'));
   const r = await SB.updateUsername(view.user.uid, newName);
   if (r.error) {
     const msg = ({
-      invalid_username: 'Username inválido.',
-      username_taken:   'Ese username ya existe.',
+      invalid_username: t('profile_err_username_invalid'),
+      username_taken:   t('profile_err_username_taken'),
     })[r.error] || ('Error: ' + (r.error.message || r.error));
     return toast(msg);
   }
   view.user.username = newName;
   saveDb(); syncTopbar(); renderPerfil();
-  toast('✓ Username actualizado.');
+  toast(t('profile_toast_username_saved'));
 }
 window.saveUsername = saveUsername;
 
 async function saveEmail(){
   const newEmail = String(byId('acct-email')?.value || '').trim();
-  if (!newEmail || !/.+@.+\..+/.test(newEmail)) return toast('Email inválido.');
-  if (!window.SB || !SB.updateEmail) return toast('Sin conexión al servidor.');
+  if (!newEmail || !/.+@.+\..+/.test(newEmail)) return toast(t('profile_err_email_invalid'));
+  if (!window.SB || !SB.updateEmail) return toast(t('profile_err_server'));
   const r = await SB.updateEmail(newEmail);
   if (r.error) return toast('Error: ' + (r.error.message || r.error));
-  toast('✉ Revisá tu nuevo email para confirmar el cambio.');
+  toast(t('profile_toast_email_confirm'));
 }
 window.saveEmail = saveEmail;
 
 async function savePassword(){
   const pw = String(byId('acct-password')?.value || '');
-  if (pw.length < 6) return toast('Mínimo 6 caracteres.');
-  if (!window.SB || !SB.updatePassword) return toast('Sin conexión al servidor.');
+  if (pw.length < 6) return toast(t('profile_err_password_short'));
+  if (!window.SB || !SB.updatePassword) return toast(t('profile_err_server'));
   const r = await SB.updatePassword(pw);
   if (r.error) return toast('Error: ' + (r.error.message || r.error));
   byId('acct-password').value = '';
-  toast('🔐 Contraseña actualizada.');
+  toast(t('profile_toast_password_saved'));
 }
 window.savePassword = savePassword;
 
@@ -1164,12 +1180,14 @@ async function sendFriend(uid, username) {
   const r = await SB.sendFriendRequest(uid);
   if (r.error) return toast(socialError(r.error));
   toast(`${currentLang==='es'?'Solicitud enviada a':'Request sent to'} ${username}.`);
+  document.querySelector('.social-modal')?.remove();
   renderFriends();
 }
 async function respondFriend(requestId, accept) {
   const r = await SB.respondFriendRequest(requestId, accept);
   if (r.error) return toast(socialError(r.error));
   toast(accept ? (currentLang==='es'?'Amigo agregado.':'Friend added.') : (currentLang==='es'?'Solicitud rechazada.':'Request declined.'));
+  document.querySelector('.social-modal')?.remove();
   renderFriends();
 }
 async function removeFriend(uid) {
@@ -1224,6 +1242,7 @@ async function openUserProfile(uid) {
 
 async function openDm(uid, username) {
   if (!window.SB || !SB.loadDmThread) return;
+  document.querySelector('.social-modal')?.remove();
   document.querySelector('.dm-modal')?.remove();
   const modal = document.createElement('div');
   modal.className = 'dm-modal';
@@ -1270,6 +1289,28 @@ function askTextModal(title, placeholder, confirmText='OK') {
     modal.querySelectorAll('[data-text-cancel]').forEach(btn => btn.addEventListener('click', () => close(null)));
     modal.addEventListener('click', e => { if (e.target === modal) close(null); });
     setTimeout(() => byId('text-modal-input')?.focus(), 0);
+  });
+}
+function askConfirmModal(title, body, confirmText='OK', danger=false) {
+  return new Promise(resolve => {
+    document.querySelector('.confirm-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.className = 'social-modal confirm-modal';
+    modal.innerHTML = `
+      <div class="social-panel text-panel">
+        <button class="social-close" data-confirm-cancel>x</button>
+        <div class="social-title">${escHtml(title)}</div>
+        <div class="feed-muted" style="margin:8px 0 14px">${escHtml(body || '')}</div>
+        <div class="social-actions">
+          <button class="btn-mini" data-confirm-cancel>${currentLang==='es'?'Cancelar':'Cancel'}</button>
+          <button class="${danger?'btn-danger':'btn btn-primary btn-sm'}" data-confirm-ok>${escHtml(confirmText)}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = value => { modal.remove(); resolve(value); };
+    modal.querySelector('[data-confirm-ok]').addEventListener('click', () => close(true));
+    modal.querySelectorAll('[data-confirm-cancel]').forEach(btn => btn.addEventListener('click', () => close(false)));
+    modal.addEventListener('click', e => { if (e.target === modal) close(false); });
   });
 }
 async function renderDmThread(uid) {
@@ -1386,6 +1427,7 @@ async function renderMercado() {
 
   // Live listings from other players
   let active = await SB.loadMarketActive(view.user.uid);
+  await hydrateMarketActors(active);
   const q = String(byId('market-search')?.value || '').trim().toLowerCase();
   const clanQ = byId('market-clan-filter')?.value || '';
   const rarQ = byId('market-rarity-filter')?.value || '';
@@ -1433,6 +1475,7 @@ async function renderMercado() {
               <span class="mcard-chip">${card?.stars || '?'}★</span>
               <span class="mcard-chip">${card?.clan?.toUpperCase() || ''}</span>
             </div>
+            <div class="mcard-seller">${currentLang==='es'?'Vendedor':'Seller'}: ${escHtml(l.seller_profile?.username || 'player')}</div>
             <div class="mcard-price">${l.price} SHARDS</div>
             <button class="btn-primary full" data-buy="${l.id}">${t('market_buy_btn')}</button>
           </div>
@@ -1442,6 +1485,7 @@ async function renderMercado() {
 
   // My listings (active + recently closed) — with delist button on active ones
   const mine = await SB.loadMyListings(view.user.uid);
+  await hydrateMarketActors(mine);
   const myActive = mine.filter(l => l.status === 'active');
   if (msEl){
     msEl.innerHTML = myActive.length ? '' : `<div class="feed-muted">${t('no_sales')}</div>`;
@@ -1460,6 +1504,7 @@ async function renderMercado() {
     sold.forEach(l => shEl.insertAdjacentHTML('beforeend', renderMiniMarketRow(l, { pricePrefix:'+', tone:'sold' })));
   }
   const bought = SB.loadMarketPurchases ? await SB.loadMarketPurchases(view.user.uid) : [];
+  await hydrateMarketActors(bought);
   if (bhEl){
     bhEl.innerHTML = bought.length ? '' : `<div class="feed-muted">${t('no_buy_hist')}</div>`;
     bought.forEach(l => bhEl.insertAdjacentHTML('beforeend', renderMiniMarketRow(l, { pricePrefix:'-', tone:'bought' })));
@@ -1520,17 +1565,39 @@ function renderSellCardPicker(ids) {
   }).join('');
 }
 
+const marketActorCache = {};
+async function hydrateMarketActors(rows) {
+  if (!window.SB || !SB.getProfileCard || !Array.isArray(rows) || !rows.length) return rows;
+  const ids = Array.from(new Set(rows.flatMap(r => [r.seller_uid, r.buyer_uid]).filter(Boolean)));
+  await Promise.all(ids.map(async uid => {
+    if (marketActorCache[uid]) return;
+    const res = await SB.getProfileCard(uid);
+    marketActorCache[uid] = res?.data || { user_id:uid, username:'player' };
+  }));
+  rows.forEach(r => {
+    if (r.seller_uid) r.seller_profile = marketActorCache[r.seller_uid] || null;
+    if (r.buyer_uid) r.buyer_profile = marketActorCache[r.buyer_uid] || null;
+  });
+  return rows;
+}
+
 function renderMiniMarketRow(l, opts={}) {
   const card = getCard(l.card_id) || {};
   const cc = card.clan ? clanColor(card.clan) : '#00ffc6';
   const ce = card.clan ? clanEmoji(card.clan) : 'G';
   const pricePrefix = opts.pricePrefix || '';
   const rar = card.type === 'grand' ? 'GD' : (card.rar || '?');
+  const actor = opts.actor || (opts.tone === 'bought'
+    ? `${currentLang==='es'?'Vendedor':'Seller'}: ${l.seller_profile?.username || 'player'}`
+    : opts.tone === 'sold'
+      ? `${currentLang==='es'?'Comprador':'Buyer'}: ${l.buyer_profile?.username || 'player'}`
+      : l.seller_profile ? `${currentLang==='es'?'Vendedor':'Seller'}: ${l.seller_profile.username || 'player'}` : '');
   return `
     <div class="market-mini-row ${opts.tone || ''}" style="--cc:${cc}">
       <button class="market-mini-art" onclick="openCardDetail('${l.card_id}')">${ce}</button>
       <div class="market-mini-main">
         <div class="market-mini-name">${card.name || l.card_id}</div>
+        ${actor ? `<div class="market-mini-actor">${escHtml(actor)}</div>` : ''}
         <div class="market-mini-meta">${card.clan?.toUpperCase() || ''} - ${rar} - ${card.stars || '?'}★</div>
       </div>
       <div class="market-mini-price">${pricePrefix}${l.price} SHARDS</div>
@@ -1641,6 +1708,7 @@ async function renderGuildsServer() {
   const guilds = data.guilds || [];
   const myApplications = data.my_applications || [];
   mgEl.innerHTML = '';
+  setGuildCreateEnabled(!myGuild);
 
   if (!myGuild) {
     u.guildId = null;
@@ -1652,11 +1720,15 @@ async function renderGuildsServer() {
           ${app.response ? `<span class="feed-label">${escHtml(app.response)}</span>` : ''}
         </div>`).join(''));
     }
-    reqEl.innerHTML = `<div class="feed-muted">${t('leader_only')}</div>`;
+    reqEl.closest('.guild-requests-block')?.classList.add('hidden');
   } else {
     u.guildId = myGuild.id;
-    const members = myGuild.members || [];
+    const members = (myGuild.members || []).slice().sort((a, b) => {
+      const rank = role => role === 'leader' ? 0 : role === 'subleader' ? 1 : 2;
+      return rank(a.role) - rank(b.role);
+    });
     const applications = myGuild.applications || [];
+    reqEl.closest('.guild-requests-block')?.classList.toggle('hidden', myGuild.role !== 'leader');
     mgEl.insertAdjacentHTML('beforeend', `
       <div class="guild-card">
         <div class="guild-card-header">
@@ -1668,7 +1740,14 @@ async function renderGuildsServer() {
         </div>
         ${myGuild.bio ? `<div class="guild-bio">${escHtml(myGuild.bio)}</div>` : ''}
         <div class="guild-member-list">
-          ${members.map(m => `<button class="mini-card-link" onclick="openUserProfile('${m.user_id}')">${escHtml(m.username)} - ${escHtml(m.role || 'member')}</button>`).join('')}
+          ${members.map(m => `<div class="guild-member-line">
+            <button class="mini-card-link guild-member-row" onclick="openUserProfile('${m.user_id}')"><span>${escHtml(m.username)}</span><span>${escHtml(m.role || 'member')}</span></button>
+            ${myGuild.role === 'leader' && m.user_id !== u.uid ? `<button class="btn-danger btn-sm" data-kick-guild="${m.user_id}" data-member-name="${escHtml(m.username || 'player')}">${currentLang==='es'?'Expulsar':'Kick'}</button>` : ''}
+          </div>`).join('')}
+        </div>
+        <div class="guild-actions guild-management-actions">
+          <button class="btn-mini" data-leave-guild>${currentLang==='es'?'Salir del gremio':'Leave guild'}</button>
+          ${myGuild.role === 'leader' ? `<button class="btn-danger" data-disband-guild>${currentLang==='es'?'Eliminar gremio':'Delete guild'}</button>` : ''}
         </div>
       </div>`);
 
@@ -1679,16 +1758,18 @@ async function renderGuildsServer() {
         applications.forEach(app => {
           const ru = app.user || {};
           reqEl.insertAdjacentHTML('beforeend', `
-            <div class="feed-row">
-              <span class="feed-label clickable" onclick="openUserProfile('${ru.user_id}')">USER ${escHtml(ru.username || 'player')}</span>
-              <span class="feed-label">${escHtml(app.message || '')}</span>
-              <button class="btn-mini" data-approve-guild="${app.id}">${t('guild_approve_btn')}</button>
-              <button class="btn-danger" data-deny-guild="${app.id}">${t('guild_deny_btn')}</button>
+            <div class="guild-request-row">
+              <button class="mini-card-link guild-request-user" onclick="openUserProfile('${ru.user_id}')">USER ${escHtml(ru.username || 'player')}</button>
+              <div class="guild-request-message">${escHtml(app.message || (currentLang==='es'?'Sin mensaje':'No message'))}</div>
+              <div class="guild-request-actions">
+                <button class="btn-mini" data-approve-guild="${app.id}">${t('guild_approve_btn')}</button>
+                <button class="btn-danger" data-deny-guild="${app.id}">${t('guild_deny_btn')}</button>
+              </div>
             </div>`);
         });
       }
     } else {
-      reqEl.innerHTML = `<div class="feed-muted">${t('leader_only')}</div>`;
+      reqEl.innerHTML = '';
     }
   }
 
@@ -1698,7 +1779,7 @@ async function renderGuildsServer() {
     guilds.forEach(g => {
       const isMember = myGuild && myGuild.id === g.id;
       const requested = !!g.requested;
-      const canReq = !isMember && !requested;
+      const canReq = !myGuild && !requested;
       list.insertAdjacentHTML('beforeend', `
         <div class="guild-card">
           <div class="guild-card-header">
@@ -1720,6 +1801,22 @@ async function renderGuildsServer() {
   }
 }
 renderGuilds = renderGuildsServer;
+
+function setGuildCreateEnabled(enabled){
+  const ids = ['guild-name','guild-avatar','guild-bio','guild-icon-url','guild-country','create-guild-btn'];
+  ids.forEach(id => {
+    const el = byId(id);
+    if (!el) return;
+    el.disabled = !enabled;
+    el.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+  });
+  const btn = byId('create-guild-btn');
+  if (btn) {
+    btn.textContent = enabled
+      ? t('guild_create_btn')
+      : (currentLang === 'es' ? 'Ya perteneces a un gremio' : 'Already in a guild');
+  }
+}
 
 function renderLearnClans() {
   const el = byId('clans-learn-grid');
@@ -2130,20 +2227,31 @@ function renderCommunity() {
 }
 
 let activeThreadId = null;
+const FORUM_TAG_LABELS = {
+  Strategy:{ es:'Estrategia', en:'Strategy' },
+  Discussion:{ es:'Discusion', en:'Discussion' },
+  Guide:{ es:'Guia', en:'Guide' },
+  Recruit:{ es:'Reclutamiento', en:'Recruit' },
+  'Off-topic':{ es:'Otros temas', en:'Off-topic' },
+  Announcement:{ es:'Anuncio', en:'Announcement' },
+};
+function forumTagLabel(tag) {
+  return FORUM_TAG_LABELS[tag]?.[currentLang] || tag;
+}
 function renderForumList(container) {
   const threads = getForumThreads();
   container.innerHTML = `
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <input id="forum-new-title" class="input-dark" style="flex:1;font-size:0.8rem" placeholder="${currentLang==='es'?'Nuevo post…':'New post…'}"/>
       <select id="forum-new-tag" class="input-dark" style="width:110px;font-size:0.75rem">
-        <option>Strategy</option><option>Discussion</option><option>Guide</option><option>Recruit</option><option>Off-topic</option>
+        ${['Strategy','Discussion','Guide','Recruit','Off-topic'].map(tag => `<option value="${tag}">${forumTagLabel(tag)}</option>`).join('')}
       </select>
-      <button class="btn btn-primary btn-sm" onclick="submitForumThread()">Post</button>
+      <button class="btn btn-primary btn-sm" onclick="submitForumThread()">${currentLang==='es'?'Crear':'Post'}</button>
     </div>
     ${threads.map(th => `
       <div class="forum-row" onclick="openThread('${th.id}')" style="cursor:pointer">
         <div class="forum-row-main">
-          <span class="forum-tag">${th.tag}</span>
+          <span class="forum-tag">${forumTagLabel(th.tag)}</span>
           <span class="forum-title">${th.title}</span>
         </div>
         <div class="forum-row-meta">
@@ -2174,8 +2282,8 @@ function openThread(id) {
   el.style.display = '';
   el.innerHTML = `
     <div class="forum-thread-header">
-      <button class="btn-mini" onclick="activeThreadId=null;byId('forum-thread-view').style.display='none'">← Back</button>
-      <span class="forum-tag">${th.tag}</span>
+      <button class="btn-mini" onclick="activeThreadId=null;byId('forum-thread-view').style.display='none'">${currentLang==='es'?'Volver':'Back'}</button>
+      <span class="forum-tag">${forumTagLabel(th.tag)}</span>
       <strong style="margin-left:6px">${th.title}</strong>
     </div>
     <div class="forum-comments">
@@ -2183,11 +2291,11 @@ function openThread(id) {
         <div class="forum-comment">
           <span class="forum-comment-author">${c.author}</span>
           <span class="forum-comment-text">${c.text}</span>
-        </div>`).join('') : '<div class="feed-muted" style="margin:8px 0">No comments yet.</div>'}
+        </div>`).join('') : `<div class="feed-muted" style="margin:8px 0">${currentLang==='es'?'Aun no hay comentarios.':'No comments yet.'}</div>`}
     </div>
     <div style="display:flex;gap:6px;margin-top:8px">
       <input id="forum-comment-input" class="input-dark" style="flex:1;font-size:0.8rem" placeholder="${currentLang==='es'?'Escribe un comentario…':'Write a comment…'}"/>
-      <button class="btn btn-primary btn-sm" onclick="submitComment('${id}')">Send</button>
+      <button class="btn btn-primary btn-sm" onclick="submitComment('${id}')">${currentLang==='es'?'Enviar':'Send'}</button>
     </div>`;
 }
 function submitComment(threadId) {
@@ -2757,6 +2865,7 @@ function bindEvents() {
       const bio = String(byId('guild-bio')?.value || '').trim();
       const iconUrl = String(byId('guild-icon-url')?.value || '').trim();
       const country = String(byId('guild-country')?.value || '').trim();
+      if (view.user?.guildId) return toast(currentLang==='es'?'Ya perteneces a un gremio.':'You already belong to a guild.');
       if (!name) return toast('Nombre de gremio requerido.');
       const r = await SB.createGuild({ name, bio, emoji, icon_url:iconUrl, country });
       if (r.error) return toast(r.error.message || r.error);
@@ -2774,7 +2883,10 @@ function bindEvents() {
       const join = e.target.closest('[data-join-guild]');
       const approve = e.target.closest('[data-approve-guild]');
       const deny = e.target.closest('[data-deny-guild]');
-      if (!join && !approve && !deny) return;
+      const leave = e.target.closest('[data-leave-guild]');
+      const kick = e.target.closest('[data-kick-guild]');
+      const disband = e.target.closest('[data-disband-guild]');
+      if (!join && !approve && !deny && !leave && !kick && !disband) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       if (!window.SB) return toast('Sin conexion al servidor.');
@@ -2788,7 +2900,7 @@ function bindEvents() {
         const r = await SB.applyGuild(join.getAttribute('data-join-guild'), msg);
         if (r.error) return toast(r.error.message || r.error);
         toast('Solicitud enviada.');
-      } else {
+      } else if (approve || deny) {
         const id = (approve || deny).getAttribute(approve ? 'data-approve-guild' : 'data-deny-guild');
         const response = await askTextModal(
           approve ? (currentLang === 'es' ? 'Aceptar solicitud' : 'Accept request') : (currentLang === 'es' ? 'Rechazar solicitud' : 'Decline request'),
@@ -2799,6 +2911,49 @@ function bindEvents() {
         const r = await SB.respondGuildApplication(id, !!approve, response);
         if (r.error) return toast(r.error.message || r.error);
         toast(approve ? 'Miembro aceptado.' : 'Solicitud rechazada.');
+      } else if (leave) {
+        if (!SB.leaveGuild) return toast('Sin conexion al servidor.');
+        const ok = await askConfirmModal(
+          currentLang === 'es' ? 'Salir del gremio' : 'Leave guild',
+          currentLang === 'es' ? 'Si sos lider, el miembro mas antiguo quedara a cargo. Si estas solo, el gremio se eliminara.' : 'If you are leader, the oldest member becomes leader. If you are alone, the guild is deleted.',
+          currentLang === 'es' ? 'Salir' : 'Leave',
+          true
+        );
+        if (!ok) return;
+        const r = await SB.leaveGuild();
+        if (r.error) return toast(r.error.message || r.error);
+        toast(currentLang === 'es' ? 'Saliste del gremio.' : 'You left the guild.');
+        await refreshFromSupabase();
+        syncTopbar();
+        renderPerfil();
+      } else if (kick) {
+        if (!SB.kickGuildMember) return toast('Sin conexion al servidor.');
+        const name = kick.getAttribute('data-member-name') || 'player';
+        const ok = await askConfirmModal(
+          currentLang === 'es' ? 'Expulsar integrante' : 'Kick member',
+          `${currentLang === 'es' ? 'Vas a expulsar a' : 'You are about to kick'} ${name}.`,
+          currentLang === 'es' ? 'Expulsar' : 'Kick',
+          true
+        );
+        if (!ok) return;
+        const r = await SB.kickGuildMember(kick.getAttribute('data-kick-guild'));
+        if (r.error) return toast(r.error.message || r.error);
+        toast(currentLang === 'es' ? 'Integrante expulsado.' : 'Member kicked.');
+      } else if (disband) {
+        if (!SB.disbandGuild) return toast('Sin conexion al servidor.');
+        const ok = await askConfirmModal(
+          currentLang === 'es' ? 'Eliminar gremio' : 'Delete guild',
+          currentLang === 'es' ? 'Esta accion elimina el gremio y todas sus solicitudes. No se puede deshacer.' : 'This deletes the guild and all applications. It cannot be undone.',
+          currentLang === 'es' ? 'Eliminar' : 'Delete',
+          true
+        );
+        if (!ok) return;
+        const r = await SB.disbandGuild();
+        if (r.error) return toast(r.error.message || r.error);
+        toast(currentLang === 'es' ? 'Gremio eliminado.' : 'Guild deleted.');
+        await refreshFromSupabase();
+        syncTopbar();
+        renderPerfil();
       }
       renderGuilds();
     }, true);
@@ -2940,6 +3095,13 @@ function bindEvents() {
     if (delistBtn) {
       const lid = delistBtn.getAttribute('data-delist');
       if (!window.SB || !window.SB.delistMarketCard) return toast('Sin conexión al servidor.');
+      const ok = await askConfirmModal(
+        currentLang === 'es' ? 'Retirar listing' : 'Delist card',
+        currentLang === 'es' ? 'La carta vuelve a tu coleccion y deja de estar a la venta.' : 'The card returns to your collection and is no longer for sale.',
+        currentLang === 'es' ? 'Retirar' : 'Delist',
+        true
+      );
+      if (!ok) return;
       delistBtn.disabled = true;
       const r = await SB.delistMarketCard(lid);
       if (r && r.error) { delistBtn.disabled = false; return toast(marketError(r.error)); }

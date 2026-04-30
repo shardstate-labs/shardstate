@@ -10,6 +10,14 @@ Use this file as local project guidance for future agents and contributors.
 - Keep dirty user work unless the user explicitly asks to remove it.
 - Verify with at least static file checks or live smoke checks before calling work done.
 
+## Supabase Session Startup
+
+- For Supabase work in a fresh Codex session, try MCP auth first: `codex mcp login supabase`.
+- Verify `codex mcp list` shows `supabase` enabled with OAuth before remote DB work.
+- Prefer Supabase MCP over CLI for remote inspection/mutations.
+- Avoid `supabase migration fetch`, `supabase db push`, and other remote CLI commands until MCP is unavailable and the user explicitly approves CLI.
+- Never accept interactive migration overwrite prompts or alter migration history without user confirmation.
+
 ## Architecture
 
 - Keep engine logic separate from UI logic.

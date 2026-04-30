@@ -237,15 +237,17 @@ function computeRewards(B){
   } else if(B.winner==='o'){
     shards = Math.floor(cfg.shardsW[1]*0.15);
     xp = Math.floor(cfg.xpW*0.3); elo = -Math.floor(cfg.eloW*0.7);
-    // Apply abandon-streak ELO penalty multiplier (consumed once, then cleared).
-    try {
-      const cur = JSON.parse(localStorage.getItem('shs_player') || '{}');
-      if (cur.eloPenaltyMult && cur.eloPenaltyMult > 1) {
-        elo = elo * cur.eloPenaltyMult;
-        cur.eloPenaltyMult = 1;
-        localStorage.setItem('shs_player', JSON.stringify(cur));
-      }
-    } catch(_){}
+    // Offline fallback only; Supabase finalization owns live reward penalties.
+    if (typeof window === 'undefined' || !window.SHS_SYNC) {
+      try {
+        const cur = JSON.parse(localStorage.getItem('shs_player') || '{}');
+        if (cur.eloPenaltyMult && cur.eloPenaltyMult > 1) {
+          elo = elo * cur.eloPenaltyMult;
+          cur.eloPenaltyMult = 1;
+          localStorage.setItem('shs_player', JSON.stringify(cur));
+        }
+      } catch(_){}
+    }
     PLAYER.losses++;
   } else {
     shards = Math.floor(cfg.shardsW[1]*0.4);

@@ -552,6 +552,7 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .mcard-stats{font-size:.62rem;color:var(--text2);margin-bottom:6px}
 .mcard-meta{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px}
 .mcard-chip{font-size:.55rem;color:var(--text2);border:1px solid var(--border);border-radius:3px;padding:2px 4px;background:rgba(255,255,255,.03)}
+.mcard-seller,.market-mini-actor{font-size:.58rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px}
 .mcard-price{display:flex;align-items:center;justify-content:space-between}
 .mcard-price-val{font-family:var(--font-head);font-size:0.85rem;font-weight:900;color:var(--acc)}
 .market-mini-row{
@@ -793,7 +794,9 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .guild-card-header{display:flex;align-items:center;gap:11px}
 .guild-avatar{width:38px;height:38px;border-radius:var(--radius);background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:1px solid var(--border);flex-shrink:0}
 .guild-icon-img{width:100%;height:100%;object-fit:cover;border-radius:inherit}
-.guild-member-list,.social-deck,.social-actions{display:flex;flex-wrap:wrap;gap:6px}
+.guild-member-list{display:flex;flex-direction:column;gap:6px}
+.social-deck,.social-actions{display:flex;flex-wrap:wrap;gap:6px}
+.hidden{display:none!important}
 .clickable{cursor:pointer}
 .clickable:hover{color:var(--acc)}
 .mini-card-link{border:1px solid var(--border);background:var(--bg);color:var(--text2);border-radius:4px;padding:4px 7px;font-size:.68rem;cursor:pointer}
@@ -845,6 +848,16 @@ textarea.input-dark{resize:vertical;min-height:68px}
 .guild-name{font-family:var(--font-head);font-size:0.78rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
 .guild-stats-text{font-size:0.68rem;color:var(--text2)}
 .guild-actions{display:flex;gap:5px;flex-shrink:0}
+.guild-request-row{display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1.4fr) auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.guild-request-row:last-child{border-bottom:none}
+.guild-request-user{width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.guild-request-message{min-width:0;color:var(--text2);font-size:.72rem;line-height:1.35;overflow-wrap:anywhere}
+.guild-request-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end}
+.guild-member-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left}
+.guild-member-row span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.guild-member-row span:last-child{color:var(--text2);font-size:.58rem;text-transform:uppercase;letter-spacing:.08em}
+.guild-member-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center}
+.guild-management-actions{margin-top:10px;flex-wrap:wrap}
 .stack-form{display:flex;flex-direction:column;gap:7px}
 .guild-directory-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .guild-directory-header .block-title{margin-bottom:0}
@@ -983,6 +996,9 @@ textarea.input-dark{resize:vertical;min-height:68px}
   .market-filterbar{grid-template-columns:1fr 1fr}
   .missions-grid,.two-col,.history-layout{grid-template-columns:1fr}
   .play-modes-grid{grid-template-columns:1fr}
+  .guild-request-row{grid-template-columns:1fr}
+  .guild-request-actions{justify-content:stretch}
+  .guild-request-actions .btn-mini,.guild-request-actions .btn-danger{flex:1}
 }
 
 /* ── FORUM INTERACTIVE ─────────────────────────────────── */

@@ -253,7 +253,7 @@
     async loadMarketPurchases(uid){
       const sb = await ensureClient();
       const { data, error } = await sb.from('market_listings').select('*')
-        .eq('buyer_uid', uid).eq('status','sold').order('sold_at', { ascending:false }).limit(200);
+        .eq('buyer_uid', uid).eq('status','sold').order('closed_at', { ascending:false }).limit(200);
       if (error) return [];
       return data || [];
     },
@@ -360,6 +360,24 @@
         p_accept:!!accept,
         p_response:String(response||''),
       });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async leaveGuild(){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('leave_guild');
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async kickGuildMember(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('kick_guild_member', { p_user:userId });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async disbandGuild(){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('disband_guild');
       if (error) return { error };
       return data || { ok:true };
     },

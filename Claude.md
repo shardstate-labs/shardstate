@@ -7,7 +7,25 @@ Last updated: 2026-04-27
 - PWA + Web platform on Vercel.
 - Supabase project `ivtnqwqmhdotsralghjt` in `sa-east-1`.
 - Single repo: `https://github.com/shardstate-labs/shardstate`, branch `main`.
-- Current asset cache version: `v=41`.
+- Current asset cache version: `v=44`.
+
+## Supabase Access Rule
+
+- At the start of any new Codex session that needs Supabase, use the Supabase MCP server first:
+  - `codex mcp list`
+  - `codex mcp login supabase`
+- The MCP server is `https://mcp.supabase.com/mcp?project_ref=ivtnqwqmhdotsralghjt`.
+- Repo-level `.mcp.json` also points to the same Supabase MCP server so new sessions can discover it from the project root.
+- Do not use Supabase CLI remote DB commands (`migration fetch`, `db push`, `db query --linked`, etc.) as the first connection path unless the user explicitly asks for CLI.
+- Do not run interactive migration commands or overwrite local migration files without explicit confirmation.
+- If MCP tools are not visible after login, ask the user to verify `/mcp` or restart Codex before attempting remote DB changes.
+- If `codex mcp login supabase` succeeds but Supabase tools still do not appear in the current tool list, the current Codex process needs a fresh session/reload; auth is already valid.
+
+## External Tool Access
+
+- GitHub is available through the Codex GitHub plugin for `shardstate-labs/shardstate`; verify with branch/search tools before repository operations.
+- Vercel is available through the Codex Vercel plugin; verify teams/projects/deployments through connector tools before deploy work.
+- `gh` and `vercel` CLI may not be installed in PATH on Windows; prefer the Codex plugins unless the user explicitly asks to install local CLIs.
 
 ## Live URLs
 
@@ -181,6 +199,7 @@ Future modes are intentionally not enabled yet:
 - Do not rename cards or clans unless explicitly requested.
 - Do not rewrite core round math unless explicitly requested.
 - Server state in Supabase is authoritative where available.
+- `localStorage` may hold UI prefs, one-tab handoff payloads, offline retry queues, or legacy fallback caches only; do not add authoritative game/account/economy state there when Supabase sync is available.
 - Bump cache globally on every deploy.
 - Prefer small, targeted edits over broad rewrites.
 - Validate before reporting done.

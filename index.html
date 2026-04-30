@@ -981,7 +981,9 @@ const RAR_COLORS = { C:'#6B7280', U:'#3498DB', R:'#F7B731', M:'#B5179E' };
   const uid = !window.SB ? localStorage.getItem(AUTH_SESSION_KEY) : '';
   if(uid && AUTH.db.users[uid]){
     window.location.replace('gamehub/index.html');
+    return;
   }
+  if(ref) setTimeout(() => openAuth('register'), 0);
 })();
 
 /** Mirrors a Supabase auth user (+ profile + game_state) into the

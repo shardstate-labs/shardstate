@@ -378,15 +378,17 @@ function seededHand(deckIds, seed){
 // ─── MATCHMAKING ─────────────────────────────────────────────
 function startMode(mode){
   // Abandon-streak lockout (5 min after 3 abandons in a row).
-  try {
-    const cur = JSON.parse(localStorage.getItem('shs_player') || '{}');
-    if (cur.lockoutUntil && Date.now() < cur.lockoutUntil) {
-      const sec = Math.ceil((cur.lockoutUntil - Date.now())/1000);
-      const mm = Math.floor(sec/60), ss = String(sec%60).padStart(2,'0');
+  if (!window.SHS_SYNC) {
+    try {
+      const cur = JSON.parse(localStorage.getItem('shs_player') || '{}');
+      if (cur.lockoutUntil && Date.now() < cur.lockoutUntil) {
+        const sec = Math.ceil((cur.lockoutUntil - Date.now())/1000);
+        const mm = Math.floor(sec/60), ss = String(sec%60).padStart(2,'0');
       alert(`⛔ ${gt('abandonLock')} ${mm}:${ss}.`);
-      return;
-    }
-  } catch(_){}
+        return;
+      }
+    } catch(_){}
+  }
   goScreen('matchmaking');
   document.getElementById('mm-tag').textContent   = MODE_META[mode].tag;
   document.getElementById('mm-title').textContent = MODES[mode].label;
@@ -483,6 +485,7 @@ async function beginPvpBattle(mode, row, uid){
     channel, localMove:null, remoteMove:null, resolving:false, finalized:false,
   });
   channel.onMove(payload => handlePvpMove(payload));
+  channel.onStatus(row => handlePvpMatchStatus(row));
   beginBattle(mode, {
     id: match.id,
     side: match.side,
@@ -566,6 +569,26 @@ function beginBattle(mode, pvpMatch){
   appendLog(`${gt('battleStarted')} · ${MODES[mode].label}`, '');
   if(pvpMatch) appendLog(gt('pvpReady'), '');
   showTurnBanner(()=> startRoundTimer());
+}
+
+function handlePvpMatchStatus(row){
+  if(!APP.battle?.pvp || !APP.pvp || APP.screen === 'end') return;
+  const status = String(row?.status || '').toLowerCase();
+  const winnerUid = pickMatchValue(row, ['winner_uid','winner_user_id','winner','winner_id'], null);
+  const finished = !!winnerUid || ['finished','finalized','completed','complete','ended','abandoned'].includes(status);
+  if(!finished || APP.pvp.finalized) return;
+
+  APP.pvp.finalized = true;
+  if(winnerUid === APP.pvp.uid) APP.battle.winner = 'p';
+  else if(winnerUid === APP.pvp.opponentId) APP.battle.winner = 'o';
+  else APP.battle.winner = 'draw';
+
+  appendLog(
+    APP.battle.winner === 'p' ? gt('win') : APP.battle.winner === 'o' ? gt('defeat') : gt('draw'),
+    APP.battle.winner === 'p' ? 'win' : APP.battle.winner === 'o' ? 'loss' : ''
+  );
+  try { clearInterval(APP.roundTimerId); APP.roundTimerId = null; } catch(_){}
+  setTimeout(()=> showEnd(), 500);
 }
 
 function layoutHand(side, ids, faceDown){
@@ -1345,17 +1368,19 @@ function surrenderForced(){
 }
 // Abandon penalty: 3 in a row → 5-min lockout + 2× ELO loss multiplier on next match.
 function recordAbandon(){
-  try {
-    const KEY = 'shs_player';
-    const cur = JSON.parse(localStorage.getItem(KEY) || '{}');
-    cur.abandonStreak = (cur.abandonStreak||0) + 1;
-    cur.lastAbandonAt = Date.now();
-    if (cur.abandonStreak >= 3) {
-      cur.lockoutUntil = Date.now() + 5*60*1000;
-      cur.eloPenaltyMult = 2;
-    }
-    localStorage.setItem(KEY, JSON.stringify(cur));
-  } catch(_){}
+  if (!window.SHS_SYNC) {
+    try {
+      const KEY = 'shs_player';
+      const cur = JSON.parse(localStorage.getItem(KEY) || '{}');
+      cur.abandonStreak = (cur.abandonStreak||0) + 1;
+      cur.lastAbandonAt = Date.now();
+      if (cur.abandonStreak >= 3) {
+        cur.lockoutUntil = Date.now() + 5*60*1000;
+        cur.eloPenaltyMult = 2;
+      }
+      localStorage.setItem(KEY, JSON.stringify(cur));
+    } catch(_){}
+  }
   if (APP?.battle?.pvp) {
     finalizePvpBattle('abandon');
     return;
@@ -1372,6 +1397,7 @@ function recordAbandon(){
   } catch(_){}
 }
 function clearAbandonStreak(){
+  if (window.SHS_SYNC) return;
   try {
     const KEY = 'shs_player';
     const cur = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -1385,13 +1411,17 @@ function showEnd(){
   const B = APP.battle;
   // Successful battle clears the abandon streak.
   clearAbandonStreak();
-  // Queue Battle Pass XP for the gamehub to consume.
-  try {
-    const xp = B.winner === 'p' ? 30 : (B.winner === 'o' ? 15 : 20);
-    const cur = JSON.parse(localStorage.getItem('shs_bp_pending') || '{"xp":0,"battles":0,"wins":0}');
-    cur.xp += xp; cur.battles += 1; if (B.winner==='p') cur.wins += 1;
-    localStorage.setItem('shs_bp_pending', JSON.stringify(cur));
-  } catch(_){}
+  // Queue local Battle Pass XP only for offline/local fallback battles.
+  // Supabase finalization already persists battle_pass XP; optimistic local XP
+  // makes Gamehub show a higher value that drops after refresh.
+  if (!B.pvp && !window.SHS_SYNC) {
+    try {
+      const xp = B.winner === 'p' ? 30 : (B.winner === 'o' ? 15 : 20);
+      const cur = JSON.parse(localStorage.getItem('shs_bp_pending') || '{"xp":0,"battles":0,"wins":0}');
+      cur.xp += xp; cur.battles += 1; if (B.winner==='p') cur.wins += 1;
+      localStorage.setItem('shs_bp_pending', JSON.stringify(cur));
+    } catch(_){}
+  }
   goScreen('end');
 
   const card = document.getElementById('end-card');
