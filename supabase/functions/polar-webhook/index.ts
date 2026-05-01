@@ -1,58 +1,85 @@
-// SHARDSTATE — Polar.sh webhook handler (Phase 4).
+// SHARDSTATE - Polar webhook handler.
 //
-// Deploy URL (production):
+// Deploy URL:
 //   https://ivtnqwqmhdotsralghjt.supabase.co/functions/v1/polar-webhook
 //
-// Required secrets (set via `supabase secrets set …`):
+// Required secrets:
 //   SUPABASE_URL                 (auto-provided)
 //   SUPABASE_SERVICE_ROLE_KEY    (auto-provided)
-//   POLAR_WEBHOOK_SECRET         (from Polar dashboard → Webhooks → Signing secret)
+//   POLAR_WEBHOOK_SECRET         (Polar webhook signing secret)
 //
 // Polar dashboard config:
-//   - Add webhook → URL: <deploy URL above>
-//   - Subscribe to: order.created, order.refunded
-//   - Enable signing → copy the secret into POLAR_WEBHOOK_SECRET
-//
-// Product mapping (set in Polar dashboard, name MUST match exactly):
-//   - "BP_PREMIUM" → grants Battle Pass Premium ($20 one-shot)
-//   - "FLUX_5"     → +5  FLUX
-//   - "FLUX_10"    → +10 FLUX
-//   - "FLUX_30"    → +30 FLUX
-//   - "FLUX_50"    → +50 FLUX
-//
-// At checkout time the frontend (js/payments.js) MUST attach `metadata.shs_uid`
-// equal to the Supabase user.id so this handler can resolve the recipient.
+//   - Delivery format: Raw
+//   - Subscribe to: order.paid, order.refunded
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const SB_URL  = Deno.env.get('SUPABASE_URL')!;
-const SB_SVC  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const SECRET  = Deno.env.get('POLAR_WEBHOOK_SECRET') || '';
+const SB_URL = Deno.env.get('SUPABASE_URL')!;
+const SB_SVC = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const SECRET = Deno.env.get('POLAR_WEBHOOK_SECRET') || '';
 
 const sb = createClient(SB_URL, SB_SVC, { auth: { persistSession: false } });
 
 const FLUX_GRANTS: Record<string, number> = {
-  FLUX_5:  5,
+  FLUX_5: 5,
   FLUX_10: 10,
   FLUX_30: 30,
   FLUX_50: 50,
 };
 
-// ── HMAC-SHA256 signature verification ──────────────────────────────
-// Polar signs the raw body with the webhook secret. We compute HMAC and
-// compare in constant time. Header name: `polar-signature` (hex).
-async function verifySignature(body: string, signature: string): Promise<boolean> {
-  if (!SECRET || !signature) return false;
+async function verifySignature(body: string, headers: Headers): Promise<boolean> {
+  const id = headers.get('webhook-id') || '';
+  const timestamp = headers.get('webhook-timestamp') || '';
+  const signature = headers.get('webhook-signature') || '';
+  if (!SECRET || !id || !timestamp || !signature) return false;
+
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) return false;
+  if (Math.abs(Date.now() / 1000 - ts) > 10 * 60) return false;
+
+  const payload = `${id}.${timestamp}.${body}`;
+  const signatures = signature
+    .split(/\s+/)
+    .flatMap(part => part.split(','))
+    .map(part => part.trim())
+    .filter(Boolean)
+    .map(part => part.startsWith('v1,') ? part.slice(3) : part)
+    .map(part => part.startsWith('v1=') ? part.slice(3) : part)
+    .filter(Boolean);
+
+  for (const keyBytes of secretCandidates(SECRET)) {
+    const digest = await hmacBase64(keyBytes, payload);
+    if (signatures.some(sig => timingSafeEqual(digest, sig))) return true;
+  }
+  return false;
+}
+
+async function hmacBase64(keyBytes: Uint8Array, payload: string): Promise<string> {
   const enc = new TextEncoder();
   const key = await crypto.subtle.importKey(
-    'raw', enc.encode(SECRET),
-    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    'raw',
+    keyBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
   );
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(body));
-  const hex = Array.from(new Uint8Array(sig))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
-  return timingSafeEqual(hex, signature.toLowerCase().replace(/^sha256=/, ''));
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(payload));
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
+}
+
+function secretCandidates(secret: string): Uint8Array[] {
+  const enc = new TextEncoder();
+  const raw = secret.startsWith('whsec_') ? secret.slice(6) : secret;
+  const candidates = [enc.encode(secret)];
+  if (raw !== secret) candidates.push(enc.encode(raw));
+  try {
+    const bin = atob(raw);
+    candidates.push(Uint8Array.from(bin, c => c.charCodeAt(0)));
+  } catch {
+    // Not base64; the UTF-8 candidates above are enough.
+  }
+  return candidates;
 }
 
 function timingSafeEqual(a: string, b: string): boolean {
@@ -62,13 +89,39 @@ function timingSafeEqual(a: string, b: string): boolean {
   return r === 0;
 }
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+function resolveProduct(data: any): string {
+  return String(
+    data?.metadata?.shs_product ||
+    data?.checkout?.metadata?.shs_product ||
+    data?.product?.name ||
+    data?.product_name ||
+    data?.items?.[0]?.product?.name ||
+    '',
+  );
+}
+
+function resolveUserId(data: any): string {
+  return String(
+    data?.metadata?.shs_uid ||
+    data?.checkout?.metadata?.shs_uid ||
+    data?.customer?.metadata?.shs_uid ||
+    data?.customer?.external_id ||
+    '',
+  );
+}
+
 serve(async (req) => {
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 });
 
-  const sig  = req.headers.get('polar-signature') || req.headers.get('webhook-signature') || '';
   const body = await req.text();
-
-  if (!await verifySignature(body, sig)) {
+  if (!await verifySignature(body, req.headers)) {
     return new Response('invalid signature', { status: 401 });
   }
 
@@ -76,79 +129,76 @@ serve(async (req) => {
   try { evt = JSON.parse(body); }
   catch { return new Response('invalid json', { status: 400 }); }
 
-  // Polar event envelope: { type, data: { ... } }
   const type = evt?.type || '';
   const data = evt?.data || {};
-
-  // Resolve user + product (defensive: Polar payload shape can vary by version).
-  const userId  = data?.metadata?.shs_uid || data?.customer?.metadata?.shs_uid || null;
-  const product = data?.product?.name      || data?.product_name              || data?.items?.[0]?.product?.name || '';
-  const orderId = data?.id                  || data?.order_id                 || '';
-  const amount  = data?.amount              ?? data?.total_amount             ?? 0;
-  const ccy     = data?.currency            || 'USD';
+  const userId = resolveUserId(data);
+  const product = resolveProduct(data);
+  const orderId = data?.id || data?.order_id || data?.order?.id || '';
+  const amount = data?.amount ?? data?.total_amount ?? data?.net_amount ?? 0;
+  const ccy = data?.currency || 'USD';
 
   if (!userId || !product || !orderId) {
-    return new Response(JSON.stringify({ ignored: 'missing fields', type }), {
-      status: 200, headers: { 'content-type': 'application/json' },
-    });
+    return json({ ignored: 'missing_fields', type });
   }
 
-  if (type === 'order.created' || type === 'checkout.completed') {
-    // Idempotent insert (UNIQUE on provider + provider_id).
+  if (type === 'order.paid' || type === 'checkout.completed') {
     const { error: insErr } = await sb.from('purchases').insert({
-      user_id:      userId,
-      provider:     'polar',
-      provider_id:  orderId,
-      product_id:   product,
+      user_id: userId,
+      provider: 'polar',
+      provider_id: orderId,
+      product_id: product,
       amount_cents: amount | 0,
-      currency:     ccy,
-      status:       'paid',
-      raw:          data,
-      paid_at:      new Date().toISOString(),
+      currency: ccy,
+      status: 'paid',
+      raw: data,
+      paid_at: new Date().toISOString(),
     });
-    // Duplicate = already processed; treat as success.
+
     if (insErr && !String(insErr.message || '').includes('duplicate')) {
       console.error('purchase insert failed', insErr);
       return new Response('db error', { status: 500 });
     }
-    if (insErr) return new Response(JSON.stringify({ ok: true, dedup: true }), { status: 200 });
+    if (insErr) return json({ ok: true, dedup: true });
 
-    // Look up the row we just inserted to use its id as source_purchase.
     const { data: purch } = await sb.from('purchases')
-      .select('id').eq('provider', 'polar').eq('provider_id', orderId).maybeSingle();
+      .select('id')
+      .eq('provider', 'polar')
+      .eq('provider_id', orderId)
+      .maybeSingle();
     const purchaseId = purch?.id || null;
 
-    // Grant entitlements based on product.
     if (product === 'BP_PREMIUM') {
       await sb.rpc('grant_bp_premium', { p_uid: userId });
       await sb.from('entitlements').insert({
-        user_id: userId, kind: 'bp_premium', value_int: 1, source_purchase: purchaseId,
+        user_id: userId,
+        kind: 'bp_premium',
+        value_int: 1,
+        source_purchase: purchaseId,
       });
     } else if (FLUX_GRANTS[product] != null) {
       const flux = FLUX_GRANTS[product];
       await sb.rpc('grant_flux', { p_uid: userId, p_amount: flux });
       await sb.from('entitlements').insert({
-        user_id: userId, kind: 'flux_credits', value_int: flux, source_purchase: purchaseId,
+        user_id: userId,
+        kind: 'flux_credits',
+        value_int: flux,
+        source_purchase: purchaseId,
       });
       await sb.rpc('grant_referral_flux_once', { p_referred_uid: userId, p_purchase_id: purchaseId });
     } else {
       console.warn('unknown product', product);
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200, headers: { 'content-type': 'application/json' },
-    });
+    return json({ ok: true });
   }
 
   if (type === 'order.refunded') {
     await sb.from('purchases')
       .update({ status: 'refunded' })
-      .eq('provider', 'polar').eq('provider_id', orderId);
-    // Note: we do NOT auto-claw-back FLUX/premium. Manual review per refund.
-    return new Response(JSON.stringify({ ok: true, refunded: orderId }), { status: 200 });
+      .eq('provider', 'polar')
+      .eq('provider_id', orderId);
+    return json({ ok: true, refunded: orderId });
   }
 
-  return new Response(JSON.stringify({ ignored: type }), {
-    status: 200, headers: { 'content-type': 'application/json' },
-  });
+  return json({ ignored: type });
 });

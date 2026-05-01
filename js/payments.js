@@ -50,6 +50,17 @@
     return u.toString();
   }
 
+  function returnUrl(){
+    return location.origin + location.pathname;
+  }
+
+  function openCheckout(url){
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!win) {
+      location.href = url;
+    }
+  }
+
   const SHS_PAY = {
     /** Open a Polar checkout for the given product. Resolves once the new
      *  tab is opened (does NOT wait for payment).
@@ -61,6 +72,24 @@
       const user = await SB.getUser();
       if (!user) return { ok:false, error:'not_authenticated' };
 
+      try {
+        const sb = await SB.client();
+        const { data, error } = await sb.functions.invoke('polar-checkout', {
+          body: {
+            product,
+            success_url: successUrl(product),
+            return_url: returnUrl(),
+          },
+        });
+        if (!error && data?.url) {
+          openCheckout(data.url);
+          return { ok:true };
+        }
+        if (error) console.warn('polar-checkout unavailable, falling back to buy link', error);
+      } catch (err) {
+        console.warn('polar-checkout failed, falling back to buy link', err);
+      }
+
       const link = buyLink(product);
       if (!link) return { ok:false, error:'product_not_configured' };
 
@@ -70,11 +99,7 @@
       url.searchParams.set('metadata[shs_uid]', user.id);
       url.searchParams.set('success_url', successUrl(product));
 
-      const win = window.open(url.toString(), '_blank', 'noopener,noreferrer');
-      if (!win) {
-        // Pop-up blocked → fall back to same-tab navigation.
-        location.href = url.toString();
-      }
+      openCheckout(url.toString());
       return { ok:true };
     },
 
