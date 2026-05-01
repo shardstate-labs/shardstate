@@ -32,3 +32,5 @@ npm-debug.log*
 # Local-only test/scratch files
 scratch/
 *.local.html
+
+.vercel
