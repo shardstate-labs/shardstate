@@ -1414,12 +1414,31 @@ async function searchAndAddFriend() {
   host.innerHTML = rows.map(p => renderFriendRow(p, `<button class="btn-mini" onclick="sendFriend('${p.user_id}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar':'Add'}</button>`)).join('');
 }
 async function sendFriend(uid, username) {
-  const r = await SB.sendFriendRequest(uid);
+  if (!uid || uid === view.user?.uid) return toast(currentLang==='es'?'No puedes agregarte a ti mismo.':'You cannot add yourself.');
+  if (!window.SB || !SB.sendFriendRequest) return toast(currentLang==='es'?'Social requiere conexion.':'Social requires connection.');
+  let r;
+  try {
+    r = await SB.sendFriendRequest(uid);
+  } catch(e) {
+    return toast(currentLang==='es'?'No se pudo enviar la solicitud.':'Could not send the request.');
+  }
   if (r.error) return toast(socialError(r.error));
   toast(`${currentLang==='es'?'Solicitud enviada a':'Request sent to'} ${username}.`);
   document.querySelector('.social-modal')?.remove();
   renderFriends();
 }
+async function sendFriendFromProfile(btn, uid, username) {
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = currentLang === 'es' ? 'Enviando...' : 'Sending...';
+  }
+  await sendFriend(uid, username);
+  if (btn && document.body.contains(btn)) {
+    btn.disabled = false;
+    btn.textContent = currentLang === 'es' ? 'Agregar amigo' : 'Add friend';
+  }
+}
+window.sendFriendFromProfile = sendFriendFromProfile;
 async function respondFriend(requestId, accept) {
   const r = await SB.respondFriendRequest(requestId, accept);
   if (r.error) return toast(socialError(r.error));
@@ -1454,13 +1473,16 @@ async function openUserProfile(uid) {
   const isFriend = friends.some(f => f.user_id === uid);
   const sentReq = sent.find(req => req.to?.user_id === uid);
   const incomingReq = incoming.find(req => req.from?.user_id === uid);
-  const socialAction = isFriend
+  const isSelf = uid === view.user?.uid;
+  const socialAction = isSelf
+    ? `<span class="social-pending">${currentLang==='es'?'Este es tu perfil':'This is your profile'}</span>`
+    : isFriend
     ? `<button class="btn-mini" onclick="openDm('${uid}', ${jsLit(p.username || 'friend')})">Chat</button>`
     : incomingReq
       ? `<button class="btn-mini" onclick="respondFriend('${incomingReq.id}', true); this.closest('.social-modal').remove();">${currentLang==='es'?'Aceptar amistad':'Accept friend'}</button>`
       : sentReq
         ? `<span class="social-pending">${currentLang==='es'?'Solicitud enviada':'Request sent'}</span>`
-        : `<button class="btn-mini" onclick="sendFriend('${uid}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar amigo':'Add friend'}</button>`;
+        : `<button class="btn-mini" onclick="sendFriendFromProfile(this, '${uid}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar amigo':'Add friend'}</button>`;
   const modal = document.createElement('div');
   modal.className = 'social-modal';
   modal.innerHTML = `
@@ -1904,7 +1926,7 @@ function renderGuilds() {
   const list = byId('guild-directory');
   list.innerHTML = '';
   const guilds = (view.db.guilds || []).filter(g => !q || g.name.toLowerCase().includes(q));
-  const directoryGuilds = myGuild ? guilds.filter(g => g.id !== myGuild.id) : guilds;
+  const directoryGuilds = guilds;
   if (!directoryGuilds.length) {
     list.innerHTML = `<div class="feed-muted">${t('no_guilds')}</div>`;
   } else {
@@ -2033,7 +2055,7 @@ async function renderGuildsServer() {
     }
   }
 
-  const directoryGuilds = myGuild ? guilds.filter(g => g.id !== myGuild.id) : guilds;
+  const directoryGuilds = guilds;
   if (!directoryGuilds.length) {
     list.innerHTML = `<div class="feed-muted">${t('no_guilds')}</div>`;
   } else {

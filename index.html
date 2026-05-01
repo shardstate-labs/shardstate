@@ -851,7 +851,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
 </div>
 
 <script src="js/config.js"></script>
-<script src="js/sb.js?v=61"></script>
+<script src="js/sb.js?v=62"></script>
 <script>
 // ── COMPREHENSIVE LANG SYSTEM ──────────────────────────────────
 const LANDING_I18N = {
@@ -1041,6 +1041,8 @@ async function mirrorSupabaseUserToLocal(authUser){
   }, existing);
   // Pull DB values when present.
   u.username = profile?.username || u.username;
+  u.referralCode = profile?.referral_code || u.referralCode || '';
+  u.referredByUid = profile?.referred_by || u.referredByUid || null;
   if (gs) {
     u.shardsBalance = gs.shards ?? u.shardsBalance;
     u.fluxBalance   = gs.flux   ?? u.fluxBalance;
@@ -1060,12 +1062,43 @@ async function mirrorSupabaseUserToLocal(authUser){
       console.warn('protocol username generation failed:', e);
     }
   }
+  await applyPendingReferralToUser(u, profile);
   AUTH.db.users[uid] = u;
   if (u.email) AUTH.db.emailToUid[u.email] = uid;
   saveAuthDb();
   localStorage.setItem(AUTH_SESSION_KEY, uid);
   AUTH.currentUser = u;
   return u;
+}
+
+async function applyPendingReferralToUser(user, profile){
+  const refCode = sessionStorage.getItem(REF_SESSION_KEY);
+  if(!user || !refCode || user.referredByUid || profile?.referred_by) return;
+  let sponsor = Object.values(AUTH.db.users || {}).find(x => x.referralCode === refCode);
+  if(!sponsor && window.SB && SB.findProfileByReferralCode){
+    const sp = await SB.findProfileByReferralCode(refCode);
+    if(sp) sponsor = { uid:sp.user_id, username:sp.username, referralCode:sp.referral_code };
+  }
+  if(!sponsor || sponsor.uid === user.uid) {
+    sessionStorage.removeItem(REF_SESSION_KEY);
+    return;
+  }
+  user.referredByUid = sponsor.uid;
+  sponsor.referrals = sponsor.referrals || [];
+  if(!sponsor.referrals.includes(user.uid)) sponsor.referrals.push(user.uid);
+  if(window.SB && SB.upsertProfile){
+    const patch = {
+      referred_by: sponsor.uid,
+      referral_code: user.referralCode || '',
+    };
+    if(user.username) patch.username = user.username;
+    const r = await SB.upsertProfile(user.uid, patch);
+    if(r?.error) {
+      console.warn('referral persist failed:', r.error);
+      return;
+    }
+  }
+  sessionStorage.removeItem(REF_SESSION_KEY);
 }
 
 // ── AUTH DB ─────────────────────────────────────────────────────
