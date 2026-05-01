@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=64"/>
+<link rel="stylesheet" href="./styles.css?v=65"/>
 </head>
 <body>
 
@@ -23,7 +23,7 @@
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="sidebar-brand">SHARD<span>STATE</span></div>
-      <div class="sidebar-tagline" data-i18n="sidebar_tagline">ABSTRACT CHAIN</div>
+      <div class="sidebar-tagline" data-i18n="sidebar_tagline">CARD BATTLE</div>
     </div>
 
     <nav class="sidebar-nav">
@@ -79,7 +79,7 @@
     </button>
 
     <div class="sidebar-currencies">
-      <div class="currency-row" title="SHARDS — off-chain earned currency">
+      <div class="currency-row" title="SHARDS — earned in-game currency">
         <span class="currency-icon shards">◈</span>
         <span class="currency-label">SHARDS</span>
         <span class="currency-val" id="sb-shards">—</span>
@@ -89,9 +89,9 @@
         <span class="currency-label">FLUX</span>
         <span class="currency-val" id="sb-flux">—</span>
       </div>
-      <div class="currency-row" title="$SHS — on-chain token">
+      <div class="currency-row hidden-compliance" title="Inactive game balance">
         <span class="currency-icon shs">◎</span>
-        <span class="currency-label">$SHS</span>
+        <span class="currency-label">Legacy</span>
         <span class="currency-val" id="sb-shs">—</span>
       </div>
     </div>
@@ -120,9 +120,9 @@
       </div>
       <div class="topbar-right">
         <button class="btn-lang" id="lang-toggle" onclick="toggleLang()">ES</button>
-        <button class="btn-wallet" onclick="connectWallet()">
+        <button class="btn-account-link hidden-compliance" onclick="connectAccountLink()">
           <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M21 18v1c0 1.1-.9 2-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h14c1.1 0 2 .9 2 2v1h-9a2 2 0 00-2 2v8a2 2 0 002 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-          <span data-i18n="topbar_wallet">Connect Wallet</span>
+          <span data-i18n="topbar_account_link">Account Link</span>
         </button>
       </div>
     </header>
@@ -253,13 +253,13 @@
         <div class="panel-header">
           <div class="panel-header-left">
             <h1 data-i18n="panel_mercado_title">Market</h1>
-            <p data-i18n="panel_mercado_sub">Trade cards off-chain with SHARDS or on-chain with $SHS</p>
+            <p data-i18n="panel_mercado_sub">List cards and review in-game transaction history</p>
           </div>
         </div>
 
         <div class="market-tabs">
-          <button class="market-tab active" data-mtab="offchain" data-i18n="market_tab_offchain">Off-Chain (SHARDS)</button>
-          <button class="market-tab" data-mtab="onchain" data-i18n="market_tab_onchain">On-Chain ($SHS)</button>
+          <button class="market-tab active" data-mtab="offchain" data-i18n="market_tab_offchain">Card Listings</button>
+          <button class="market-tab hidden-compliance" data-mtab="onchain" data-i18n="market_tab_onchain">Coming Soon</button>
           <button class="market-tab" data-mtab="history" data-i18n="market_tab_history">History</button>
         </div>
 
@@ -321,9 +321,9 @@
         <div id="mtab-onchain" style="display:none">
           <div class="card-block" style="text-align:center;padding:48px 24px">
             <div style="font-size:2rem;margin-bottom:16px">◎</div>
-            <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:900;margin-bottom:8px" data-i18n="market_onchain_title">ON-CHAIN MARKET</div>
-            <div style="font-size:0.82rem;color:var(--text2);max-width:360px;margin:0 auto 20px" data-i18n="market_onchain_desc">Trade NFT cards with $SHS tokens on Abstract Chain. Connect your wallet to access.</div>
-            <button class="btn btn-primary" onclick="connectWallet()" data-i18n="market_onchain_btn">Connect Wallet to Trade</button>
+            <div style="font-family:var(--font-head);font-size:0.9rem;font-weight:900;margin-bottom:8px" data-i18n="market_onchain_title">FEATURE LOCKED</div>
+            <div style="font-size:0.82rem;color:var(--text2);max-width:360px;margin:0 auto 20px" data-i18n="market_onchain_desc">This feature is not available in the current public build.</div>
+            <button class="btn btn-primary" onclick="showTab('mercado')" data-i18n="market_onchain_btn">Back to Listings</button>
           </div>
         </div>
 
@@ -541,16 +541,16 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=64"></script>
-<script src="../engine/ability_catalog.js?v=64"></script>
-<script src="../engine/round_engine.js?v=64"></script>
-<script src="../engine/utils.js?v=64"></script>
-<script src="../js/config.js?v=64"></script>
-<script src="../js/sb.js?v=64"></script>
-<script src="../js/sync.js?v=64"></script>
-<script src="../js/pvp.js?v=64"></script>
-<script src="../js/payments.js?v=64"></script>
-<script src="./app.js?v=64"></script>
+<script src="../engine/cards.js?v=65"></script>
+<script src="../engine/ability_catalog.js?v=65"></script>
+<script src="../engine/round_engine.js?v=65"></script>
+<script src="../engine/utils.js?v=65"></script>
+<script src="../js/config.js?v=65"></script>
+<script src="../js/sb.js?v=65"></script>
+<script src="../js/sync.js?v=65"></script>
+<script src="../js/pvp.js?v=65"></script>
+<script src="../js/payments.js?v=65"></script>
+<script src="./app.js?v=65"></script>
 </body>
 </html>
 

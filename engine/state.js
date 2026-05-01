@@ -6,7 +6,7 @@ const STATE = {
   collection: {}, // cardId -> {lv, xp}
   deck: [],       // array of cardIds (max 8)
   selectedMode: 'casual',
-  wallet: null,
+  accountLink: null,
   marketFilter: 'cards',
   clanFilter: 'all',
   collectionFilters: {clan:'all', stars:'all', rarity:'all', owned:'all', page:1, pageSize:15},

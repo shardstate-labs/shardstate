@@ -48,7 +48,7 @@ const I18N = {
     nav_mercado:'MERCADO', nav_guilds:'GREMIOS', nav_shop:'LA TIENDA',
     tab_jugar:'JUGAR', tab_perfil:'PERFIL', tab_coleccion:'COLECCIÓN',
     tab_mercado:'MERCADO', tab_guilds:'GREMIOS', tab_shop:'LA TIENDA',
-    topbar_wallet:'Conectar Wallet', topbar_logout:'Cerrar sesión',
+    topbar_account_link:'Vincular cuenta', topbar_logout:'Cerrar sesión',
     panel_learn_title:'Aprender', panel_learn_sub:'Reglas, modos, rangos, clanes y mecánicas de cartas',
     panel_missions_title:'Misiones', panel_missions_sub:'Completa objetivos para ganar SHARDS y desbloquear cartas TITAN/ECO',
     panel_community_title:'Comunidad', panel_community_sub:'Foro, Discord y presets compartidos',
@@ -72,9 +72,9 @@ const I18N = {
     market_live:'Ofertas del mercado', market_buy_history:'Historial de compras',
     market_sell_history:'Historial de ventas',
     market_list_btn:'Listar', market_buy_btn:'Comprar',
-    market_tab_offchain:'Off-Chain (SHARDS)', market_tab_onchain:'On-Chain ($SHS)', market_tab_history:'Historial',
-    market_onchain_title:'MERCADO ON-CHAIN', market_onchain_desc:'Intercambia cartas NFT con tokens $SHS en Abstract Chain. Conecta tu wallet para acceder.',
-    market_onchain_btn:'Conectar Wallet',
+    market_tab_offchain:'Cartas listadas', market_tab_onchain:'Próximamente', market_tab_history:'Historial',
+    market_onchain_title:'FUNCIÓN BLOQUEADA', market_onchain_desc:'Esta función no está disponible en la versión pública actual.',
+    market_onchain_btn:'Volver a ofertas',
     market_price_ph:'Precio en SHARDS',
     shop_last_opened:'Último Pack Abierto', shop_empty:'Abre un pack para ver el resultado.',
     guild_create:'Crear Gremio', guild_create_tab:'Crear Gremio', guild_create_cost:'2 FLUX',
@@ -94,7 +94,7 @@ const I18N = {
     profile_toast_username_saved:'Nombre de usuario actualizado.', profile_err_email_invalid:'Correo invalido.',
     profile_toast_email_confirm:'Revisa tu nuevo correo para confirmar el cambio.', profile_err_password_short:'Minimo 6 caracteres.',
     profile_toast_password_saved:'Contrasena actualizada.',
-    sidebar_tagline:'ABSTRACT CHAIN', logout:'Cerrar sesión',
+    sidebar_tagline:'CARD BATTLE', logout:'Cerrar sesión',
     community_forum:'Foro', community_join:'Únete a la Comunidad',
     community_discord:'Servidor Discord', community_presets:'Presets Públicos',
     learn_tab_rules:'Reglas', learn_tab_modes:'Modos', learn_tab_rankings:'Rankings',
@@ -109,10 +109,10 @@ const I18N = {
     pack_8_name:'Pack de 8 cartas', pack_8_desc:'8 cartas aleatorias · todos los clanes principales',
     pack_20_name:'Pack de 20 cartas', pack_20_desc:'20 cartas aleatorias · todos los clanes principales',
     pack_open_btn:'Abrir Pack', pack_last:'Última apertura',
-    mode_classic:'CASUAL', mode_classic_sub:'PvP off-chain · Sin ELO',
-    mode_ranked:'RANKED', mode_ranked_sub:'ELO semanal off-chain',
+    mode_classic:'CASUAL', mode_classic_sub:'PvP · Sin ELO',
+    mode_ranked:'RANKED', mode_ranked_sub:'ELO semanal',
     mode_training:'ENTRENAMIENTO', mode_training_sub:'Jugador vs IA · XP baja',
-    gate_sub:'ABSTRACT CHAIN · TCG ON-CHAIN',
+    gate_sub:'JUEGO DE CARTAS COMPETITIVO',
     gate_msg:'Inicia sesión desde la app para acceder al portal.',
     gate_btn:'⚡ ENTRAR AL JUEGO',
     gate_hint:'La sesión se crea automáticamente al hacer login en la app.',
@@ -128,9 +128,9 @@ const I18N = {
     no_preset:'Sin presets', no_pack_open:'Abre un pack para ver el resultado.',
     leader_only:'Solo el líder gestiona solicitudes.',
     member_badge:'Miembro', requested_badge:'Solicitud enviada',
-    members_label:'miembro(s)', version:'v0.9 · Abstract Chain',
-    tagline:'ABSTRACT CHAIN',
-    currency_shards:'SHARDS', currency_flux:'FLUX', currency_shs:'$SHS',
+    members_label:'miembro(s)', version:'v0.9 · Card Battle',
+    tagline:'CARD BATTLE',
+    currency_shards:'SHARDS', currency_flux:'FLUX', currency_shs:'Legacy',
     add_deck:'+ Deck', remove_deck:'− Deck', sell_card:'Vender',
     in_deck_label:'EN DECK',
     deck_full:'Deck completo (8/8).', removed_deck:'Removido del deck.',
@@ -155,7 +155,7 @@ const I18N = {
     nav_mercado:'MARKET', nav_guilds:'GUILDS', nav_shop:'PACK SHOP',
     tab_jugar:'PLAY', tab_perfil:'PROFILE', tab_coleccion:'COLLECTION',
     tab_mercado:'MARKET', tab_guilds:'GUILDS', tab_shop:'PACK SHOP',
-    topbar_wallet:'Connect Wallet', topbar_logout:'Log out',
+    topbar_account_link:'Link Account', topbar_logout:'Log out',
     panel_learn_title:'Learn', panel_learn_sub:'Game rules, modes, rankings, clans, and card mechanics',
     panel_missions_title:'Missions', panel_missions_sub:'Complete objectives to earn SHARDS and unlock TITAN/ECO cards',
     panel_community_title:'Community', panel_community_sub:'Forum, Discord, and shared deck presets',
@@ -179,9 +179,9 @@ const I18N = {
     market_live:'Market Listings', market_buy_history:'Purchase History',
     market_sell_history:'Sales History',
     market_list_btn:'List', market_buy_btn:'Buy',
-    market_tab_offchain:'Off-Chain (SHARDS)', market_tab_onchain:'On-Chain ($SHS)', market_tab_history:'History',
-    market_onchain_title:'ON-CHAIN MARKET', market_onchain_desc:'Trade NFT cards with $SHS tokens on Abstract Chain. Connect your wallet to access.',
-    market_onchain_btn:'Connect Wallet to Trade',
+    market_tab_offchain:'Card Listings', market_tab_onchain:'Coming Soon', market_tab_history:'History',
+    market_onchain_title:'FEATURE LOCKED', market_onchain_desc:'This feature is not available in the current public build.',
+    market_onchain_btn:'Back to Listings',
     market_price_ph:'Price in SHARDS',
     shop_last_opened:'Last Opened', shop_empty:'Open a pack to see results.',
     guild_create:'Create Guild', guild_create_tab:'Create Guild', guild_create_cost:'2 FLUX',
@@ -201,7 +201,7 @@ const I18N = {
     profile_toast_username_saved:'Username updated.', profile_err_email_invalid:'Invalid email.',
     profile_toast_email_confirm:'Check your new email to confirm the change.', profile_err_password_short:'Minimum 6 characters.',
     profile_toast_password_saved:'Password updated.',
-    sidebar_tagline:'ABSTRACT CHAIN', logout:'Log out',
+    sidebar_tagline:'CARD BATTLE', logout:'Log out',
     community_forum:'Forum', community_join:'Join the Community',
     community_discord:'Discord Server', community_presets:'Public Presets',
     learn_tab_rules:'Rules', learn_tab_modes:'Modes', learn_tab_rankings:'Rankings',
@@ -214,10 +214,10 @@ const I18N = {
     pack_8_name:'8-card Pack', pack_8_desc:'8 random cards · all main clans',
     pack_20_name:'20-card Pack', pack_20_desc:'20 random cards · all main clans',
     pack_open_btn:'Open Pack', pack_last:'Last opened',
-    mode_classic:'CASUAL', mode_classic_sub:'Off-chain PvP · No ELO',
-    mode_ranked:'RANKED', mode_ranked_sub:'Weekly off-chain ELO',
+    mode_classic:'CASUAL', mode_classic_sub:'PvP · No ELO',
+    mode_ranked:'RANKED', mode_ranked_sub:'Weekly ELO',
     mode_training:'TRAINING', mode_training_sub:'Player vs AI · Low XP',
-    gate_sub:'ABSTRACT CHAIN · ON-CHAIN TCG',
+    gate_sub:'COMPETITIVE CARD GAME',
     gate_msg:'Log in from the app to access the portal.',
     gate_btn:'⚡ ENTER THE GAME',
     gate_hint:'Your session is created automatically when you log in from the app.',
@@ -233,9 +233,9 @@ const I18N = {
     no_preset:'No presets', no_pack_open:'Open a pack to see the result.',
     leader_only:'Only the guild leader manages requests.',
     member_badge:'Member', requested_badge:'Request sent',
-    members_label:'member(s)', version:'v0.9 · Abstract Chain',
-    tagline:'ABSTRACT CHAIN',
-    currency_shards:'SHARDS', currency_flux:'FLUX', currency_shs:'$SHS',
+    members_label:'member(s)', version:'v0.9 · Card Battle',
+    tagline:'CARD BATTLE',
+    currency_shards:'SHARDS', currency_flux:'FLUX', currency_shs:'Legacy',
     add_deck:'+ Deck', remove_deck:'− Deck', sell_card:'Sell',
     in_deck_label:'IN DECK',
     deck_full:'Deck full (8/8).', removed_deck:'Removed from deck.',
@@ -279,7 +279,7 @@ function renderLearnContent() {
   if (rulesEl) rulesEl.innerHTML = `<div class="rules-grid">
     <div class="rule-card"><div class="rule-card-num">01 · ${L?'OBJECTIVE':'OBJETIVO'}</div><h3>${L?'Drain 12 HP':'Drenar 12 HP'}</h3><p>${L?'Each player starts with <strong>12 HP</strong>. Win rounds to deal damage equal to your card\'s Damage stat. First to zero loses.':'Cada jugador empieza con <strong>12 HP</strong>. Gana rondas para infligir daño igual al Daño de tu carta. El primero en llegar a cero pierde.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">02 · ${L?'DECK':'MAZO'}</div><h3>${L?'Build Your 8-Card Deck':'Arma tu Mazo de 8 Cartas'}</h3><p>${L?'Choose <strong>8 cards</strong>. You can mix clans freely; each battle draws 4 random cards, so build depth to handle variance.':'Elige <strong>8 cartas</strong>. Puedes mezclar clanes libremente; cada batalla roba 4 cartas al azar, asi que construye profundidad para manejar la varianza.'}</p></div>
-    <div class="rule-card"><div class="rule-card-num">03 · ${L?'PULSOS':'PULSOS'}</div><h3>${L?'Wager Pulsos Each Round':'Apuesta Pulsos Cada Ronda'}</h3><p>${L?'Start with <strong>12 Pulsos</strong>. Each Pulso spent multiplies your card Power into ATQ. Higher ATQ wins the clash.':'Empiezas con <strong>12 Pulsos</strong>. Cada Pulso gastado multiplica el Poder de tu carta para formar el ATQ. El ATQ mas alto gana el choque.'}</p></div>
+    <div class="rule-card"><div class="rule-card-num">03 · ${L?'PULSOS':'PULSOS'}</div><h3>${L?'Assign Pulsos Each Round':'Asigna Pulsos Cada Ronda'}</h3><p>${L?'Start with <strong>12 Pulsos</strong>. Each Pulso spent multiplies your card Power into ATQ. Higher ATQ wins the clash.':'Empiezas con <strong>12 Pulsos</strong>. Cada Pulso gastado multiplica el Poder de tu carta para formar el ATQ. El ATQ mas alto gana el choque.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">04 · ${L?'ROUNDS':'RONDAS'}</div><h3>${L?'4 Rounds Per Battle':'4 Rondas por Batalla'}</h3><p>${L?'Both players secretly choose a card and allocate Pulsos simultaneously. Reveals happen at the same time — <strong>mind games are real</strong>.':'Ambos eligen carta y Pulsos en secreto simultáneamente. Todo se revela al mismo tiempo — <strong>los juegos mentales son reales</strong>.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">05 · ${L?'CLAN BONUS':'BONUS DE CLAN'}</div><h3>${L?'Hold 2+ Same-Clan Cards':'Ten 2+ Cartas del Mismo Clan'}</h3><p>${L?'If your 4-card hand contains at least 2 cards from the played card\'s clan, that card activates its <strong>passive clan bonus</strong>.':'Si tu mano de 4 cartas contiene al menos 2 cartas del clan de la carta jugada, esa carta activa su <strong>bonus pasivo de clan</strong>.'}</p></div>
     <div class="rule-card"><div class="rule-card-num">06 · ${L?'ABILITIES':'HABILIDADES'}</div><h3>${L?'Card Abilities Trigger on Condition':'Las Habilidades se Activan por Condición'}</h3><p>${L?'Abilities like <strong>Poison, Weaken, Stop, Copy, Support</strong> can swing any round.':'Habilidades como <strong>Veneno, Debilitar, Stop, Copiar, Apoyo</strong> pueden cambiar cualquier ronda.'}</p></div>
@@ -289,8 +289,8 @@ function renderLearnContent() {
   const modesEl = document.getElementById('ltab-modes');
   if (modesEl) modesEl.innerHTML = `<div class="rules-grid">
     <div class="rule-card" style="--mc-color:#9BFF00"><div class="rule-card-num" style="color:#9BFF00">TRAINING</div><h3>${L?'Player vs AI':'Jugador vs IA'}</h3><p>${L?'Use your Gamehub deck against a random AI deck. Very low SHARDS, account XP, and card XP. No ELO.':'Usa tu deck del Gamehub contra un deck random de IA. Muy pocos SHARDS, XP de cuenta y XP de cartas. Sin ELO.'}</p></div>
-    <div class="rule-card" style="--mc-color:var(--acc)"><div class="rule-card-num">CASUAL</div><h3>${L?'PvP · No ELO':'PvP · Sin ELO'}</h3><p>${L?'Player vs Player off-chain. Normal-low SHARDS, account XP, and card XP rewards.':'Player vs Player off-chain. Rewards normal-bajos de SHARDS, XP de cuenta y XP de cartas.'}</p></div>
-    <div class="rule-card" style="--mc-color:var(--am)"><div class="rule-card-num" style="color:var(--am)">RANKED</div><h3>${L?'Weekly Off-Chain ELO':'ELO semanal off-chain'}</h3><p>${L?'Player vs Player off-chain with ELO for the weekly leaderboard. Normal SHARDS, account XP, and card XP rewards.':'Player vs Player off-chain con ELO para el leaderboard semanal. Rewards normales de SHARDS, XP de cuenta y XP de cartas.'}</p></div>
+    <div class="rule-card" style="--mc-color:var(--acc)"><div class="rule-card-num">CASUAL</div><h3>${L?'PvP · No ELO':'PvP · Sin ELO'}</h3><p>${L?'Player vs Player battles. Normal-low SHARDS, account XP, and card XP rewards.':'Batallas Player vs Player. Rewards normal-bajos de SHARDS, XP de cuenta y XP de cartas.'}</p></div>
+    <div class="rule-card" style="--mc-color:var(--am)"><div class="rule-card-num" style="color:var(--am)">RANKED</div><h3>${L?'Weekly ELO':'ELO semanal'}</h3><p>${L?'Player vs Player with ELO for the weekly leaderboard. Normal SHARDS, account XP, and card XP rewards.':'Player vs Player con ELO para el leaderboard semanal. Rewards normales de SHARDS, XP de cuenta y XP de cartas.'}</p></div>
   </div>`;
 
   // ── RANKINGS ──
@@ -308,7 +308,7 @@ function renderLearnContent() {
     <div class="rank-explainer">
       <div class="rule-card-num">RANKING</div>
       <h3>${L?'How ELO Works':'Como funciona el ELO'}</h3>
-      <p>${L?'Ranked PvP changes your off-chain ELO. Wins raise it, losses reduce it, and the current bracket is shown in profile/leaderboard surfaces. Weekly ranking uses your current ELO snapshot for competition rewards and bragging rights.':'El PvP ranked modifica tu ELO off-chain. Las victorias lo suben, las derrotas lo bajan y el rango actual se refleja en perfil/leaderboard. El ranking semanal usa tu ELO actual como corte competitivo para recompensas y prestigio.'}</p>
+      <p>${L?'Ranked PvP changes your ELO. Wins raise it, losses reduce it, and the current bracket is shown in profile/leaderboard surfaces. Weekly ranking uses your current ELO snapshot for competition rewards and bragging rights.':'El PvP ranked modifica tu ELO. Las victorias lo suben, las derrotas lo bajan y el rango actual se refleja en perfil/leaderboard. El ranking semanal usa tu ELO actual como corte competitivo para recompensas y prestigio.'}</p>
     </div>
     <div class="ranks-list">
       <div class="rank-row" style="--rc:#6B7280"><div class="rank-dot"></div><div class="rank-name">Astilla</div><div class="rank-range">0 - 799 ELO</div><div class="rank-note">${L?'Entry bracket':'Rango inicial'}</div></div>
@@ -1183,7 +1183,6 @@ async function renderPerfil() {
   if (statsGrid) statsGrid.innerHTML = `
     <div class="pstat pstat-balance"><span class="currency-icon shards"></span><div class="pstat-num">${(view.state.shards||0).toLocaleString()}</div><div class="pstat-label">SHARDS</div></div>
     <div class="pstat pstat-balance"><span class="currency-icon flux"></span><div class="pstat-num">${(view.state.flux||0).toLocaleString()}</div><div class="pstat-label">FLUX</div></div>
-    <div class="pstat pstat-balance"><span class="currency-icon shs"></span><div class="pstat-num">${(view.state.shs||0).toLocaleString()}</div><div class="pstat-label">$SHS</div></div>
     <div class="pstat"><div class="pstat-num">${u.battlesTotal||0}</div><div class="pstat-label">${t('profile_stat_battles')}</div></div>
     <div class="pstat"><div class="pstat-num">${u.battleWins||0}</div><div class="pstat-label">${t('profile_stat_wins')}</div></div>
     <div class="pstat"><div class="pstat-num">${u.battleLosses||0}</div><div class="pstat-label">${t('profile_stat_losses')}</div></div>
@@ -3143,9 +3142,9 @@ function openDiscord() {
   toast('Discord link coming soon.');
 }
 
-// ── WALLET ─────────────────────────────────────────────────────
-function connectWallet() {
-  toast('🔗 Wallet connect: próximamente en Abstract Chain.');
+// ── ACCOUNT LINK ────────────────────────────────────────────────
+function connectAccountLink() {
+  toast('Account linking is not available in this public build.');
 }
 
 // ── LOGOUT ─────────────────────────────────────────────────────

@@ -140,12 +140,13 @@ input,select,textarea{font-family:var(--font-body);color:var(--text);outline:non
   font-size:0.68rem;font-weight:700;letter-spacing:0.1em;color:var(--text2);transition:all var(--tr);
 }
 .btn-lang:hover{border-color:var(--acc);color:var(--acc)}
-.btn-wallet{
+.btn-account-link{
   display:flex;align-items:center;gap:5px;
   padding:6px 12px;border-radius:var(--radius);border:1px solid var(--border2);
   font-size:0.68rem;font-weight:700;letter-spacing:0.06em;color:var(--text2);transition:all var(--tr);
 }
-.btn-wallet:hover{border-color:var(--am);color:var(--am)}
+.btn-account-link:hover{border-color:var(--am);color:var(--am)}
+.hidden-compliance{display:none!important}
 .topbar-avatar-wrap{display:flex;align-items:center;gap:8px;padding:4px 10px;border-radius:var(--radius);background:var(--bg3);border:1px solid var(--border)}
 .topbar-avatar{font-size:1rem}
 .topbar-username{font-size:0.76rem;font-weight:700}

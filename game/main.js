@@ -130,8 +130,8 @@ function toggleGameLang(){ setGameLang(GAME_LANG === 'es' ? 'en' : 'es'); }
 const MODE_ORDER = ['training','casual','ranked'];
 const MODE_META = {
   training: { tag:'PRACTICE', desc:'Player deck vs IA. Muy pocas recompensas, cero ELO.' },
-  casual:   { tag:'PVP',      desc:'Player vs Player off-chain. SHARDS y XP normal-bajo, sin ELO.' },
-  ranked:   { tag:'RANKED',   desc:'PvP off-chain con ELO para leaderboard semanal.' },
+  casual:   { tag:'PVP',      desc:'Player vs Player. SHARDS y XP normal-bajo, sin ELO.' },
+  ranked:   { tag:'RANKED',   desc:'PvP con ELO para leaderboard semanal.' },
 };
 
 function bootGame(){
@@ -309,7 +309,7 @@ function renderMenu(){ renderModes(); }
 const MODE_ICONS = {
   training: { glyph:'◈', title:'Entrenamiento',     lines:['TU DECK · IA RANDOM','SHARDS + XP BAJO'] },
   casual:   { glyph:'◇', title:'Casual PvP',        lines:['PLAYER VS PLAYER','SIN ELO · REWARD BAJO'] },
-  ranked:   { glyph:'◆', title:'Ranked off-chain',  lines:['ELO SEMANAL','REWARD NORMAL'] },
+  ranked:   { glyph:'◆', title:'Ranked',  lines:['ELO SEMANAL','REWARD NORMAL'] },
 };
 
 function renderModes(){
