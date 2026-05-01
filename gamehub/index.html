@@ -7,7 +7,7 @@
 <link rel="icon" href="../icon-192.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="./styles.css?v=63"/>
+<link rel="stylesheet" href="./styles.css?v=64"/>
 </head>
 <body>
 
@@ -455,7 +455,7 @@
           </div>
         </div>
         <div class="profile-layout">
-          <div>
+          <div class="profile-identity-column">
             <div class="profile-main-card">
               <span class="profile-avatar-xl" id="profile-avatar-big">⚡</span>
               <div class="profile-name" id="profile-name">—</div>
@@ -465,43 +465,43 @@
               <div class="profile-stats-grid" id="profile-stats-grid"></div>
             </div>
           </div>
-          <div>
-            <div class="card-block" style="margin-bottom:12px">
+          <div class="profile-content-grid">
+            <div class="card-block profile-card profile-card-wide">
               <div class="block-title" data-i18n="profile_notifications">Notifications</div>
               <div id="profile-notifications" class="list-feed"></div>
             </div>
-            <div class="card-block" style="margin-bottom:12px">
+            <div class="card-block profile-card profile-card-wide">
               <div class="block-title" data-i18n="profile_account">Account</div>
               <div class="account-edit">
                 <label class="block-sub" data-i18n="profile_username">Username</label>
-                <div style="display:flex;gap:6px;margin-bottom:10px">
-                  <input id="acct-username" class="input-dark" style="flex:1" maxlength="24" placeholder="username"/>
+                <div class="profile-form-row">
+                  <input id="acct-username" class="input-dark" maxlength="24" placeholder="username"/>
                   <button class="btn btn-primary btn-sm" onclick="saveUsername()" data-i18n="profile_save">Save</button>
                 </div>
                 <label class="block-sub" data-i18n="profile_email">Email</label>
-                <div style="display:flex;gap:6px;margin-bottom:10px">
-                  <input id="acct-email" class="input-dark" style="flex:1" type="email" placeholder="email"/>
+                <div class="profile-form-row">
+                  <input id="acct-email" class="input-dark" type="email" placeholder="email"/>
                   <button class="btn btn-primary btn-sm" onclick="saveEmail()" data-i18n="profile_save">Save</button>
                 </div>
                 <label class="block-sub" data-i18n="profile_password">New password</label>
-                <div style="display:flex;gap:6px">
-                  <input id="acct-password" class="input-dark" style="flex:1" type="password" placeholder="••••••" autocomplete="new-password"/>
+                <div class="profile-form-row">
+                  <input id="acct-password" class="input-dark" type="password" placeholder="••••••" autocomplete="new-password"/>
                   <button class="btn btn-primary btn-sm" onclick="savePassword()" data-i18n="profile_save">Save</button>
                 </div>
               </div>
             </div>
-            <div class="card-block" style="margin-bottom:12px">
+            <div class="card-block profile-card">
               <div class="block-title" data-i18n="profile_sponsor">Sponsor</div>
               <div id="profile-sponsor" class="feed-empty" data-i18n="profile_no_sponsor">No sponsor.</div>
             </div>
-            <div class="card-block" style="margin-bottom:12px">
+            <div class="card-block profile-card">
               <div class="block-title" data-i18n="profile_friends">Friends</div>
               <div id="friends-section"><!-- JS --></div>
             </div>
-            <div class="card-block">
+            <div class="card-block profile-card profile-card-wide">
               <div class="block-title" data-i18n="profile_ref_title">Referral Link</div>
-              <div style="display:flex;gap:8px;margin-bottom:12px">
-                <input id="ref-link" class="input-dark" style="flex:1" readonly placeholder="Generate your link…" data-i18n-ph="profile_ref_ph"/>
+              <div class="referral-copy-row">
+                <input id="ref-link" class="input-dark" readonly placeholder="Generate your link…" data-i18n-ph="profile_ref_ph"/>
                 <button id="copy-ref-link" class="btn btn-primary btn-sm" data-i18n="profile_copy">Copy</button>
               </div>
               <div class="block-sub" data-i18n="profile_referrals">Referrals</div>
@@ -541,16 +541,16 @@
   </div>
 </div>
 
-<script src="../engine/cards.js?v=63"></script>
-<script src="../engine/ability_catalog.js?v=63"></script>
-<script src="../engine/round_engine.js?v=63"></script>
-<script src="../engine/utils.js?v=63"></script>
-<script src="../js/config.js?v=63"></script>
-<script src="../js/sb.js?v=63"></script>
-<script src="../js/sync.js?v=63"></script>
-<script src="../js/pvp.js?v=63"></script>
-<script src="../js/payments.js?v=63"></script>
-<script src="./app.js?v=63"></script>
+<script src="../engine/cards.js?v=64"></script>
+<script src="../engine/ability_catalog.js?v=64"></script>
+<script src="../engine/round_engine.js?v=64"></script>
+<script src="../engine/utils.js?v=64"></script>
+<script src="../js/config.js?v=64"></script>
+<script src="../js/sb.js?v=64"></script>
+<script src="../js/sync.js?v=64"></script>
+<script src="../js/pvp.js?v=64"></script>
+<script src="../js/payments.js?v=64"></script>
+<script src="./app.js?v=64"></script>
 </body>
 </html>
 
