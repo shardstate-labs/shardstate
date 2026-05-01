@@ -23,6 +23,7 @@ const view = {
   user: null,
   state:{ shards:0, flux:0, shs:0, collection:{}, deck:[], deckInstances:[], deckPresets:[] },
   lastPack: [],
+  notifications: [],
 };
 
 const ADMIN_EMAILS = new Set(['faxie.contact@gmail.com', 'shardstate.game@gmail.com']);
@@ -86,6 +87,8 @@ const I18N = {
     profile_friends:'Amigos', profile_ref_title:'Enlace de referido',
     profile_ref_ph:'Genera tu link…', profile_copy:'Copiar', profile_referrals:'Referidos',
     profile_no_referrals:'Sin referidos aun.',
+    profile_notifications:'Notificaciones', profile_no_notifications:'Sin notificaciones pendientes.',
+    profile_notification_dismiss:'Cerrar', notification_view_profile:'Ver en perfil',
     profile_err_username_required:'Ingresa un nombre de usuario valido.', profile_err_server:'Sin conexion al servidor.', profile_err_login:'Inicia sesion.',
     profile_err_username_invalid:'Nombre de usuario invalido.', profile_err_username_taken:'Ese nombre de usuario ya existe.',
     profile_toast_username_saved:'Nombre de usuario actualizado.', profile_err_email_invalid:'Correo invalido.',
@@ -191,6 +194,8 @@ const I18N = {
     profile_friends:'Friends', profile_ref_title:'Referral Link',
     profile_ref_ph:'Generate your link…', profile_copy:'Copy', profile_referrals:'Referrals',
     profile_no_referrals:'No referrals yet.',
+    profile_notifications:'Notifications', profile_no_notifications:'No pending notifications.',
+    profile_notification_dismiss:'Dismiss', notification_view_profile:'View in profile',
     profile_err_username_required:'Enter a valid username.', profile_err_server:'No server connection.', profile_err_login:'Log in first.',
     profile_err_username_invalid:'Invalid username.', profile_err_username_taken:'That username is already taken.',
     profile_toast_username_saved:'Username updated.', profile_err_email_invalid:'Invalid email.',
@@ -549,25 +554,58 @@ async function enforceAccountStatus(){
 async function showPendingAdminNotifications(){
   if (!window.SB || !view.user?.uid) return;
   const list = await SB.loadMyNotifications().catch(() => []);
-  if (!Array.isArray(list) || !list.length) return;
-  const note = list[0];
+  view.notifications = Array.isArray(list) ? list : [];
+  renderProfileNotifications();
+  view.notifications.slice(0, 3).forEach(note => showNotificationToast(note));
+}
+
+async function dismissNotification(id){
+  if (!id || !window.SB || !SB.acknowledgeNotification) return;
+  await SB.acknowledgeNotification(id).catch(()=>{});
+  view.notifications = (view.notifications || []).filter(n => n.id !== id);
+  document.querySelector(`[data-social-note="${id}"]`)?.remove();
+  renderProfileNotifications();
+}
+window.dismissNotification = dismissNotification;
+
+function renderProfileNotifications(){
+  const el = byId('profile-notifications');
+  if (!el) return;
+  const list = Array.isArray(view.notifications) ? view.notifications : [];
+  if (!list.length) {
+    el.innerHTML = `<div class="feed-muted">${t('profile_no_notifications')}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(note => `
+    <div class="profile-note">
+      <div class="profile-note-copy">
+        <div class="profile-note-kicker">${escHtml((note.kind || 'protocol').replace(/_/g, ' '))}</div>
+        <div class="profile-note-title">${escHtml(note.title || 'PROTOCOL')}</div>
+        <div class="profile-note-body">${escHtml(note.body || '')}</div>
+      </div>
+      <button class="btn-mini profile-note-dismiss" onclick="dismissNotification('${note.id}')">${t('profile_notification_dismiss')}</button>
+    </div>
+  `).join('');
+}
+
+function showNotificationToast(note){
+  if (!note || document.querySelector(`[data-social-note="${note.id}"]`)) return;
   if (note.kind === 'dm' || note.kind === 'friend_request') return showSocialNotification(note);
-  const modal = document.createElement('div');
-  modal.className = 'admin-reward-modal';
-  modal.innerHTML = `
-    <div class="admin-reward-panel">
-      <div class="admin-reward-kicker">PROTOCOL</div>
-      <div class="admin-reward-title">${escHtml(note.title || 'Recompensa de Admin')}</div>
-      <div class="admin-reward-body">${escHtml(note.body || 'El Admin te concedio una recompensa.')}</div>
-      <button class="admin-reward-btn">${currentLang === 'es' ? 'ACEPTAR' : 'ACCEPT'}</button>
-    </div>`;
-  modal.querySelector('button').onclick = async () => {
-    await SB.acknowledgeNotification(note.id).catch(()=>{});
-    modal.remove();
-    await refreshFromSupabase();
-    showPendingAdminNotifications();
+  const wrap = document.createElement('div');
+  wrap.className = 'social-note protocol-note';
+  wrap.dataset.socialNote = note.id;
+  wrap.innerHTML = `
+    <button class="social-note-x" aria-label="close">x</button>
+    <div class="social-note-kicker">PROTOCOL</div>
+    <div class="social-note-title">${escHtml(note.title || 'Notificacion')}</div>
+    <div class="social-note-body">${escHtml(note.body || '')}</div>
+    <button class="social-note-open">${t('notification_view_profile')}</button>`;
+  wrap.querySelector('.social-note-x').onclick = () => dismissNotification(note.id);
+  wrap.querySelector('.social-note-open').onclick = () => {
+    setTab('perfil');
+    renderProfileNotifications();
   };
-  document.body.appendChild(modal);
+  document.body.appendChild(wrap);
 }
 
 function showSocialNotification(note){
@@ -586,8 +624,7 @@ function showSocialNotification(note){
     <div class="social-note-body">${escHtml(note.body || '')}</div>
     <button class="social-note-open">${isDm ? (currentLang === 'es' ? 'ABRIR CHAT' : 'OPEN CHAT') : (currentLang === 'es' ? 'VER SOLICITUD' : 'VIEW REQUEST')}</button>`;
   async function ack(){
-    await SB.acknowledgeNotification(note.id).catch(()=>{});
-    wrap.remove();
+    await dismissNotification(note.id);
   }
   wrap.querySelector('.social-note-x').onclick = ack;
   wrap.querySelector('.social-note-open').onclick = async () => {
@@ -1188,6 +1225,7 @@ async function renderPerfil() {
   if (un && document.activeElement !== un) un.value = u.username || '';
   if (em && document.activeElement !== em) em.value = u.email || '';
 
+  renderProfileNotifications();
   renderFriends();
 }
 
@@ -1426,20 +1464,31 @@ async function openUserProfile(uid) {
   const modal = document.createElement('div');
   modal.className = 'social-modal';
   modal.innerHTML = `
-    <div class="social-panel">
-      <button class="social-close" onclick="this.closest('.social-modal').remove()">x</button>
-      <div class="social-title">USER ${escHtml(p.username)}</div>
-      <div class="social-grid">
+    <div class="social-panel user-profile-panel">
+      <button class="social-close user-profile-close" onclick="this.closest('.social-modal').remove()">x</button>
+      <div class="user-profile-head">
+        <div class="user-profile-avatar">${escHtml((p.avatar || p.username || 'U').slice(0, 1).toUpperCase())}</div>
+        <div class="user-profile-id">
+          <div class="user-profile-kicker">USER PROFILE</div>
+          <div class="user-profile-title">${escHtml(p.username || 'player')}</div>
+          <div class="user-profile-meta">${guild ? `${escHtml(guild.name)} / ${escHtml(guild.role || 'member')}` : (currentLang==='es'?'Sin gremio':'No guild')}</div>
+        </div>
+      </div>
+      <div class="social-grid user-profile-stats">
         <div><span>LV</span>${p.level || 1}</div>
         <div><span>ELO</span>${p.elo || 0}</div>
-        <div><span>Cartas</span>${p.cards_count || 0}</div>
+        <div><span>${currentLang==='es'?'Cartas':'Cards'}</span>${p.cards_count || 0}</div>
         <div><span>Presets</span>${p.presets_count || 0}</div>
       </div>
-      <div class="social-sub">${currentLang==='es'?'Gremio':'Guild'}</div>
-      <div class="feed-row"><span class="feed-label">${guild ? `${escHtml(guild.emoji || 'G')} ${escHtml(guild.name)} - ${escHtml(guild.role)}` : (currentLang==='es'?'Sin gremio':'No guild')}</span></div>
-      <div class="social-sub">Deck actual</div>
-      <div class="social-deck">${deck.length ? deck.map(id => `<button class="mini-card-link" onclick="openCardDetail('${id}')">${cardName(id)}</button>`).join('') : '<span class="feed-muted">Sin deck publico.</span>'}</div>
-      <div class="social-actions">
+      <div class="user-profile-section">
+        <div class="user-profile-section-title">${currentLang==='es'?'Gremio':'Guild'}</div>
+        <div class="user-profile-guild">${guild ? `${escHtml(guild.emoji || 'G')} ${escHtml(guild.name)} <span>${escHtml(guild.role || 'member')}</span>` : (currentLang==='es'?'Sin gremio':'No guild')}</div>
+      </div>
+      <div class="user-profile-section">
+        <div class="user-profile-section-title">${currentLang==='es'?'Deck actual':'Current deck'}</div>
+        <div class="social-deck user-profile-deck">${deck.length ? deck.map(id => `<button class="mini-card-link" onclick="openCardDetail('${id}')">${cardName(id)}</button>`).join('') : `<span class="feed-muted">${currentLang==='es'?'Sin deck publico.':'No public deck.'}</span>`}</div>
+      </div>
+      <div class="social-actions user-profile-actions">
         ${socialAction}
       </div>
     </div>`;
