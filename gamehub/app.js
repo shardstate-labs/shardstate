@@ -791,6 +791,23 @@ function parseGuildLogo(raw) {
 // ════════════════════════════════════════════════════════════
 // CARD RENDERING — TCG Visual Cards
 // ════════════════════════════════════════════════════════════
+function guildLogoValue(guild) {
+  return guild?.icon_url || guild?.emoji || 'G';
+}
+
+function renderGuildMemberTools(member, myGuild) {
+  if (!member || !myGuild || myGuild.role !== 'leader' || member.user_id === view.user?.uid) return '';
+  const role = member.role || 'member';
+  const name = escHtml(member.username || 'player');
+  return `<div class="guild-member-tools">
+    ${role === 'subleader'
+      ? `<button class="btn-mini btn-sm" data-set-guild-role="${member.user_id}" data-role="member" data-member-name="${name}">${currentLang==='es'?'Integrante':'Member'}</button>`
+      : `<button class="btn-mini btn-sm" data-set-guild-role="${member.user_id}" data-role="subleader" data-member-name="${name}">${currentLang==='es'?'Sublider':'Subleader'}</button>`}
+    <button class="btn-mini btn-sm" data-transfer-guild-leader="${member.user_id}" data-member-name="${name}">${currentLang==='es'?'Transferir':'Transfer'}</button>
+    <button class="btn-danger btn-sm" data-kick-guild="${member.user_id}" data-member-name="${name}">${currentLang==='es'?'Expulsar':'Kick'}</button>
+  </div>`;
+}
+
 function generateReferralCode(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return 'REF' + Array.from({length:6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -2006,24 +2023,37 @@ async function renderGuildsServer() {
     if (sentEl) sentEl.innerHTML = `<div class="feed-muted">${currentLang==='es'?'Ya perteneces a un gremio.':'Already in a guild.'}</div>`;
     const members = (myGuild.members || []).slice().sort((a, b) => {
       const rank = role => role === 'leader' ? 0 : role === 'subleader' ? 1 : 2;
-      return rank(a.role) - rank(b.role);
+      return rank(a.role) - rank(b.role) || String(a.joined_at || '').localeCompare(String(b.joined_at || ''));
     });
     const applications = myGuild.applications || [];
-    reqEl.closest('.guild-requests-block')?.classList.toggle('hidden', myGuild.role !== 'leader');
+    const canManageRequests = myGuild.role === 'leader' || myGuild.role === 'subleader';
+    reqEl.closest('.guild-requests-block')?.classList.toggle('hidden', !canManageRequests);
     mgEl.insertAdjacentHTML('beforeend', `
       <div class="guild-card">
-        <div class="guild-card-header">
+        <div class="guild-card-title-row">
           <div class="guild-avatar">${myGuild.icon_url ? `<img class="guild-icon-img" src="${escHtml(myGuild.icon_url)}" alt=""/>` : escHtml(myGuild.emoji || 'G')}</div>
-          <div>
+          <div class="guild-info">
             <div class="guild-name">${escHtml(myGuild.name)}</div>
             <div class="guild-members">${members.length} ${t('members_label')}${myGuild.country ? ` - ${escHtml(myGuild.country)}` : ''}</div>
           </div>
+          ${myGuild.role === 'leader' ? `<button class="guild-settings-toggle" type="button" data-toggle-guild-settings aria-label="${currentLang==='es'?'Ajustes de gremio':'Guild settings'}">⚙</button>` : ''}
         </div>
         ${myGuild.bio ? `<div class="guild-bio">${escHtml(myGuild.bio)}</div>` : ''}
+        ${myGuild.role === 'leader' ? `
+          <div class="guild-settings-panel hidden" id="guild-settings-panel">
+            <div class="block-sub">${currentLang==='es'?'Ajustes de gremio':'Guild settings'}</div>
+            <div class="guild-settings-grid">
+              <input id="guild-settings-name" class="input-dark" maxlength="32" value="${escHtml(myGuild.name)}" placeholder="${currentLang==='es'?'Nombre':'Name'}"/>
+              <input id="guild-settings-logo" class="input-dark" maxlength="240" value="${escHtml(guildLogoValue(myGuild))}" placeholder="${currentLang==='es'?'Emoji o URL de imagen':'Emoji or image URL'}"/>
+              <input id="guild-settings-country" class="input-dark" maxlength="48" value="${escHtml(myGuild.country || '')}" placeholder="${currentLang==='es'?'Pais':'Country'}"/>
+              <button class="btn btn-primary btn-sm" data-save-guild-settings>${currentLang==='es'?'Guardar ajustes':'Save settings'}</button>
+            </div>
+            <textarea id="guild-settings-bio" class="input-dark" maxlength="240" placeholder="${currentLang==='es'?'Descripcion':'Description'}">${escHtml(myGuild.bio || '')}</textarea>
+          </div>` : ''}
         <div class="guild-member-list">
           ${members.map(m => `<div class="guild-member-line">
             <button class="mini-card-link guild-member-row" onclick="openUserProfile('${m.user_id}')"><span>${escHtml(m.username)}</span><span class="guild-role-badge role-${escHtml(m.role || 'member')}">${escHtml(guildRoleLabel(m.role || 'member'))}</span></button>
-            ${myGuild.role === 'leader' && m.user_id !== u.uid ? `<button class="btn-danger btn-sm" data-kick-guild="${m.user_id}" data-member-name="${escHtml(m.username || 'player')}">${currentLang==='es'?'Expulsar':'Kick'}</button>` : ''}
+            ${renderGuildMemberTools(m, myGuild)}
           </div>`).join('')}
         </div>
         <div class="guild-actions guild-management-actions">
@@ -2032,7 +2062,7 @@ async function renderGuildsServer() {
         </div>
       </div>`);
 
-    if (myGuild.role === 'leader') {
+    if (canManageRequests) {
       if (!applications.length) {
         reqEl.innerHTML = `<div class="feed-muted">${t('no_requests')}</div>`;
       } else {
@@ -2273,7 +2303,7 @@ function ensureBpState(){
   return u.gameState.battlePass;
 }
 function bpLevel(bp){ return Math.min(BP_LEVELS, Math.floor(bp.xp / BP_XP_PER_LEVEL)); }
-function bpRemaining(bp){ return Math.max(0, bp.startedAt + BP_DURATION_MS - Date.now()); }
+function bpRemaining(bp){ return Math.max(0, (bp.endsAt || (bp.startedAt + BP_DURATION_MS)) - Date.now()); }
 function formatBpTime(ms){
   if (ms <= 0) return '0d 0h';
   const d = Math.floor(ms / 86400000);
@@ -3233,11 +3263,55 @@ function bindEvents() {
       const leave = e.target.closest('[data-leave-guild]');
       const kick = e.target.closest('[data-kick-guild]');
       const disband = e.target.closest('[data-disband-guild]');
-      if (!join && !approve && !deny && !leave && !kick && !disband) return;
+      const toggleSettings = e.target.closest('[data-toggle-guild-settings]');
+      const saveSettings = e.target.closest('[data-save-guild-settings]');
+      const setRole = e.target.closest('[data-set-guild-role]');
+      const transferLeader = e.target.closest('[data-transfer-guild-leader]');
+      if (!join && !approve && !deny && !leave && !kick && !disband && !toggleSettings && !saveSettings && !setRole && !transferLeader) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       if (!window.SB) return toast('Sin conexion al servidor.');
-      if (join) {
+      if (toggleSettings) {
+        byId('guild-settings-panel')?.classList.toggle('hidden');
+        return;
+      } else if (saveSettings) {
+        if (!SB.updateGuild) return toast('Sin conexion al servidor.');
+        const logo = parseGuildLogo(byId('guild-settings-logo')?.value || '');
+        const r = await SB.updateGuild({
+          name:byId('guild-settings-name')?.value || '',
+          bio:byId('guild-settings-bio')?.value || '',
+          country:byId('guild-settings-country')?.value || '',
+          ...logo,
+        });
+        if (r.error || r.error === 'leader_required') return toast(r.error?.message || r.error || 'Error');
+        toast(currentLang === 'es' ? 'Gremio actualizado.' : 'Guild updated.');
+      } else if (setRole) {
+        if (!SB.setGuildMemberRole) return toast('Sin conexion al servidor.');
+        const name = setRole.getAttribute('data-member-name') || 'player';
+        const role = setRole.getAttribute('data-role') || 'member';
+        const ok = await askConfirmModal(
+          currentLang === 'es' ? 'Cambiar rango' : 'Change rank',
+          `${currentLang === 'es' ? 'Cambiar rango de' : 'Change rank for'} ${name} ${currentLang === 'es' ? 'a' : 'to'} ${guildRoleLabel(role)}.`,
+          currentLang === 'es' ? 'Confirmar' : 'Confirm'
+        );
+        if (!ok) return;
+        const r = await SB.setGuildMemberRole(setRole.getAttribute('data-set-guild-role'), role);
+        if (r.error || r.error === 'leader_required') return toast(r.error?.message || r.error || 'Error');
+        toast(currentLang === 'es' ? 'Rango actualizado.' : 'Rank updated.');
+      } else if (transferLeader) {
+        if (!SB.transferGuildLeadership) return toast('Sin conexion al servidor.');
+        const name = transferLeader.getAttribute('data-member-name') || 'player';
+        const ok = await askConfirmModal(
+          currentLang === 'es' ? 'Transferir liderazgo' : 'Transfer leadership',
+          `${currentLang === 'es' ? 'Vas a convertir a' : 'You are making'} ${name} ${currentLang === 'es' ? 'lider del gremio. Vos quedas como sublider y no se puede deshacer desde aca.' : 'guild leader. You become subleader and this cannot be undone here.'}`,
+          currentLang === 'es' ? 'Transferir' : 'Transfer',
+          true
+        );
+        if (!ok) return;
+        const r = await SB.transferGuildLeadership(transferLeader.getAttribute('data-transfer-guild-leader'));
+        if (r.error || r.error === 'leader_required') return toast(r.error?.message || r.error || 'Error');
+        toast(currentLang === 'es' ? 'Liderazgo transferido.' : 'Leadership transferred.');
+      } else if (join) {
         const msg = await askTextModal(
           currentLang === 'es' ? 'Solicitud de ingreso' : 'Guild application',
           currentLang === 'es' ? 'Mensaje para el lider...' : 'Message for the leader...',
@@ -3671,7 +3745,8 @@ async function hydrateFromSupabase(authUser){
     const claimedPremium = Array.isArray(battlePass.claimed_premium) ? battlePass.claimed_premium : [];
     u.gameState.battlePass = {
       season:         battlePass.season|0,
-      startedAt:      battlePass.started_at ? new Date(battlePass.started_at).getTime() : Date.now(),
+      startedAt:      (battlePass.season_starts_at || battlePass.started_at) ? new Date(battlePass.season_starts_at || battlePass.started_at).getTime() : Date.now(),
+      endsAt:         battlePass.season_ends_at ? new Date(battlePass.season_ends_at).getTime() : null,
       xp:             battlePass.xp|0,
       premium:        !!battlePass.is_premium,
       claimedLevels:  [

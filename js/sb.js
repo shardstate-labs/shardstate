@@ -109,7 +109,7 @@
       const [{ data: profile }, { data: gameState }, { data: bp }] = await Promise.all([
         sb.from('profiles').select('*').eq('user_id', uid).maybeSingle(),
         sb.from('game_state').select('*').eq('user_id', uid).maybeSingle(),
-        sb.from('battle_pass').select('*').eq('user_id', uid).maybeSingle(),
+        sb.rpc('get_battle_pass_state'),
       ]);
       return { profile: profile || null, gameState: gameState || null, battlePass: bp || null };
     },
@@ -392,6 +392,30 @@
       if (error) return { error };
       return data || { ok:true };
     },
+    async updateGuild(payload){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('update_guild', {
+        p_name:String(payload?.name||''),
+        p_bio:String(payload?.bio||''),
+        p_emoji:String(payload?.emoji||''),
+        p_icon_url:String(payload?.icon_url||''),
+        p_country:String(payload?.country||''),
+      });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async setGuildMemberRole(userId, role){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('set_guild_member_role', { p_user:userId, p_role:String(role||'member') });
+      if (error) return { error };
+      return data || { ok:true };
+    },
+    async transferGuildLeadership(userId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('transfer_guild_leadership', { p_user:userId });
+      if (error) return { error };
+      return data || { ok:true };
+    },
     async leaveGuild(){
       const sb = await ensureClient();
       const { data, error } = await sb.rpc('leave_guild');
@@ -413,7 +437,11 @@
 
     async loadBattlePass(uid){
       const sb = await ensureClient();
-      const { data } = await sb.from('battle_pass').select('*').eq('user_id', uid).maybeSingle();
+      if (sb.rpc) {
+        const { data, error } = await sb.rpc('get_battle_pass_state');
+        if (!error && data && !data.error) return data;
+      }
+      const { data } = await sb.from('battle_pass').select('*').eq('user_id', uid).order('season', { ascending:false }).limit(1).maybeSingle();
       return data || null;
     },
     async claimBattlePass(tier, track){
