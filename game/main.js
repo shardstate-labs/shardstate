@@ -835,6 +835,20 @@ function showActionPanel(){
   const prev = document.getElementById('ap-preview');
   prev.innerHTML = '';
   prev.appendChild(buildCardEl(card, {}));
+  const info = document.getElementById('ap-card-info');
+  if(info){
+    const clan = getClan(card.clan) || {};
+    const ability = typeof card.ability === 'object' ? card.ability.text : (card.ability || '—');
+    const bonus = typeof card.bonus === 'object' ? card.bonus.text : (card.bonus || clan.bonus || '—');
+    info.innerHTML = `
+      <div class="ap-stat-line">
+        <span>POW <b>${card.pow}</b></span>
+        <span>DMG <b>${card.dmg}</b></span>
+        <span>${card.rar || card.rarity || 'C'} · ${card.stars || 0}★</span>
+      </div>
+      <div><strong>ABILITY</strong> ${ability}</div>
+      <div><strong>BONUS</strong> ${bonus}</div>`;
+  }
 
   buildPulseRow();
   refreshActionPanel();
