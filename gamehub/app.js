@@ -504,6 +504,18 @@ function persistToUser() {
 }
 
 document.addEventListener('click', e => {
+  const profileAddBtn = e.target.closest('[data-profile-add-friend]');
+  if (profileAddBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    sendFriendFromProfile(
+      profileAddBtn,
+      profileAddBtn.getAttribute('data-profile-add-friend'),
+      profileAddBtn.getAttribute('data-profile-name') || 'player'
+    );
+    return;
+  }
+
   const communityPanel = byId('panel-community');
   if (!communityPanel || !communityPanel.contains(e.target)) return;
   const presetBtn = e.target.closest('[data-public-preset]');
@@ -1463,15 +1475,19 @@ async function sendFriend(uid, username) {
   document.querySelector('.social-modal')?.remove();
   renderFriends();
 }
+window.sendFriend = sendFriend;
 async function sendFriendFromProfile(btn, uid, username) {
   if (btn) {
     btn.disabled = true;
     btn.textContent = currentLang === 'es' ? 'Enviando...' : 'Sending...';
   }
+  const profileModal = btn?.closest?.('.social-modal') || null;
   await sendFriend(uid, username);
   if (btn && document.body.contains(btn)) {
     btn.disabled = false;
     btn.textContent = currentLang === 'es' ? 'Agregar amigo' : 'Add friend';
+  } else if (profileModal && document.body.contains(profileModal)) {
+    profileModal.remove();
   }
 }
 window.sendFriendFromProfile = sendFriendFromProfile;
@@ -1482,6 +1498,7 @@ async function respondFriend(requestId, accept) {
   document.querySelector('.social-modal')?.remove();
   renderFriends();
 }
+window.respondFriend = respondFriend;
 async function removeFriend(uid) {
   const ok = await askConfirmModal(
     currentLang === 'es' ? 'Eliminar amigo' : 'Remove friend',
@@ -1518,7 +1535,7 @@ async function openUserProfile(uid) {
       ? `<button class="btn-mini" onclick="respondFriend('${incomingReq.id}', true); this.closest('.social-modal').remove();">${currentLang==='es'?'Aceptar amistad':'Accept friend'}</button>`
       : sentReq
         ? `<span class="social-pending">${currentLang==='es'?'Solicitud enviada':'Request sent'}</span>`
-        : `<button class="btn-mini" onclick="sendFriendFromProfile(this, '${uid}', ${jsLit(p.username || 'player')})">${currentLang==='es'?'Agregar amigo':'Add friend'}</button>`;
+        : `<button class="btn-mini" type="button" data-profile-add-friend="${escHtml(uid)}" data-profile-name="${escHtml(p.username || 'player')}">${currentLang==='es'?'Agregar amigo':'Add friend'}</button>`;
   const modal = document.createElement('div');
   modal.className = 'social-modal';
   modal.innerHTML = `
@@ -1552,6 +1569,7 @@ async function openUserProfile(uid) {
     </div>`;
   document.body.appendChild(modal);
 }
+window.openUserProfile = openUserProfile;
 
 async function openDm(uid, username) {
   if (!window.SB || !SB.loadDmThread) return;
@@ -1577,6 +1595,7 @@ async function openDm(uid, username) {
   document.body.appendChild(modal);
   await renderDmThread(uid);
 }
+window.openDm = openDm;
 function openGiphySearch() {
   const q = encodeURIComponent(byId('dm-input')?.value || 'shardstate');
   window.open(`https://giphy.com/search/${q || 'shardstate'}`, '_blank', 'noopener');
