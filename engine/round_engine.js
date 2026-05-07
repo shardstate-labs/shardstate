@@ -37,6 +37,18 @@
       const flr = own.filter(m => m.floor != null).reduce((mx,m)=> Math.max(mx, m.floor), 0);
       return Math.max(baseValue + sum, flr);
     }
+    /**
+     * ATK floors are floors on the final attack value, not on the modifier.
+     * Example: "-6 ATQ adv (min 5)" means max((PWR * multiplier) - 6, 5).
+     */
+    resolveAttack(owner, baseAttack){
+      const own = this.mods.filter(m => m.ownerId === owner._id && m.stat === 'ATK');
+      const ovr = own.find(m => m.kind === 'override');
+      if (ovr) return Math.max(0, ovr.amount);
+      const sum = own.filter(m => m.kind === 'add').reduce((s,m)=> s + m.amount, 0);
+      const flr = own.filter(m => m.floor != null).reduce((mx,m)=> Math.max(mx, m.floor), 0);
+      return Math.max(0, baseAttack + sum, flr);
+    }
     clear(){ this.mods.length = 0; }
   }
 
@@ -315,11 +327,11 @@
     const baseDmg = player.card.dmg|0;
     const pow = stack.resolve(player, basePow, 'PWR');
     stack.resolve(player, baseDmg, 'DMG');
-    // ATQ = final PWR * pulsos spent + ATK modifiers. DMG resolves separately after the winner is known.
+    // ATQ = effective PWR * (1 + pulsos spent), then direct ATK modifiers.
+    // This keeps cards functional at 0 spent pulsos and lets PWR buffs scale.
     // `player.pulsos` is the remaining pool (read by PWR_PER_PULSO etc.).
     const spend = (player.spend != null ? player.spend : player.pulsos) | 0;
-    const atkMod = stack.resolve(player, 0, 'ATK');
-    return Math.max(0, pow * spend + atkMod);
+    return stack.resolveAttack(player, pow * (1 + spend));
   }
   function earlyEnd(match){
     const winner = match.p.hp > match.o.hp ? 'p' : (match.o.hp > match.p.hp ? 'o' : (match.starter||'p'));
