@@ -92,7 +92,7 @@ const I18N = {
     profile_err_username_required:'Ingresa un nombre de usuario valido.', profile_err_server:'Sin conexion al servidor.', profile_err_login:'Inicia sesion.',
     profile_err_username_invalid:'Nombre de usuario invalido.', profile_err_username_taken:'Ese nombre de usuario ya existe.',
     profile_toast_username_saved:'Nombre de usuario actualizado.', profile_err_email_invalid:'Correo invalido.',
-    profile_toast_email_confirm:'Revisa tu nuevo correo para confirmar el cambio.', profile_err_password_short:'Minimo 6 caracteres.',
+    profile_toast_email_confirm:'Revisa tu nuevo correo para confirmar el cambio.', profile_err_password_short:'Minimo 8 caracteres, con mayuscula, minuscula y numero.',
     profile_toast_password_saved:'Contrasena actualizada.',
     sidebar_tagline:'CARD BATTLE', logout:'Cerrar sesión',
     community_forum:'Foro', community_join:'Únete a la Comunidad',
@@ -199,7 +199,7 @@ const I18N = {
     profile_err_username_required:'Enter a valid username.', profile_err_server:'No server connection.', profile_err_login:'Log in first.',
     profile_err_username_invalid:'Invalid username.', profile_err_username_taken:'That username is already taken.',
     profile_toast_username_saved:'Username updated.', profile_err_email_invalid:'Invalid email.',
-    profile_toast_email_confirm:'Check your new email to confirm the change.', profile_err_password_short:'Minimum 6 characters.',
+    profile_toast_email_confirm:'Check your new email to confirm the change.', profile_err_password_short:'Minimum 8 characters, with uppercase, lowercase and number.',
     profile_toast_password_saved:'Password updated.',
     sidebar_tagline:'CARD BATTLE', logout:'Log out',
     community_forum:'Forum', community_join:'Join the Community',
@@ -391,6 +391,65 @@ function eloFrameClass(elo) {
   return 'frame-mythic';
 }
 
+const PROFILE_FRAME_CATALOG = [
+  { id:'basic', name:'BASIC', premium:false, asset:'/Assets/ui/cosmetics/profile-frame-basic.png' },
+  { id:'premium-circuit', name:'CIRCUIT', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-circuit.png' },
+  { id:'premium-prism', name:'PRISM', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-prism.png' },
+  { id:'premium-gold', name:'AURUM', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-gold.png' },
+  { id:'premium-void', name:'VOID', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-void.png' },
+  { id:'premium-singularity', name:'SINGULARITY', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-singularity.png' },
+];
+const PROFILE_AVATAR_CATALOG = [
+  { id:'protocol-seed', name:'Protocol Seed', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-protocol-seed.png' },
+  { id:'nexus-orb', name:'Nexus Orb', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-nexus-orb.png' },
+  { id:'tide-sigil', name:'Tide Sigil', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-tide-sigil.png' },
+  { id:'ash-spark', name:'Ash Spark', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-ash-spark.png' },
+  { id:'void-eye', name:'Void Eye', tier:'premium', price:3, asset:'/Assets/ui/cosmetics/avatar-void-eye.png' },
+  { id:'mycel-spore', name:'Mycel Spore', tier:'premium', price:3, asset:'/Assets/ui/cosmetics/avatar-mycel-spore.png' },
+  { id:'iron-crest', name:'Iron Crest', tier:'premium', price:3, asset:'/Assets/ui/cosmetics/avatar-iron-crest.png' },
+  { id:'singularity-core', name:'Singularity Core', tier:'premium', price:5, asset:'/Assets/ui/cosmetics/avatar-singularity-core.png' },
+];
+function profileFrameById(id){ return PROFILE_FRAME_CATALOG.find(x => x.id === id) || PROFILE_FRAME_CATALOG[0]; }
+function profileAvatarById(id){ return PROFILE_AVATAR_CATALOG.find(x => x.id === id) || PROFILE_AVATAR_CATALOG[0]; }
+function profileCosmetics(){
+  const gs = view.user?.gameState || {};
+  const owned = Array.isArray(gs.ownedAvatars) && gs.ownedAvatars.length ? gs.ownedAvatars : ['protocol-seed'];
+  return {
+    selectedAvatar: gs.selectedAvatar || 'protocol-seed',
+    selectedFrame: gs.selectedProfileFrame || 'basic',
+    ownedAvatars: Array.from(new Set(['protocol-seed', ...owned])),
+  };
+}
+function userHasPremiumPass(){
+  return !!ensureBpState()?.premium;
+}
+function setAvatarVisual(el, avatarId){
+  if (!el) return;
+  const av = profileAvatarById(avatarId);
+  el.textContent = '';
+  el.style.setProperty('--avatar-img', `url('${av.asset}')`);
+  el.setAttribute('aria-label', av.name);
+}
+function setFrameVisual(el, frameId){
+  if (!el) return;
+  const frame = profileFrameById(frameId);
+  el.style.setProperty('--profile-frame', `url('${frame.asset}')`);
+  el.dataset.profileFrame = frame.id;
+}
+function applyProfileCosmetics(){
+  const c = profileCosmetics();
+  const frame = profileFrameById(c.selectedFrame);
+  const usableFrame = frame.premium && !userHasPremiumPass() ? 'basic' : frame.id;
+  setAvatarVisual(byId('topbar-avatar'), c.selectedAvatar);
+  setFrameVisual(byId('topbar-avatar'), usableFrame);
+  setAvatarVisual(byId('profile-avatar-big'), c.selectedAvatar);
+  setFrameVisual(byId('profile-avatar-big'), usableFrame);
+  document.querySelectorAll('.su-avatar').forEach(el => {
+    if (!el.style.getPropertyValue('--avatar-img')) setAvatarVisual(el, c.selectedAvatar);
+    if (!el.style.getPropertyValue('--profile-frame')) setFrameVisual(el, usableFrame);
+  });
+}
+
 // ── DB / SESSION ───────────────────────────────────────────────
 function loadDb() {
   try {
@@ -420,6 +479,10 @@ function ensureUserDefaults(u) {
     guildId:null, avatar:'⚡', gameState:{ collection:{}, deck:[], deckPresets:[], welcomePackClaimed:false, claimedMissions:[] },
   };
   Object.keys(d).forEach(k => { if (u[k] == null) u[k] = d[k]; });
+  u.gameState = u.gameState || {};
+  if (!Array.isArray(u.gameState.ownedAvatars) || !u.gameState.ownedAvatars.length) u.gameState.ownedAvatars = ['protocol-seed'];
+  if (!u.gameState.selectedAvatar) u.gameState.selectedAvatar = 'protocol-seed';
+  if (!u.gameState.selectedProfileFrame) u.gameState.selectedProfileFrame = 'basic';
 }
 function resolveCurrentUser() {
   const uid = localStorage.getItem(AUTH_SESSION_KEY);
@@ -457,13 +520,9 @@ function persistToUser() {
   // Mirror to Supabase (debounced, queued, retried offline).
   if (window.SHS_SYNC && u.uid) {
     SHS_SYNC.queueState(u.uid, {
-      shards: view.state.shards|0,
-      flux:   view.state.flux|0,
-      shs:    Number(view.state.shs||0),
-      elo:    u.elo|0,
-      level:  u.accountLevel|0 || 1,
-      xp:     u.accountXp|0,
       welcome_pack_claimed: !!view.state.welcomePackClaimed,
+      selected_avatar: u.gameState.selectedAvatar || 'protocol-seed',
+      selected_profile_frame: u.gameState.selectedProfileFrame || 'basic',
     });
     // Normalize collection to {cardId: qty} for the server (legacy entries
     // may still be {lv,xp} objects from old localStorage profiles).
@@ -513,6 +572,18 @@ document.addEventListener('click', e => {
       profileAddBtn.getAttribute('data-profile-add-friend'),
       profileAddBtn.getAttribute('data-profile-name') || 'player'
     );
+    return;
+  }
+  const frameBtn = e.target.closest('[data-profile-frame]');
+  if (frameBtn) {
+    e.preventDefault();
+    selectProfileFrame(frameBtn.getAttribute('data-profile-frame'));
+    return;
+  }
+  const avatarBtn = e.target.closest('[data-profile-avatar]');
+  if (avatarBtn) {
+    e.preventDefault();
+    selectProfileAvatar(avatarBtn.getAttribute('data-profile-avatar'));
     return;
   }
 
@@ -575,6 +646,7 @@ async function showPendingAdminNotifications(){
   const list = await SB.loadMyNotifications().catch(() => []);
   view.notifications = Array.isArray(list) ? list : [];
   renderProfileNotifications();
+  renderProfileCosmetics();
   view.notifications.slice(0, 3).forEach(note => showNotificationToast(note));
 }
 
@@ -584,6 +656,7 @@ async function dismissNotification(id){
   view.notifications = (view.notifications || []).filter(n => n.id !== id);
   document.querySelector(`[data-social-note="${id}"]`)?.remove();
   renderProfileNotifications();
+  renderProfileCosmetics();
 }
 window.dismissNotification = dismissNotification;
 
@@ -623,6 +696,7 @@ function showNotificationToast(note){
   wrap.querySelector('.social-note-open').onclick = () => {
     setTab('perfil');
     renderProfileNotifications();
+  renderProfileCosmetics();
   };
   document.body.appendChild(wrap);
 }
@@ -660,26 +734,16 @@ function syncTopbar() {
   byId('sb-shards').textContent = (view.state.shards || 0).toLocaleString();
   byId('sb-flux').textContent   = (view.state.flux   || 0).toLocaleString();
   byId('sb-shs').textContent    = (view.state.shs    || 0).toLocaleString();
-  const avatar = u.avatar || '⚡';
   const username = u.username || 'Player';
-  byId('topbar-avatar') && (byId('topbar-avatar').textContent = avatar);
-  byId('topbar-avatar2') && (byId('topbar-avatar2').textContent = avatar);
-  byId('profile-avatar-big') && (byId('profile-avatar-big').textContent = avatar);
+  applyProfileCosmetics();
   byId('topbar-username') && (byId('topbar-username').textContent = username);
   byId('topbar-username2') && (byId('topbar-username2').textContent = username);
   const eb = eloBracket(u.elo || 0);
-  const frameClass = eloFrameClass(u.elo || 0);
   const eloText = `${eb.label} · ${u.elo || 0}`;
   const eloEl = byId('topbar-elo');
   if (eloEl) { eloEl.textContent = eloText; eloEl.className = `user-elo ${eb.cls}`; }
   const eloEl2 = byId('topbar-elo2');
   if (eloEl2) { eloEl2.textContent = eloText; eloEl2.className = `topbar-elo ${eb.cls}`; }
-  ['topbar-avatar','topbar-avatar2','profile-avatar-big'].forEach(id => {
-    const el = byId(id);
-    if (!el) return;
-    el.classList.remove('frame-common','frame-rare','frame-epic','frame-legendary','frame-mythic');
-    el.classList.add(frameClass);
-  });
   // Show admin nav link only for the admin email.
   const adminLink = byId('nav-admin-link');
   if (adminLink) {
@@ -1214,15 +1278,10 @@ function cdmSell(id) {
 async function renderPerfil() {
   const u = view.user;
   const eb = eloBracket(u.elo || 0);
-  const frameClass = eloFrameClass(u.elo || 0);
   const ep = eloProgress(u.elo || 0);
   byId('profile-name') && (byId('profile-name').textContent = u.username || 'Player');
   const profileAvatar = byId('profile-avatar-big');
-  if (profileAvatar) {
-    profileAvatar.textContent = u.avatar || '⚡';
-    profileAvatar.classList.remove('frame-common','frame-rare','frame-epic','frame-legendary','frame-mythic');
-    profileAvatar.classList.add(frameClass);
-  }
+  if (profileAvatar) applyProfileCosmetics();
   const badge = byId('profile-elo-badge');
   if (badge) { badge.textContent = `${eb.label} · ${u.elo||0}`; badge.className = `profile-elo-badge ${eb.cls}`; }
   const xpBar = byId('xp-bar');
@@ -1274,8 +1333,104 @@ async function renderPerfil() {
   if (em && document.activeElement !== em) em.value = u.email || '';
 
   renderProfileNotifications();
+  renderProfileCosmetics();
   renderFriends();
 }
+
+
+function renderProfileCosmetics(){
+  const wrap = byId('profile-cosmetics');
+  if (!wrap || !view.user) return;
+  const c = profileCosmetics();
+  const hasPremium = userHasPremiumPass();
+  const L = currentLang === 'es';
+  const frames = PROFILE_FRAME_CATALOG.map(frame => {
+    const locked = frame.premium && !hasPremium;
+    const active = c.selectedFrame === frame.id && !locked;
+    return `<button class="cosmetic-tile frame-choice ${active?'active':''} ${locked?'locked':''}" type="button" data-profile-frame="${escHtml(frame.id)}" ${locked?'disabled':''}>
+      <span class="cosmetic-frame-preview" style="--profile-frame:url('${frame.asset}')"><span></span></span>
+      <strong>${escHtml(frame.name)}</strong>
+      <em>${frame.premium ? (hasPremium ? 'PREMIUM' : (L?'PASE PREMIUM':'PREMIUM PASS')) : (L?'BASICO':'BASIC')}</em>
+    </button>`;
+  }).join('');
+  const avatars = PROFILE_AVATAR_CATALOG.map(av => {
+    const owned = c.ownedAvatars.includes(av.id) || av.price === 0;
+    const active = c.selectedAvatar === av.id;
+    const canBuy = !owned && av.price > 0;
+    return `<button class="cosmetic-tile avatar-choice ${active?'active':''} ${owned?'owned':'locked'}" type="button" data-profile-avatar="${escHtml(av.id)}">
+      <span class="cosmetic-avatar-preview" style="--avatar-img:url('${av.asset}')"></span>
+      <strong>${escHtml(av.name)}</strong>
+      <em>${owned ? (active ? (L?'EQUIPADO':'EQUIPPED') : (L?'DISPONIBLE':'OWNED')) : `${av.price} FLUX`}</em>
+      ${canBuy ? `<span class="cosmetic-buy-chip">${L?'COMPRAR':'BUY'}</span>` : ''}
+    </button>`;
+  }).join('');
+  wrap.innerHTML = `
+    <div class="cosmetics-section">
+      <div class="cosmetics-head">
+        <div>
+          <div class="block-title">${L?'Marcos de perfil':'Profile Frames'}</div>
+          <p>${L?'El marco basico es gratis. Los premium se desbloquean con Pase Premium activo.':'The basic frame is free. Premium frames unlock with an active Premium Pass.'}</p>
+        </div>
+        <span class="cosmetics-premium-pill ${hasPremium?'on':''}">${hasPremium ? (L?'Premium activo':'Premium active') : (L?'Premium requerido':'Premium required')}</span>
+      </div>
+      <div class="cosmetic-grid">${frames}</div>
+      <div class="cosmetics-head avatar-head">
+        <div>
+          <div class="block-title">${L?'Foto de perfil':'Profile Avatar'}</div>
+          <p>${L?'Elegi un sprite base o compra avatares premium con FLUX.':'Choose a base sprite or buy premium avatars with FLUX.'}</p>
+        </div>
+      </div>
+      <div class="cosmetic-grid">${avatars}</div>
+    </div>`;
+}
+window.renderProfileCosmetics = renderProfileCosmetics;
+
+async function selectProfileFrame(frameId){
+  const frame = profileFrameById(frameId);
+  if (frame.premium && !userHasPremiumPass()) return toast(currentLang === 'es' ? 'Requiere Pase Premium activo.' : 'Requires active Premium Pass.');
+  if (window.SB && SB.setProfileCosmetic) {
+    const r = await SB.setProfileCosmetic({ frame_id:frame.id });
+    if (r?.error) return toast('Error: ' + (r.error.message || r.error));
+    view.user.gameState.selectedProfileFrame = r.selected_profile_frame || frame.id;
+  } else if (window.SHS_SYNC && view.user.uid) {
+    view.user.gameState.selectedProfileFrame = frame.id;
+    SHS_SYNC.queueState(view.user.uid, { selected_profile_frame:frame.id });
+  } else {
+    view.user.gameState.selectedProfileFrame = frame.id;
+  }
+  saveDb(); applyProfileCosmetics(); renderProfileCosmetics();
+  toast(currentLang === 'es' ? 'Marco equipado.' : 'Frame equipped.');
+}
+window.selectProfileFrame = selectProfileFrame;
+
+async function selectProfileAvatar(avatarId){
+  const av = profileAvatarById(avatarId);
+  const owned = profileCosmetics().ownedAvatars.includes(av.id) || av.price === 0;
+  if (!owned) {
+    if (!window.SB || !SB.purchaseProfileAvatar) return toast(currentLang === 'es' ? 'Compra disponible solo con servidor.' : 'Purchase requires server connection.');
+    const r = await SB.purchaseProfileAvatar(av.id);
+    if (r?.error) {
+      const map = { not_enough_flux: currentLang === 'es' ? 'No tenes FLUX suficiente.' : 'Not enough FLUX.', invalid_avatar: 'Avatar invalido.' };
+      return toast(map[r.error] || ('Error: ' + (r.error.message || r.error)));
+    }
+    view.state.flux = r.flux ?? Math.max(0, (view.state.flux || 0) - av.price);
+    view.user.gameState.ownedAvatars = r.owned_avatars || [...profileCosmetics().ownedAvatars, av.id];
+    view.user.gameState.selectedAvatar = r.selected_avatar || av.id;
+  }
+  if (window.SB && SB.setProfileCosmetic) {
+    const r = await SB.setProfileCosmetic({ avatar_id:av.id });
+    if (r?.error) return toast('Error: ' + (r.error.message || r.error));
+    view.user.gameState.selectedAvatar = r.selected_avatar || av.id;
+  } else if (window.SHS_SYNC && view.user.uid) {
+    view.user.gameState.selectedAvatar = av.id;
+    SHS_SYNC.queueState(view.user.uid, { selected_avatar:av.id });
+  } else {
+    view.user.gameState.selectedAvatar = av.id;
+  }
+  saveDb(); syncTopbar(); renderProfileCosmetics();
+  toast(currentLang === 'es' ? 'Avatar equipado.' : 'Avatar equipped.');
+}
+window.selectProfileAvatar = selectProfileAvatar;
 
 // ── ACCOUNT EDIT ──────────────────────────────────────────────
 async function saveUsername(){
@@ -1312,7 +1467,7 @@ window.saveEmail = saveEmail;
 
 async function savePassword(){
   const pw = String(byId('acct-password')?.value || '');
-  if (pw.length < 6) return toast(t('profile_err_password_short'));
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(pw)) return toast(t('profile_err_password_short'));
   if (!window.SB || !SB.updatePassword) return toast(t('profile_err_server'));
   const r = await SB.updatePassword(pw);
   if (r.error) return toast('Error: ' + (r.error.message || r.error));
@@ -2327,6 +2482,13 @@ function bpRewardFor(level, track){
 function bpPricing(){
   return { usd: BP_PRICE_USD, flux: BP_PRICE_USD };
 }
+function bpRewardIcon(kind){
+  if (kind === 'shards') return `<span class="currency-icon shards bp-currency-icon"></span>`;
+  if (kind === 'flux') return `<span class="currency-icon flux bp-currency-icon"></span>`;
+  if (kind === 'grand_card') return `<span class="bp-card-prize bp-grand-prize"></span>`;
+  if (kind === 'random_card') return `<span class="bp-card-prize"></span>`;
+  return `<span class="bp-card-prize"></span>`;
+}
 function ensureBpState(){
   const u = view.user; if (!u) return null;
   u.gameState = u.gameState || {};
@@ -2427,9 +2589,13 @@ function renderBattlePass(){
          </div>
          <div class="bp-buy-hint">${L==='es'?'Free: pocos SHARDS cada 3 niveles. Premium: FLUX, cartas y GRAND nivel 30.':'Free: small SHARDS every 3 levels. Premium: FLUX, cards and GRAND at level 30.'}</div>
        </div>`;
+  const premiumFramePreview = PROFILE_FRAME_CATALOG.filter(f => f.premium).map(f =>
+    `<span class="bp-frame-chip" style="--profile-frame:url('${f.asset}')" title="${escHtml(f.name)}"></span>`
+  ).join('');
   const header = `
     <div class="bp-header">
       <div class="bp-head-left">
+        <div class="bp-hero-kicker">${L==='es'?'TEMPORADA ACTIVA':'ACTIVE SEASON'}</div>
         <div class="bp-lvl-row">
           <span class="bp-lvl-pill">${L==='es'?'NIVEL':'LEVEL'} <strong>${lvl}</strong><span class="bp-lvl-max">/ ${BP_LEVELS}</span></span>
           <span class="bp-xp-tag">${Math.min(bp.xp, BP_TOTAL_XP).toLocaleString()} / ${BP_TOTAL_XP.toLocaleString()} XP</span>
@@ -2437,9 +2603,15 @@ function renderBattlePass(){
         <div class="bp-xp-track-wrap">
           <div class="bp-xp-track"><div class="bp-xp-fill" style="width:${overallPct.toFixed(1)}%"></div></div>
         </div>
-        <div class="bp-xp-hint">${L==='es'?'Gana XP del pase jugando partidas (Win +30 · Loss +15).':'Earn pass XP by playing battles (Win +30 · Loss +15).'}</div>
+        <div class="bp-xp-hint">${L==='es'?'Gana XP del pase jugando partidas (Win +30 - Loss +15).':'Earn pass XP by playing battles (Win +30 - Loss +15).'}</div>
       </div>
-      <div class="bp-head-right">${buyBox}</div>
+      <div class="bp-head-right">
+        <div class="bp-premium-preview">
+          <div class="bp-preview-title">${L==='es'?'Cosmeticos Premium incluidos':'Premium cosmetics included'}</div>
+          <div class="bp-frame-strip">${premiumFramePreview}</div>
+        </div>
+        ${buyBox}
+      </div>
     </div>`;
 
   // Horizontal slider: continuous bar that fills 100% per level segment, two reward rows (Free / Premium).
@@ -2458,13 +2630,12 @@ function renderBattlePass(){
     const claimed = claimedSet.has(claimedKey);
     const lockedByTier = isPremium ? !bp.premium : false;
     const canClaim = reached && !claimed && !lockedByTier;
-    const icon = r.kind==='grand_card' ? '👑' : r.kind==='flux' ? '⚡' : r.kind==='random_card' ? '▣' : '◈';
     const cls = r.kind==='grand_card' ? 'bp-rew-grand' : r.kind==='flux' ? 'bp-rew-flux' : r.kind==='random_card' ? 'bp-rew-card' : 'bp-rew-shards';
     const stateCls = claimed ? 'claimed' : reached ? 'ready' : 'pending';
     return `
       <div class="bp-cell ${stateCls} ${lockedByTier?'locked':''}" style="width:${segWidth}px">
         <div class="bp-rew ${cls}">
-          <div class="bp-rew-icon">${icon}</div>
+          <div class="bp-rew-icon">${bpRewardIcon(r.kind)}</div>
           <div class="bp-rew-label">${r.label}</div>
           ${claimed
             ? `<div class="bp-rew-state">✓</div>`
@@ -3768,6 +3939,9 @@ async function hydrateFromSupabase(authUser){
     u.accountXp      = gs.xp    ?? u.accountXp ?? 0;
     u.accountLevel   = gs.level ?? u.accountLevel ?? 1;
     u.gameState.welcomePackClaimed = !!gs.welcome_pack_claimed;
+    u.gameState.selectedAvatar = gs.selected_avatar || u.gameState.selectedAvatar || 'protocol-seed';
+    u.gameState.selectedProfileFrame = gs.selected_profile_frame || u.gameState.selectedProfileFrame || 'basic';
+    u.gameState.ownedAvatars = Array.isArray(gs.owned_avatars) && gs.owned_avatars.length ? gs.owned_avatars : (u.gameState.ownedAvatars || ['protocol-seed']);
   }
   // Server is source of truth for collection — only override if we got data back.
   if (collection && Object.keys(collection).length){

@@ -456,6 +456,21 @@
       if (error) return { error };
       return data || { error:'unknown' };
     },
+    async setProfileCosmetic(payload){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('set_profile_cosmetic', {
+        p_avatar: payload?.avatar_id ? String(payload.avatar_id) : null,
+        p_frame: payload?.frame_id ? String(payload.frame_id) : null,
+      });
+      if (error) return { error };
+      return data || { error:'unknown' };
+    },
+    async purchaseProfileAvatar(avatarId){
+      const sb = await ensureClient();
+      const { data, error } = await sb.rpc('purchase_profile_avatar', { p_avatar:String(avatarId || '') });
+      if (error) return { error };
+      return data || { error:'unknown' };
+    },
 
     // ── Custom cards (admin-authored) ───────────────────────────
     async loadCustomCards(){
