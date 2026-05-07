@@ -696,7 +696,7 @@ function ensureBattleTopUI(){
     lang.id = 'game-lang-toggle';
     lang.title = 'Language / Idioma';
     lang.textContent = GAME_LANG === 'es' ? 'EN' : 'ES';
-    lang.onclick = toggleGameLang;
+    lang.onclick = () => { closeBattleMenu(); toggleGameLang(); };
     tools.appendChild(lang);
   }
   if (tools && !document.getElementById('bgm-toggle')) {
@@ -704,7 +704,7 @@ function ensureBattleTopUI(){
     btn.className = 'tool-btn'; btn.id = 'bgm-toggle';
     btn.title = gt('music');
     btn.textContent = '🎵';
-    btn.onclick = toggleBgm;
+    btn.onclick = () => { closeBattleMenu(); toggleBgm(); };
     const vol = document.createElement('input');
     vol.className = 'bgm-vol'; vol.id = 'bgm-vol';
     vol.type = 'range'; vol.min = '0'; vol.max = '100'; vol.value = '35';
@@ -721,6 +721,14 @@ function ensureBattleTopUI(){
     document.getElementById('screen-battle').appendChild(layer);
   }
 }
+function toggleBattleMenu(){
+  document.body.classList.toggle('battle-menu-open');
+}
+function closeBattleMenu(){
+  document.body.classList.remove('battle-menu-open');
+}
+window.toggleBattleMenu = toggleBattleMenu;
+window.closeBattleMenu = closeBattleMenu;
 function startRoundTimer(){
   stopRoundTimer();
   const el = document.getElementById('round-timer');
@@ -1351,10 +1359,12 @@ function appendLog(text, kind){
   while(el.children.length > 6) el.removeChild(el.lastChild);
 }
 function toggleLog(){
+  closeBattleMenu();
   APP.logOpen = !APP.logOpen;
   document.getElementById('battle-log').classList.toggle('show', APP.logOpen);
 }
 function surrender(){
+  closeBattleMenu();
   if(!APP.battle || APP.screen !== 'battle') return;
   openSurrenderModal();
 }
