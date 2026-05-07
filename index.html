@@ -1099,7 +1099,28 @@ async function applyPendingReferralToUser(user, profile){
       return;
     }
   }
+  await sendSponsorFriendRequest(user, sponsor);
   sessionStorage.removeItem(REF_SESSION_KEY);
+}
+
+async function sendSponsorFriendRequest(user, sponsor){
+  const sponsorUid = sponsor?.uid || sponsor?.user_id || sponsor;
+  if(!user || !sponsorUid || sponsorUid === user.uid) return;
+
+  // Remote persistence is owned by the profiles.referred_by DB trigger.
+  // This local mirror keeps the UI coherent until the next Supabase refresh.
+  const localSponsor = AUTH.db.users[sponsorUid] || (typeof sponsor === 'object' ? sponsor : null);
+  user.friendRequests = user.friendRequests || { sent:[], received:[] };
+  user.friends = user.friends || [];
+  if (!user.friends.includes(sponsorUid) && !(user.friendRequests.sent || []).includes(sponsorUid)) {
+    user.friendRequests.sent.push(sponsorUid);
+  }
+  if (localSponsor) {
+    localSponsor.friendRequests = localSponsor.friendRequests || { sent:[], received:[] };
+    if (!(localSponsor.friendRequests.received || []).includes(user.uid)) {
+      localSponsor.friendRequests.received.push(user.uid);
+    }
+  }
 }
 
 // ── AUTH DB ─────────────────────────────────────────────────────
@@ -1351,6 +1372,7 @@ async function saveUsername(){
   // Apply referral
   const refCode = sessionStorage.getItem(REF_SESSION_KEY);
   const me = AUTH.db.users[AUTH.currentUser.uid];
+  let sponsorForAutoFriend = null;
   if(refCode && !me.referredByUid){
     let sponsor = Object.values(AUTH.db.users).find(x=>x.referralCode===refCode);
     if(!sponsor && window.SB && SB.findProfileByReferralCode){
@@ -1361,6 +1383,7 @@ async function saveUsername(){
       me.referredByUid = sponsor.uid;
       sponsor.referrals = sponsor.referrals||[];
       if(!sponsor.referrals.includes(AUTH.currentUser.uid)) sponsor.referrals.push(AUTH.currentUser.uid);
+      sponsorForAutoFriend = sponsor;
     }
     sessionStorage.removeItem(REF_SESSION_KEY);
   }
@@ -1377,6 +1400,7 @@ async function saveUsername(){
     me.referredByUid = suid;
     const sp = AUTH.db.users[suid];
     if(sp){ sp.referrals=sp.referrals||[]; if(!sp.referrals.includes(AUTH.currentUser.uid)) sp.referrals.push(AUTH.currentUser.uid); }
+    sponsorForAutoFriend = sp || { uid:suid };
   }
   me.username = username;
   AUTH.currentUser.username = username;
@@ -1392,6 +1416,7 @@ async function saveUsername(){
         usernameFeedback(r.error.message || 'Username could not be saved.');
         return;
       }
+      if(sponsorForAutoFriend) await sendSponsorFriendRequest(me, sponsorForAutoFriend);
     } catch(e){
       console.warn('upsertProfile failed:', e);
       usernameFeedback('Username could not be saved. Try again.');
