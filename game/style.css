@@ -580,10 +580,14 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   content:'';
   position:absolute;
   inset:-16px -24px -18px -16px;
-  background:url('/Assets/ui/vital-bar-frame.png') left center/100% 100% no-repeat;
+  background:url('/Assets/ui/battle/hp-bar-frame.png') left center/100% 100% no-repeat;
   z-index:3;
   pointer-events:none;
-  filter:drop-shadow(0 0 8px rgba(120,180,255,.2));
+  filter:drop-shadow(0 0 8px rgba(0,255,198,.16));
+}
+.bar.pulse::after{
+  background-image:url('/Assets/ui/battle/pulse-bar-frame.png');
+  filter:drop-shadow(0 0 9px rgba(188,91,255,.22));
 }
 .bar .fill{
   position:absolute;
@@ -1180,7 +1184,7 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 .pulse-cap{
   flex:1; max-width: 22px; height: 28px;
   background:
-    url('/Assets/ui/pulse-bottle-empty.png') center/contain no-repeat,
+    url('/Assets/ui/battle/pulse-bottle-empty.png') center/contain no-repeat,
     linear-gradient(180deg,rgba(180,190,220,.18),rgba(64,68,88,.26));
   border-radius:4px;
   border:1px solid rgba(190,200,230,.16);
@@ -1189,14 +1193,14 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   transition: all .15s;
 }
 .pulse-cap.active{
-  background:url('/Assets/ui/pulse-bottle-full.png') center/contain no-repeat;
+  background:url('/Assets/ui/battle/pulse-bottle-full.png') center/contain no-repeat;
   border-color:rgba(180,120,255,.7);
   opacity:1;
   transform:translateY(-2px) scale(1.04);
   filter:drop-shadow(0 0 8px rgba(164,100,255,.8));
 }
 .pulse-cap.fury{
-  background:url('/Assets/ui/pulse-bottle-full.png') center/contain no-repeat;
+  background:url('/Assets/ui/battle/pulse-bottle-full.png') center/contain no-repeat;
   border-color:rgba(255,59,59,.72);
   opacity:1;
   filter:hue-rotate(120deg) saturate(1.4) drop-shadow(0 0 8px rgba(255,59,59,.85));
@@ -1422,18 +1426,18 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 }
 .cs-pulse-bar .pip{
   flex:1;
-  background:url('/Assets/ui/pulse-bottle-empty.png') center/contain no-repeat;
+  background:url('/Assets/ui/battle/pulse-bottle-empty.png') center/contain no-repeat;
   border-radius:1px;
   opacity:.35;
   transition: all .12s ease;
 }
 .cs-pulse-bar .pip.lit{
-  background:url('/Assets/ui/pulse-bottle-full.png') center/contain no-repeat;
+  background:url('/Assets/ui/battle/pulse-bottle-full.png') center/contain no-repeat;
   opacity:1;
   filter:drop-shadow(0 0 7px rgba(164,100,255,.85));
 }
 .cs-pulse-bar .pip.fury{
-  background:url('/Assets/ui/pulse-bottle-full.png') center/contain no-repeat;
+  background:url('/Assets/ui/battle/pulse-bottle-full.png') center/contain no-repeat;
   opacity:1;
   filter:hue-rotate(120deg) saturate(1.4) drop-shadow(0 0 7px rgba(255,59,59,.85));
 }
@@ -1873,6 +1877,18 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   will-change: transform;
   color:#fff;
 }
+.dmg-projectile .dmg-sprite{
+  position:absolute;
+  left:-23px;
+  top:-23px;
+  width:46px;
+  height:46px;
+  object-fit:contain;
+  user-select:none;
+  pointer-events:none;
+  filter:drop-shadow(0 0 14px currentColor) drop-shadow(0 0 5px rgba(255,255,255,.75));
+  animation:dmg-sprite-spin .58s linear infinite, dmg-sprite-breathe .36s ease-in-out infinite alternate;
+}
 .dmg-projectile .dmg-emoji{
   position:absolute; left:-18px; top:-22px;
   font-size:2.2rem;
@@ -1886,8 +1902,10 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   opacity:.85;
 }
 .dmg-projectile.fx-laser .dmg-trail{ box-shadow: 0 0 36px 14px currentColor; }
-.dmg-projectile.fx-fire  .dmg-emoji{ filter: drop-shadow(0 0 22px #FF6B35) drop-shadow(0 0 8px #FBBF24); }
-.dmg-projectile.fx-wave  .dmg-emoji{ filter: drop-shadow(0 0 22px #3B82F6) drop-shadow(0 0 8px #60A5FA); }
+.dmg-projectile.fx-fire  .dmg-sprite{ filter: drop-shadow(0 0 22px #FF6B35) drop-shadow(0 0 8px #FBBF24); }
+.dmg-projectile.fx-wave  .dmg-sprite{ filter: drop-shadow(0 0 22px #3B82F6) drop-shadow(0 0 8px #60A5FA); }
+@keyframes dmg-sprite-spin{to{transform:rotate(360deg)}}
+@keyframes dmg-sprite-breathe{from{scale:.92}to{scale:1.08}}
 
 /* HP bar reaction on hit */
 .bar.hp.hp-hit{ animation: hp-hit-bar .36s ease-out; position:relative; }
@@ -2445,22 +2463,28 @@ body.surrender-open #screen-battle > :not(.surrender-modal){
   }
   .player-block.me .vital-row{flex-direction:row}
   .bar{
-    height:12px;
+    height:18px;
     min-width:82px;
-    border:1px solid rgba(255,255,255,.14);
-    border-radius:999px;
+    border:0;
+    border-radius:10px;
     background:rgba(0,0,0,.48);
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.45),0 0 12px rgba(0,0,0,.34);
+    box-shadow:0 0 12px rgba(0,0,0,.34);
   }
   .bar::before{
-    inset:2px;
+    left:18px;
+    right:8px;
+    top:6px;
+    bottom:6px;
     background:repeating-linear-gradient(90deg,rgba(255,255,255,.14) 0 1px,transparent 1px calc(100% / 12));
     border-radius:inherit;
   }
-  .bar::after{display:none}
+  .bar::after{
+    display:block;
+    inset:-8px -12px -10px -8px;
+  }
   .bar .fill{
-    left:2px;top:2px;bottom:2px;
-    max-width:calc(100% - 4px);
+    left:18px;top:6px;bottom:6px;
+    max-width:calc(100% - 26px);
     border-radius:inherit;
   }
   .player-block.me .bar{transform:none}
@@ -2613,6 +2637,12 @@ body.surrender-open #screen-battle > :not(.surrender-modal){
     max-width:none;
     height:30px;
     border-radius:6px;
+  }
+  .dmg-projectile .dmg-sprite{
+    left:-18px;
+    top:-18px;
+    width:36px;
+    height:36px;
   }
   .ap-row{
     grid-template-columns:minmax(0,1fr) 82px;

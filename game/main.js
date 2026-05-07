@@ -1229,26 +1229,26 @@ function onRoundResolved(result){
 
 // ─── CLAN ATTACK ANIMATIONS + SHATTER ────────────────────────
 const CLAN_FX = {
-  nexus:    { color:'#6B5CE7', emoji:'🤖', kind:'laser'   },
-  tidecall: { color:'#3B82F6', emoji:'🌊', kind:'wave'    },
-  ashborn:  { color:'#FF6B35', emoji:'🔥', kind:'fire'    },
-  errvoid:  { color:'#a855f7', emoji:'👾', kind:'glitch'  },
-  vault:    { color:'#FBBF24', emoji:'👑', kind:'goldsmash' },
-  mycelium: { color:'#10B981', emoji:'🍄', kind:'spores'  },
-  ironpact: { color:'#94A3B8', emoji:'💀', kind:'iron'    },
-  synthos:  { color:'#06B6D4', emoji:'🔬', kind:'beam'    },
-  loopkin:  { color:'#F472B6', emoji:'⏳', kind:'loop'    },
-  phantom:  { color:'#E5E7EB', emoji:'👁', kind:'phase'   },
-  frequenz: { color:'#EF4444', emoji:'🎸', kind:'sonic'   },
-  protocol: { color:'#22D3EE', emoji:'🛡', kind:'shield'  },
-  echo:     { color:'#F5F0E8', emoji:'✨', kind:'titan'   },
+  nexus:    { color:'#6B5CE7', kind:'laser',     sprite:'/Assets/ui/attack/attack-nexus.png'    },
+  tidecall: { color:'#3B82F6', kind:'wave',      sprite:'/Assets/ui/attack/attack-tidecall.png' },
+  ashborn:  { color:'#FF6B35', kind:'fire',      sprite:'/Assets/ui/attack/attack-ashborn.png'  },
+  errvoid:  { color:'#a855f7', kind:'glitch',    sprite:'/Assets/ui/attack/attack-errvoid.png'  },
+  vault:    { color:'#FBBF24', kind:'goldsmash', sprite:'/Assets/ui/attack/attack-vault.png'    },
+  mycelium: { color:'#10B981', kind:'spores',    sprite:'/Assets/ui/attack/attack-mycelium.png' },
+  ironpact: { color:'#94A3B8', kind:'iron',      sprite:'/Assets/ui/attack/attack-ironpact.png' },
+  synthos:  { color:'#06B6D4', kind:'beam',      sprite:'/Assets/ui/attack/attack-synthos.png'  },
+  loopkin:  { color:'#F472B6', kind:'loop',      sprite:'/Assets/ui/attack/attack-loopkin.png'  },
+  phantom:  { color:'#E5E7EB', kind:'phase',     sprite:'/Assets/ui/attack/attack-phantom.png'  },
+  frequenz: { color:'#EF4444', kind:'sonic',     sprite:'/Assets/ui/attack/attack-frequenz.png' },
+  protocol: { color:'#22D3EE', kind:'shield',    sprite:'/Assets/ui/attack/attack-protocol.png' },
+  echo:     { color:'#F5F0E8', kind:'titan',     sprite:'/Assets/ui/attack/attack-echo.png'     },
 };
 // Real projectile system: winning card → loser HP bar.
 // N projectiles (= damage), arc trajectory, trails, randomness, HP impact feedback.
 function launchDamageProjectiles(winnerSide, dmg, clan){
   const N  = dmg|0;
   if (N <= 0) return;
-  const fx = CLAN_FX[clan] || { color:'#fff', emoji:'⚡', kind:'laser' };
+  const fx = CLAN_FX[clan] || { color:'#fff', kind:'laser', sprite:'/Assets/ui/attack/attack-protocol.png' };
   const sourceEl = winnerSide === 'me'
     ? document.getElementById('cs-card-me')
     : document.getElementById('cs-card-opp');
@@ -1277,7 +1277,10 @@ function spawnProjectile(layer, sx, sy, tx, ty, fx, onHit){
   const el = document.createElement('div');
   el.className = 'dmg-projectile fx-' + fx.kind;
   el.style.color = fx.color;
-  el.innerHTML = `<span class="dmg-emoji">${fx.emoji}</span><span class="dmg-trail"></span>`;
+  const sprite = fx.sprite
+    ? `<img class="dmg-sprite" src="${fx.sprite}" alt="" draggable="false"/>`
+    : `<span class="dmg-emoji">*</span>`;
+  el.innerHTML = `${sprite}<span class="dmg-trail"></span>`;
   layer.appendChild(el);
   // Quadratic bezier arc with slight randomness.
   const dx = tx - sx, dy = ty - sy;
