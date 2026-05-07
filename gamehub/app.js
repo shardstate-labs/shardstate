@@ -383,6 +383,13 @@ function eloProgress(elo) {
   }
   return 100;
 }
+function eloFrameClass(elo) {
+  if (elo < 800)  return 'frame-common';
+  if (elo < 1200) return 'frame-rare';
+  if (elo < 1600) return 'frame-epic';
+  if (elo < 2000) return 'frame-legendary';
+  return 'frame-mythic';
+}
 
 // ── DB / SESSION ───────────────────────────────────────────────
 function loadDb() {
@@ -649,11 +656,18 @@ function syncTopbar() {
   byId('topbar-username') && (byId('topbar-username').textContent = username);
   byId('topbar-username2') && (byId('topbar-username2').textContent = username);
   const eb = eloBracket(u.elo || 0);
+  const frameClass = eloFrameClass(u.elo || 0);
   const eloText = `${eb.label} · ${u.elo || 0}`;
   const eloEl = byId('topbar-elo');
   if (eloEl) { eloEl.textContent = eloText; eloEl.className = `user-elo ${eb.cls}`; }
   const eloEl2 = byId('topbar-elo2');
   if (eloEl2) { eloEl2.textContent = eloText; eloEl2.className = `topbar-elo ${eb.cls}`; }
+  ['topbar-avatar','topbar-avatar2','profile-avatar-big'].forEach(id => {
+    const el = byId(id);
+    if (!el) return;
+    el.classList.remove('frame-common','frame-rare','frame-epic','frame-legendary','frame-mythic');
+    el.classList.add(frameClass);
+  });
   // Show admin nav link only for the admin email.
   const adminLink = byId('nav-admin-link');
   if (adminLink) {
@@ -1188,9 +1202,15 @@ function cdmSell(id) {
 async function renderPerfil() {
   const u = view.user;
   const eb = eloBracket(u.elo || 0);
+  const frameClass = eloFrameClass(u.elo || 0);
   const ep = eloProgress(u.elo || 0);
   byId('profile-name') && (byId('profile-name').textContent = u.username || 'Player');
-  byId('profile-avatar-big') && (byId('profile-avatar-big').textContent = u.avatar || '⚡');
+  const profileAvatar = byId('profile-avatar-big');
+  if (profileAvatar) {
+    profileAvatar.textContent = u.avatar || '⚡';
+    profileAvatar.classList.remove('frame-common','frame-rare','frame-epic','frame-legendary','frame-mythic');
+    profileAvatar.classList.add(frameClass);
+  }
   const badge = byId('profile-elo-badge');
   if (badge) { badge.textContent = `${eb.label} · ${u.elo||0}`; badge.className = `profile-elo-badge ${eb.cls}`; }
   const xpBar = byId('xp-bar');

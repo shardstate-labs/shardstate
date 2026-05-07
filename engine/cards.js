@@ -21,6 +21,7 @@ const CLANS = {
   protocol: { name:'PROTOCOL', emoji:'🛡', color:'#7F8C8D', bonus:'Anular habilidad adv' },
   titans:   { name:'TITANS',   emoji:'🗿', color:'#F5F0E8', bonus:'Cancela TITANS rival si ambos tienen TITANS en mano' },
 };
+const CLAN_LOGO_PATHS = Object.fromEntries(Object.keys(CLANS).map(key => [key, `/Assets/ui/clan-${key}.png`]));
 
 // ─── RARITY MAP ──────────────────────────────────────────────
 const RAR_MAP = { common:'C', uncommon:'U', rare:'R', mythic:'M' };
@@ -52,6 +53,7 @@ function createCard(cfg) {
     tags:        cfg.tags    || [],
     visual: {
       image: cfg.visual?.image || `/assets/cards/${cfg.id}.png`,
+      logo: cfg.visual?.logo || CLAN_LOGO_PATHS[cfg.clan] || '',
       frame: cfg.clan,
       color: CLANS[cfg.clan]?.color || '#ffffff',
     },

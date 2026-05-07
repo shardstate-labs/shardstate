@@ -1756,3 +1756,45 @@ input,select,textarea{ max-width:100%; }
   .tcg-card .card-name, .card .card-name{ font-size:.78rem; }
   .tcg-card .card-rar,  .card .card-rar { font-size:.5rem; padding:1px 4px; }
 }
+
+/* Sprite asset integration */
+.currency-icon{
+  background-color:transparent!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 0 8px rgba(0,255,198,.22));
+}
+.currency-icon::before,
+.currency-icon::after{display:none!important}
+.currency-icon.shards{background-image:url('/Assets/ui/currency-shards.png')!important}
+.currency-icon.flux{background-image:url('/Assets/ui/currency-flux.png')!important}
+.currency-icon.shs{background-image:url('/Assets/ui/currency-shs.png')!important}
+
+.profile-avatar-xl,
+.su-avatar{
+  position:relative;
+  isolation:isolate;
+}
+.profile-avatar-xl::before,
+.su-avatar::before{
+  content:'';
+  position:absolute;
+  inset:-72%;
+  background:var(--elo-frame,url('/Assets/ui/frame-common.png')) center/contain no-repeat;
+  z-index:-1;
+  pointer-events:none;
+  filter:drop-shadow(0 0 16px rgba(0,255,198,.18));
+}
+.profile-avatar-xl::before{inset:-62%}
+.frame-common{--elo-frame:url('/Assets/ui/frame-common.png')}
+.frame-rare{--elo-frame:url('/Assets/ui/frame-rare.png')}
+.frame-epic{--elo-frame:url('/Assets/ui/frame-epic.png')}
+.frame-legendary{--elo-frame:url('/Assets/ui/frame-legendary.png')}
+.frame-mythic{--elo-frame:url('/Assets/ui/frame-mythic.png')}
+.frame-mythic::before{animation:elo-frame-orbit 4.8s ease-in-out infinite}
+.frame-legendary::before{animation:elo-frame-pulse 3.4s ease-in-out infinite}
+@keyframes elo-frame-pulse{0%,100%{filter:drop-shadow(0 0 10px rgba(33,244,255,.16))}50%{filter:drop-shadow(0 0 22px rgba(245,158,11,.35))}}
+@keyframes elo-frame-orbit{0%,100%{filter:drop-shadow(0 0 14px rgba(33,244,255,.24))}50%{filter:drop-shadow(0 0 26px rgba(155,89,246,.42))}}

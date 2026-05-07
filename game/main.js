@@ -622,10 +622,22 @@ function layoutHand(side, ids, faceDown){
 // ─── HUD ─────────────────────────────────────────────────────
 function renderHud(){
   const B = APP.battle;
-  document.getElementById('p-hp-fill').style.width    = (B.pHP / 12 * 100) + '%';
-  document.getElementById('o-hp-fill').style.width    = (B.oHP / 12 * 100) + '%';
-  document.getElementById('p-pulse-fill').style.width = (B.pPulses / 12 * 100) + '%';
-  document.getElementById('o-pulse-fill').style.width = (B.oPulses / 12 * 100) + '%';
+  const setVital = (id, value, max) => {
+    const fill = document.getElementById(id);
+    const bar = fill?.parentElement;
+    const pct = Math.max(0, Math.min(100, value / max * 100));
+    if(fill) fill.style.width = pct + '%';
+    if(bar){
+      bar.style.setProperty('--vital-pct', pct + '%');
+      bar.dataset.value = value;
+      bar.classList.toggle('is-empty', value <= 0);
+      bar.classList.toggle('is-low', value > 0 && value <= Math.ceil(max * .25));
+    }
+  };
+  setVital('p-hp-fill', B.pHP, 12);
+  setVital('o-hp-fill', B.oHP, 12);
+  setVital('p-pulse-fill', B.pPulses, 12);
+  setVital('o-pulse-fill', B.oPulses, 12);
   document.getElementById('p-hp-num').textContent     = B.pHP;
   document.getElementById('o-hp-num').textContent     = B.oHP;
   document.getElementById('p-pulse-num').textContent  = B.pPulses;
