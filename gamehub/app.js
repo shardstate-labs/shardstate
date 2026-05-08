@@ -3378,6 +3378,9 @@ function launchPWA() {
       elo:    view?.user?.elo       ?? 0,
       shards: view?.state?.shards   ?? 0,
       level:  view?.user?.accountLevel ?? 1,
+      selectedAvatar: view?.user?.gameState?.selectedAvatar || 'protocol-seed',
+      selectedProfileFrame: view?.user?.gameState?.selectedProfileFrame || 'basic',
+      customAvatarUrl: view?.user?.gameState?.customAvatarUrl || view?.user?.avatarUrl || '',
     }));
   } catch (e) { /* localStorage unavailable — continue anyway */ }
   window.open('../game/index.html', '_blank');

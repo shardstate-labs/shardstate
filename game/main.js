@@ -46,6 +46,9 @@ if(APP_IMPORT.player){
   if(APP_IMPORT.player.elo    != null) PLAYER.elo    = APP_IMPORT.player.elo;
   if(APP_IMPORT.player.shards != null) PLAYER.shards = APP_IMPORT.player.shards;
   if(APP_IMPORT.player.level  != null) PLAYER.level  = APP_IMPORT.player.level;
+  PLAYER.selectedAvatar = APP_IMPORT.player.selectedAvatar || PLAYER.selectedAvatar || 'protocol-seed';
+  PLAYER.selectedProfileFrame = APP_IMPORT.player.selectedProfileFrame || PLAYER.selectedProfileFrame || 'basic';
+  PLAYER.customAvatarUrl = APP_IMPORT.player.customAvatarUrl || PLAYER.customAvatarUrl || '';
 }
 
 const APP = {
@@ -65,6 +68,24 @@ const APP = {
 };
 
 const PVP_MODES = new Set(['casual','ranked']);
+const PROFILE_FRAME_ASSETS = {
+  basic:'/Assets/ui/premium/frame-signal-v2.png',
+  'premium-circuit':'/Assets/ui/premium/frame-circuit-v2.png',
+  'premium-prism':'/Assets/ui/premium/frame-prism-v2.png',
+  'premium-gold':'/Assets/ui/premium/frame-aurum-v2.png',
+  'premium-void':'/Assets/ui/premium/frame-void-v2.png',
+  'premium-singularity':'/Assets/ui/premium/frame-singularity-v2.png',
+};
+const PROFILE_AVATAR_ASSETS = {
+  'protocol-seed':'/Assets/ui/premium/avatar-protocol-crystal.png',
+  'nexus-orb':'/Assets/ui/premium/avatar-nexus-orb.png',
+  'tide-sigil':'/Assets/ui/premium/avatar-tide-sigil.png',
+  'ash-spark':'/Assets/ui/premium/avatar-ash-spark.png',
+  'void-eye':'/Assets/ui/premium/avatar-void-eye.png',
+  'mycel-spore':'/Assets/ui/premium/avatar-mycel-spore.png',
+  'iron-crest':'/Assets/ui/premium/avatar-iron-crest.png',
+  'singularity-core':'/Assets/ui/premium/avatar-singularity-core.png',
+};
 const GAME_I18N = {
   es: {
     battleLog:'Registro de combate', surrender:'Rendirse', music:'Música on/off',
@@ -511,9 +532,36 @@ async function loadPvpOpponentProfile(uid){
     const avatarEl = document.getElementById('opp-avatar');
     if(nameEl) nameEl.textContent = APP.battle.opponent.name;
     if(clubEl) clubEl.textContent = APP.battle.opponent.club;
-    if(avatarEl) avatarEl.textContent = APP.battle.opponent.name.charAt(0);
+    applyBattleAvatar(avatarEl, {
+      selectedAvatar: r?.gameState?.selected_avatar,
+      selectedProfileFrame: r?.gameState?.selected_profile_frame,
+      customAvatarUrl: r?.profile?.avatar_url || '',
+    }, APP.battle.opponent.name);
   } catch(err) {
     console.warn('Opponent profile load failed', err);
+  }
+}
+
+function applyBattleAvatar(el, cosmetics, fallbackName){
+  if(!el) return;
+  const frame = PROFILE_FRAME_ASSETS[cosmetics?.selectedProfileFrame || 'basic'] || PROFILE_FRAME_ASSETS.basic;
+  const custom = cosmetics?.customAvatarUrl || '';
+  const sprite = PROFILE_AVATAR_ASSETS[cosmetics?.selectedAvatar || 'protocol-seed'];
+  el.style.setProperty('--profile-frame', `url('${frame}')`);
+  if(custom){
+    el.textContent = '';
+    el.dataset.avatarType = 'custom';
+    el.style.setProperty('--avatar-img', `url("${custom}")`);
+    el.classList.add('profiled');
+  } else if(sprite){
+    el.textContent = '';
+    el.dataset.avatarType = 'sprite';
+    el.style.setProperty('--avatar-img', `url('${sprite}')`);
+    el.classList.add('profiled');
+  } else {
+    el.textContent = String(fallbackName || '?').charAt(0).toUpperCase();
+    el.classList.remove('profiled');
+    el.style.removeProperty('--avatar-img');
   }
 }
 
@@ -551,10 +599,10 @@ function beginBattle(mode, pvpMatch){
   // identities
   document.getElementById('me-name').textContent  = PLAYER.name;
   document.getElementById('me-club').textContent  = PLAYER.club;
-  document.getElementById('me-avatar').textContent = PLAYER.name.charAt(0);
+  applyBattleAvatar(document.getElementById('me-avatar'), PLAYER, PLAYER.name);
   document.getElementById('opp-name').textContent  = APP.battle.opponent.name;
   document.getElementById('opp-club').textContent  = APP.battle.opponent.club;
-  document.getElementById('opp-avatar').textContent = APP.battle.opponent.name.charAt(0);
+  applyBattleAvatar(document.getElementById('opp-avatar'), null, APP.battle.opponent.name);
 
   // Snapshot original 4-card hands so we can persist played cards visually.
   APP.handSnapshot = {
@@ -1193,14 +1241,12 @@ function buildPulseVizBar(elId, pulses, colapso){
   const bar = document.getElementById(elId);
   bar.innerHTML = '';
   const total = pulses + (colapso ? 3 : 0);
-  const slots = Math.max(12, total);
-  for(let i = 0; i < slots; i++){
-    const pip = document.createElement('div');
-    pip.className = 'pip';
-    if(i < pulses) pip.dataset.kind = 'lit';
-    else if(colapso && i < pulses + 3) pip.dataset.kind = 'fury';
-    bar.appendChild(pip);
-  }
+  const token = document.createElement('div');
+  token.className = 'cs-pulse-token' + (colapso ? ' fury' : '');
+  token.innerHTML = `
+    <span class="cs-pulse-icon"></span>
+    <span class="cs-pulse-copy"><b>${total}</b><em>PULSO${total === 1 ? '' : 'S'}</em></span>`;
+  bar.appendChild(token);
 }
 
 function animateCombatCardStats(holder, baseCard, sideResult){
@@ -1221,6 +1267,13 @@ function animateCombatCardStats(holder, baseCard, sideResult){
 function animatePulsePips(elId, total){
   const bar = document.getElementById(elId);
   if(!bar) return;
+  const token = bar.querySelector('.cs-pulse-token');
+  if(token){
+    token.classList.remove('pop');
+    void token.offsetWidth;
+    token.classList.add('pop');
+    return;
+  }
   const pips = bar.querySelectorAll('.pip');
   let i = 0;
   const tick = ()=>{
