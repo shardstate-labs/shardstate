@@ -446,12 +446,14 @@ function setAvatarVisual(el, avatarId){
   if (avatarId === 'custom-upload' && customUrl) {
     el.textContent = '';
     el.style.setProperty('--avatar-img', `url("${customUrl}")`);
+    el.dataset.avatarType = 'custom';
     el.setAttribute('aria-label', currentLang === 'es' ? 'Foto personalizada' : 'Custom avatar');
     return;
   }
   const av = profileAvatarById(avatarId);
   el.textContent = '';
   el.style.setProperty('--avatar-img', `url('${av.asset}')`);
+  el.dataset.avatarType = 'sprite';
   el.setAttribute('aria-label', av.name);
 }
 function setFrameVisual(el, frameId){

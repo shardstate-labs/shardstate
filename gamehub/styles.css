@@ -2015,3 +2015,35 @@ input,select,textarea{ max-width:100%; }
 .cosmetic-frame-preview span{width:62px!important;height:62px!important;border-radius:16px!important}
 .cosmetic-avatar-preview{width:96px!important;height:96px!important;border-radius:22px!important;background-size:cover!important;background-position:center!important}
 @media(max-width:700px){.profile-avatar-xl{width:90px!important;height:90px!important;margin-bottom:42px!important}.profile-avatar-xl::before{inset:-31%!important}}
+
+/* Avatar-frame final alignment: no extra inner plate; sprites stay transparent, user photos crop cleanly. */
+.profile-avatar-xl,
+.su-avatar,
+.topbar-avatar{
+  background-color:transparent!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.profile-avatar-xl[data-avatar-type="sprite"],
+.su-avatar[data-avatar-type="sprite"],
+.topbar-avatar[data-avatar-type="sprite"]{
+  background-size:112%!important;
+}
+.profile-avatar-xl[data-avatar-type="custom"],
+.su-avatar[data-avatar-type="custom"],
+.topbar-avatar[data-avatar-type="custom"]{
+  background-size:cover!important;
+}
+.profile-avatar-xl::after{
+  content:none!important;
+  display:none!important;
+}
+.profile-avatar-xl::before{
+  inset:-30%!important;
+}
+.su-avatar::before,
+.topbar-avatar::before{
+  inset:-30%!important;
+}
