@@ -307,6 +307,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
 .field input:focus{outline:none;border-color:var(--acc)}
 .field input::placeholder{color:var(--muted)}
 .pw-rule{font-size:0.72rem;color:var(--muted);margin-top:4px;display:none}
+.auth-bot-trap{position:absolute!important;left:-10000px!important;top:auto!important;width:1px!important;height:1px!important;overflow:hidden!important}
 .auth-feedback{font-size:0.8rem;color:var(--red);margin-bottom:12px;min-height:18px;display:block}
 .auth-feedback.ok{color:var(--acc)}
 .auth-submit{width:100%;padding:14px;background:var(--acc);color:#000;font-family:var(--font-head);font-size:0.88rem;font-weight:700;letter-spacing:0.08em;border-radius:4px;transition:all var(--tr);margin-top:4px}
@@ -810,7 +811,11 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
       <div class="field">
         <label>Password</label>
         <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password"/>
-        <div class="pw-rule" id="auth-password-rule">Min 8 chars · uppercase · lowercase · number</div>
+        <div class="pw-rule" id="auth-password-rule">Min 8 chars · uppercase · lowercase · number · symbol</div>
+      </div>
+      <div class="auth-bot-trap" aria-hidden="true">
+        <label>Website</label>
+        <input type="text" id="auth-website" tabindex="-1" autocomplete="off"/>
       </div>
       <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">ENTER SHARDSTATE</button>
       <div class="auth-divider">or continue with</div>
@@ -1152,8 +1157,9 @@ function genUid(){
 function normalizeEmail(e){ return String(e||'').trim().toLowerCase(); }
 function normalizeUsernameInput(n){ return String(n||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'').slice(0,16); }
 function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
-function validPassword(p){ return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(p||''); }
+function validPassword(p){ return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(p||''); }
 function validUsername(n){ return /^[a-z0-9_]{3,16}$/.test(normalizeUsernameInput(n)); }
+function allowLocalAuthFallback(){ return ['localhost', '127.0.0.1'].includes(location.hostname); }
 function isGoogleAuthUser(authUser){
   const providers = authUser?.app_metadata?.providers || authUser?.identities?.map(i => i.provider) || [];
   return providers.includes('google');
@@ -1186,6 +1192,9 @@ function ensureUserDefaults(u){
 // ── AUTH UI ─────────────────────────────────────────────────────
 function openAuth(mode){
   setAuthMode(mode);
+  AUTH.openedAt = Date.now();
+  const botTrap = document.getElementById('auth-website');
+  if (botTrap) botTrap.value = '';
   document.getElementById('auth-overlay').classList.add('open');
   document.getElementById('auth-main-step').style.display='block';
   document.getElementById('auth-username-step').classList.remove('active');
@@ -1240,9 +1249,15 @@ function usernameFeedback(msg, ok=false){
 async function submitAuth(){
   const email    = normalizeEmail(document.getElementById('auth-email').value);
   const password = document.getElementById('auth-password').value||'';
+  const botTrap = document.getElementById('auth-website');
+  if (botTrap && botTrap.value) { authFeedback('Unable to process this request.'); return; }
+  if (AUTH.mode === 'register' && AUTH.openedAt && Date.now() - AUTH.openedAt < 1200) {
+    authFeedback('Please wait a moment and try again.');
+    return;
+  }
   if(!validEmail(email)){ authFeedback('Enter a valid email.'); return; }
   if(AUTH.mode==='register' && !validPassword(password)){
-    authFeedback('Password: 8+ chars, upper, lower and a number.'); return;
+    authFeedback('Password: 8+ chars, upper, lower, number and symbol.'); return;
   }
   if(AUTH.mode==='login'){
     await loginWithEmail(email, password);
@@ -1267,6 +1282,7 @@ async function registerWithEmail(email, password){
     return;
   }
   // Offline fallback (legacy local-only flow).
+  if (!allowLocalAuthFallback()) { authFeedback('Server auth unavailable. Try again in a moment.'); return; }
   if(AUTH.db.emailToUid[email]){ authFeedback('Email already registered. Log in instead.'); return; }
   const newUid = genUid();
   AUTH.db.emailToUid[email] = newUid;
@@ -1287,6 +1303,7 @@ async function loginWithEmail(email, password){
     return;
   }
   // Offline fallback.
+  if (!allowLocalAuthFallback()) { authFeedback('Server auth unavailable. Try again in a moment.'); return; }
   const linkedUid = AUTH.db.emailToUid[email];
   if(!linkedUid){ authFeedback('Account not found. Register first.'); return; }
   const user = AUTH.db.users[linkedUid];
@@ -1311,6 +1328,7 @@ async function beginOAuth(provider){
     return;
   }
   // Offline legacy fallback only.
+  if (!allowLocalAuthFallback()) { authFeedback('Server auth unavailable. Try again in a moment.'); return; }
   const inline = document.getElementById('oauth-inline');
   inline.style.display='flex';
   document.getElementById('oauth-helper-text').textContent = `Enter your ${provider==='google'?'Google':'Apple'} email to continue.`;
@@ -1322,6 +1340,7 @@ async function completeOAuth(){
   const email    = normalizeEmail(document.getElementById('oauth-email').value);
   if(!provider){ authFeedback('Pick Google or Apple first.'); return; }
   if(window.SB){ authFeedback('OAuth fallback disabled while server auth is available.'); return; }
+  if(!allowLocalAuthFallback()){ authFeedback('Server auth unavailable. Try again in a moment.'); return; }
   if(!validEmail(email)){ authFeedback('Enter a valid provider email.'); return; }
   const linkedUid = AUTH.db.emailToUid[email];
   if(linkedUid){

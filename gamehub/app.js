@@ -92,7 +92,7 @@ const I18N = {
     profile_err_username_required:'Ingresa un nombre de usuario valido.', profile_err_server:'Sin conexion al servidor.', profile_err_login:'Inicia sesion.',
     profile_err_username_invalid:'Nombre de usuario invalido.', profile_err_username_taken:'Ese nombre de usuario ya existe.',
     profile_toast_username_saved:'Nombre de usuario actualizado.', profile_err_email_invalid:'Correo invalido.',
-    profile_toast_email_confirm:'Revisa tu nuevo correo para confirmar el cambio.', profile_err_password_short:'Minimo 8 caracteres, con mayuscula, minuscula y numero.',
+    profile_toast_email_confirm:'Revisa tu nuevo correo para confirmar el cambio.', profile_err_password_short:'Minimo 8 caracteres, con mayuscula, minuscula, numero y simbolo.',
     profile_toast_password_saved:'Contrasena actualizada.',
     sidebar_tagline:'CARD BATTLE', logout:'Cerrar sesión',
     community_forum:'Foro', community_join:'Únete a la Comunidad',
@@ -199,7 +199,7 @@ const I18N = {
     profile_err_username_required:'Enter a valid username.', profile_err_server:'No server connection.', profile_err_login:'Log in first.',
     profile_err_username_invalid:'Invalid username.', profile_err_username_taken:'That username is already taken.',
     profile_toast_username_saved:'Username updated.', profile_err_email_invalid:'Invalid email.',
-    profile_toast_email_confirm:'Check your new email to confirm the change.', profile_err_password_short:'Minimum 8 characters, with uppercase, lowercase and number.',
+    profile_toast_email_confirm:'Check your new email to confirm the change.', profile_err_password_short:'Minimum 8 characters, with uppercase, lowercase, number and symbol.',
     profile_toast_password_saved:'Password updated.',
     sidebar_tagline:'CARD BATTLE', logout:'Log out',
     community_forum:'Forum', community_join:'Join the Community',
@@ -1467,7 +1467,7 @@ window.saveEmail = saveEmail;
 
 async function savePassword(){
   const pw = String(byId('acct-password')?.value || '');
-  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(pw)) return toast(t('profile_err_password_short'));
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(pw)) return toast(t('profile_err_password_short'));
   if (!window.SB || !SB.updatePassword) return toast(t('profile_err_server'));
   const r = await SB.updatePassword(pw);
   if (r.error) return toast('Error: ' + (r.error.message || r.error));
