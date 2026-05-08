@@ -63,8 +63,8 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   overflow:hidden;
 }
 .no-deck-card{
-  width:calc(100vw - 32px);
-  max-width:420px;
+  width:min(100%,360px);
+  max-width:calc(100vw - 28px);
   padding:clamp(24px,7vw,36px) clamp(18px,6vw,32px);
   text-align:center;
   border:1px solid #2a2f3a;
@@ -96,7 +96,7 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 }
 .no-deck-btn{
   width:100%;
-  max-width:300px;
+  max-width:100%;
   min-height:52px;
   padding:13px 18px;
   border:0;
@@ -107,7 +107,23 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   font-weight:900;
   font-size:clamp(.72rem,3.7vw,.85rem);
   letter-spacing:.08em;
+  white-space:normal;
+  overflow-wrap:anywhere;
   box-shadow:0 4px 16px rgba(0,224,255,.3);
+}
+@media (max-width:760px){
+  .no-deck-card{
+    width:min(100%,280px);
+    padding:24px 14px;
+  }
+  .no-deck-copy{
+    max-width:28ch;
+  }
+  .no-deck-btn{
+    min-height:50px;
+    padding:12px 10px;
+    font-size:.7rem;
+  }
 }
 
 /* shared grid background */
