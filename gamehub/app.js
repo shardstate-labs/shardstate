@@ -345,6 +345,16 @@ function clanEmoji(clanKey){
   const c = CLANS_DATA[clanKey];
   return c ? c.emoji : '⚡';
 }
+function clanIconSrc(clanKey){
+  if (!clanKey) return '/Assets/ui/clan-neutral.png';
+  const c = CLANS_DATA[clanKey];
+  return c?.logo || c?.visual?.logo || `/Assets/ui/clan-${String(clanKey).toLowerCase()}.png`;
+}
+function clanIconHtml(clanKey, cls = 'clan-sprite'){
+  const key = String(clanKey || 'neutral').toLowerCase();
+  const alt = CLANS_DATA[key]?.name || key.toUpperCase();
+  return `<img class="${cls}" src="${escHtml(clanIconSrc(key))}" alt="${escHtml(alt)}" loading="lazy" onerror="this.replaceWith(document.createTextNode('${escHtml(clanEmoji(key))}'))"/>`;
+}
 function escHtml(v){
   return String(v ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
@@ -392,22 +402,22 @@ function eloFrameClass(elo) {
 }
 
 const PROFILE_FRAME_CATALOG = [
-  { id:'basic', name:'BASIC', premium:false, asset:'/Assets/ui/cosmetics/profile-frame-basic.png' },
-  { id:'premium-circuit', name:'CIRCUIT', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-circuit.png' },
-  { id:'premium-prism', name:'PRISM', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-prism.png' },
-  { id:'premium-gold', name:'AURUM', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-gold.png' },
-  { id:'premium-void', name:'VOID', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-void.png' },
-  { id:'premium-singularity', name:'SINGULARITY', premium:true, asset:'/Assets/ui/cosmetics/profile-frame-premium-singularity.png' },
+  { id:'basic', name:'Signal Frame', premium:false, unlockLevel:0, asset:'/Assets/ui/cosmetics/profile-frame-basic.png' },
+  { id:'premium-circuit', name:'Circuit Bloom', premium:true, unlockLevel:4, asset:'/Assets/ui/cosmetics/profile-frame-premium-circuit.png' },
+  { id:'premium-prism', name:'Prism Gate', premium:true, unlockLevel:8, asset:'/Assets/ui/cosmetics/profile-frame-premium-prism.png' },
+  { id:'premium-gold', name:'Aurum Crown', premium:true, unlockLevel:14, asset:'/Assets/ui/cosmetics/profile-frame-premium-gold.png' },
+  { id:'premium-void', name:'Void Halo', premium:true, unlockLevel:22, asset:'/Assets/ui/cosmetics/profile-frame-premium-void.png' },
+  { id:'premium-singularity', name:'Singularity Seal', premium:true, unlockLevel:28, asset:'/Assets/ui/cosmetics/profile-frame-premium-singularity.png' },
 ];
 const PROFILE_AVATAR_CATALOG = [
   { id:'protocol-seed', name:'Protocol Seed', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-protocol-seed.png' },
   { id:'nexus-orb', name:'Nexus Orb', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-nexus-orb.png' },
   { id:'tide-sigil', name:'Tide Sigil', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-tide-sigil.png' },
   { id:'ash-spark', name:'Ash Spark', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-ash-spark.png' },
-  { id:'void-eye', name:'Void Eye', tier:'premium', price:3, asset:'/Assets/ui/cosmetics/avatar-void-eye.png' },
-  { id:'mycel-spore', name:'Mycel Spore', tier:'premium', price:3, asset:'/Assets/ui/cosmetics/avatar-mycel-spore.png' },
-  { id:'iron-crest', name:'Iron Crest', tier:'premium', price:3, asset:'/Assets/ui/cosmetics/avatar-iron-crest.png' },
-  { id:'singularity-core', name:'Singularity Core', tier:'premium', price:5, asset:'/Assets/ui/cosmetics/avatar-singularity-core.png' },
+  { id:'void-eye', name:'Void Eye', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-void-eye.png' },
+  { id:'mycel-spore', name:'Mycel Spore', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-mycel-spore.png' },
+  { id:'iron-crest', name:'Iron Crest', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-iron-crest.png' },
+  { id:'singularity-core', name:'Singularity Core', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-singularity-core.png' },
 ];
 function profileFrameById(id){ return PROFILE_FRAME_CATALOG.find(x => x.id === id) || PROFILE_FRAME_CATALOG[0]; }
 function profileAvatarById(id){ return PROFILE_AVATAR_CATALOG.find(x => x.id === id) || PROFILE_AVATAR_CATALOG[0]; }
@@ -418,10 +428,16 @@ function profileCosmetics(){
     selectedAvatar: gs.selectedAvatar || 'protocol-seed',
     selectedFrame: gs.selectedProfileFrame || 'basic',
     ownedAvatars: Array.from(new Set(['protocol-seed', ...owned])),
+    ownedFrames: Array.from(new Set(['basic', ...(Array.isArray(gs.ownedProfileFrames) ? gs.ownedProfileFrames : [])])),
   };
 }
-function userHasPremiumPass(){
-  return !!ensureBpState()?.premium;
+function userHasPremiumPass(){ return !!ensureBpState()?.premium; }
+function profileFrameUnlocked(frame){
+  if (!frame?.premium) return true;
+  const c = profileCosmetics();
+  if (c.ownedFrames.includes(frame.id)) return true;
+  const bp = ensureBpState();
+  return !!bp?.premium && bpLevel(bp) >= (frame.unlockLevel || BP_LEVELS + 1);
 }
 function setAvatarVisual(el, avatarId){
   if (!el) return;
@@ -439,7 +455,7 @@ function setFrameVisual(el, frameId){
 function applyProfileCosmetics(){
   const c = profileCosmetics();
   const frame = profileFrameById(c.selectedFrame);
-  const usableFrame = frame.premium && !userHasPremiumPass() ? 'basic' : frame.id;
+  const usableFrame = !profileFrameUnlocked(frame) ? 'basic' : frame.id;
   setAvatarVisual(byId('topbar-avatar'), c.selectedAvatar);
   setFrameVisual(byId('topbar-avatar'), usableFrame);
   setAvatarVisual(byId('profile-avatar-big'), c.selectedAvatar);
@@ -963,7 +979,7 @@ function renderCard(id, opts = {}) {
   if (!card) return `<div class="shs-card shs-card-error" data-id="${id}"><span>${id}</span></div>`;
 
   const cc      = clanColor(card.clan);
-  const ce      = clanEmoji(card.clan);
+  const ce      = clanIconHtml(card.clan, 'card-clan-sprite');
   const inst    = opts.instance || null;
   const instId  = inst?.id || inst?.instance_id || '';
   const inDeck  = instId ? isInstanceInDeck(instId) : view.state?.deck?.includes(id);
@@ -1040,7 +1056,7 @@ function renderDeckChip(id, index) {
     return `<div class="deck-chip empty" data-remove="${id}"><span class="deck-chip-num">${index+1}</span>—</div>`;
   }
   const cc = clanColor(card.clan);
-  const ce = clanEmoji(card.clan);
+  const ce = clanIconHtml(card.clan, 'deck-clan-sprite');
   const pow = card.pow ? card.pow[1] : '?';
   const dmg = card.dmg ? card.dmg[1] : '?';
   return `
@@ -1136,7 +1152,7 @@ function _renderCardDetailModal(card, owned) {
   const stars    = card.stars || 2;
   const lv       = Math.max(1, Math.min(_cdModalLv, stars));
   const cc       = clanColor(card.clan);
-  const ce       = clanEmoji(card.clan);
+  const ce       = clanIconHtml(card.clan, 'cdm-clan-sprite');
   const clanName = (CLANS_DATA[card.clan]?.name || card.clan).toUpperCase();
   const clanBonus= CLANS_DATA[card.clan]?.bonus || '';
   const stats    = (typeof getCardStatsAtLevel === 'function')
@@ -1342,15 +1358,23 @@ function renderProfileCosmetics(){
   const wrap = byId('profile-cosmetics');
   if (!wrap || !view.user) return;
   const c = profileCosmetics();
-  const hasPremium = userHasPremiumPass();
+  const bp = ensureBpState();
+  const bpLvl = bp ? bpLevel(bp) : 0;
   const L = currentLang === 'es';
   const frames = PROFILE_FRAME_CATALOG.map(frame => {
-    const locked = frame.premium && !hasPremium;
+    const locked = !profileFrameUnlocked(frame);
     const active = c.selectedFrame === frame.id && !locked;
-    return `<button class="cosmetic-tile frame-choice ${active?'active':''} ${locked?'locked':''}" type="button" data-profile-frame="${escHtml(frame.id)}" ${locked?'disabled':''}>
+    const status = active
+      ? (L ? 'Equipado' : 'Equipped')
+      : locked
+        ? `${L ? 'Nivel premium' : 'Premium level'} ${frame.unlockLevel}`
+        : (L ? 'Elegir marco' : 'Select frame');
+    return `<button class="cosmetic-tile frame-choice ${active?'active':''} ${locked?'locked':''}" type="button" data-profile-frame="${escHtml(frame.id)}">
       <span class="cosmetic-frame-preview" style="--profile-frame:url('${frame.asset}')"><span></span></span>
-      <strong>${escHtml(frame.name)}</strong>
-      <em>${frame.premium ? (hasPremium ? 'PREMIUM' : (L?'PASE PREMIUM':'PREMIUM PASS')) : (L?'BASICO':'BASIC')}</em>
+      <span class="cosmetic-copy">
+        <strong>${escHtml(frame.name)}</strong>
+        <em>${status}</em>
+      </span>
     </button>`;
   }).join('');
   const avatars = PROFILE_AVATAR_CATALOG.map(av => {
@@ -1359,9 +1383,11 @@ function renderProfileCosmetics(){
     const canBuy = !owned && av.price > 0;
     return `<button class="cosmetic-tile avatar-choice ${active?'active':''} ${owned?'owned':'locked'}" type="button" data-profile-avatar="${escHtml(av.id)}">
       <span class="cosmetic-avatar-preview" style="--avatar-img:url('${av.asset}')"></span>
-      <strong>${escHtml(av.name)}</strong>
-      <em>${owned ? (active ? (L?'EQUIPADO':'EQUIPPED') : (L?'DISPONIBLE':'OWNED')) : `${av.price} FLUX`}</em>
-      ${canBuy ? `<span class="cosmetic-buy-chip">${L?'COMPRAR':'BUY'}</span>` : ''}
+      <span class="cosmetic-copy">
+        <strong>${escHtml(av.name)}</strong>
+        <em>${owned ? (active ? (L?'Equipado':'Equipped') : (L?'Elegir foto':'Select avatar')) : `${av.price} FLUX`}</em>
+      </span>
+      ${canBuy ? `<span class="cosmetic-buy-chip">${L?'Comprar':'Buy'}</span>` : ''}
     </button>`;
   }).join('');
   wrap.innerHTML = `
@@ -1369,15 +1395,14 @@ function renderProfileCosmetics(){
       <div class="cosmetics-head">
         <div>
           <div class="block-title">${L?'Marcos de perfil':'Profile Frames'}</div>
-          <p>${L?'El marco basico es gratis. Los premium se desbloquean con Pase Premium activo.':'The basic frame is free. Premium frames unlock with an active Premium Pass.'}</p>
+          <p>${L?`Desbloqueos del Pase Premium. Tu progreso: nivel ${bpLvl}/${BP_LEVELS}.`:`Premium Battle Pass unlocks. Your progress: level ${bpLvl}/${BP_LEVELS}.`}</p>
         </div>
-        <span class="cosmetics-premium-pill ${hasPremium?'on':''}">${hasPremium ? (L?'Premium activo':'Premium active') : (L?'Premium requerido':'Premium required')}</span>
       </div>
       <div class="cosmetic-grid">${frames}</div>
       <div class="cosmetics-head avatar-head">
         <div>
           <div class="block-title">${L?'Foto de perfil':'Profile Avatar'}</div>
-          <p>${L?'Elegi un sprite base o compra avatares premium con FLUX.':'Choose a base sprite or buy premium avatars with FLUX.'}</p>
+          <p>${L?'Las fotos premium cuestan 1 FLUX y se equipan al comprarlas.':'Premium avatars cost 1 FLUX and equip after purchase.'}</p>
         </div>
       </div>
       <div class="cosmetic-grid">${avatars}</div>
@@ -1387,11 +1412,12 @@ window.renderProfileCosmetics = renderProfileCosmetics;
 
 async function selectProfileFrame(frameId){
   const frame = profileFrameById(frameId);
-  if (frame.premium && !userHasPremiumPass()) return toast(currentLang === 'es' ? 'Requiere Pase Premium activo.' : 'Requires active Premium Pass.');
+  if (!profileFrameUnlocked(frame)) return toast(currentLang === 'es' ? `Se desbloquea en nivel premium ${frame.unlockLevel}.` : `Unlocks at premium level ${frame.unlockLevel}.`);
   if (window.SB && SB.setProfileCosmetic) {
     const r = await SB.setProfileCosmetic({ frame_id:frame.id });
     if (r?.error) return toast('Error: ' + (r.error.message || r.error));
     view.user.gameState.selectedProfileFrame = r.selected_profile_frame || frame.id;
+    if (Array.isArray(r.owned_profile_frames)) view.user.gameState.ownedProfileFrames = r.owned_profile_frames;
   } else if (window.SHS_SYNC && view.user.uid) {
     view.user.gameState.selectedProfileFrame = frame.id;
     SHS_SYNC.queueState(view.user.uid, { selected_profile_frame:frame.id });
@@ -1421,6 +1447,7 @@ async function selectProfileAvatar(avatarId){
     const r = await SB.setProfileCosmetic({ avatar_id:av.id });
     if (r?.error) return toast('Error: ' + (r.error.message || r.error));
     view.user.gameState.selectedAvatar = r.selected_avatar || av.id;
+    if (Array.isArray(r.owned_avatars)) view.user.gameState.ownedAvatars = r.owned_avatars;
   } else if (window.SHS_SYNC && view.user.uid) {
     view.user.gameState.selectedAvatar = av.id;
     SHS_SYNC.queueState(view.user.uid, { selected_avatar:av.id });
@@ -1942,31 +1969,25 @@ async function renderMercado() {
     active.forEach(l => {
       const card = (typeof getCard === 'function') ? getCard(l.card_id) : null;
       const cc = card ? clanColor(card.clan) : '#6B5CE7';
-      const ce = card ? clanEmoji(card.clan) : '⚡';
-      const pow = card && card.pow ? card.pow[1] : '?';
-      const dmg = card && card.dmg ? card.dmg[1] : '?';
       const name = card ? card.name : l.card_id;
-      const imgSrc = card?.visual?.image || `/assets/cards/${l.card_id}.png`;
+      const seller = escHtml(l.seller_profile?.username || 'player');
       mList.insertAdjacentHTML('beforeend', `
-        <div class="market-card-item" style="--cc:${cc}">
-          <div class="mcard-art-wrap">
-            <div class="mcard-clan-bar" style="background:${cc}">${ce} ${card?.clan?.toUpperCase() || ''}</div>
-            <img src="${imgSrc}" alt="${name}" class="mcard-img" onerror="this.parentNode.classList.add('no-img')"/>
-            <div class="mcard-art-fallback">${ce}</div>
-          </div>
+        <article class="market-card-item market-card-listing" style="--cc:${cc}">
+          <div class="market-card-preview">${card ? renderCard(l.card_id, { size:'sm' }) : `<div class="shs-card shs-sm shs-card-error"><span>${escHtml(name)}</span></div>`}</div>
           <div class="mcard-info">
-            <div class="mcard-name">${name}</div>
-            <div class="mcard-stats">POW ${pow} · DMG ${dmg}</div>
+            <div class="mcard-name">${escHtml(name)}</div>
             <div class="mcard-meta">
+              <span class="mcard-chip">${card ? clanIconHtml(card.clan, 'mcard-clan-icon') : ''}${escHtml(card?.clan?.toUpperCase() || '')}</span>
               <span class="mcard-chip">${card?.type === 'grand' ? 'GD' : (card?.rar || '?')}</span>
               <span class="mcard-chip">${card?.stars || '?'}★</span>
-              <span class="mcard-chip">${card?.clan?.toUpperCase() || ''}</span>
             </div>
-            <div class="mcard-seller">${currentLang==='es'?'Vendedor':'Seller'}: ${escHtml(l.seller_profile?.username || 'player')}</div>
-            <div class="mcard-price">${l.price} SHARDS</div>
-            <button class="btn-primary full" data-buy="${l.id}">${t('market_buy_btn')}</button>
+            <div class="mcard-seller">${currentLang==='es'?'Vendedor':'Seller'}: ${seller}</div>
+            <div class="mcard-buy-row">
+              <div class="mcard-price"><span class="currency-icon shards"></span>${l.price}</div>
+              <button class="btn-primary full" data-buy="${l.id}">${t('market_buy_btn')}</button>
+            </div>
           </div>
-        </div>`);
+        </article>`);
     });
   }
 
@@ -2013,7 +2034,7 @@ function renderSellCardPreview() {
   }
   const lv = instance?.level || instance?.lv || 1;
   const cc = clanColor(card.clan);
-  const ce = clanEmoji(card.clan);
+  const ce = clanIconHtml(card.clan, 'sell-preview-clan-icon');
   const rar = card.type === 'grand' ? 'GD' : (card.rar || '?');
   host.innerHTML = `
     <div class="sell-preview-card" style="--cc:${cc}">
@@ -2335,7 +2356,7 @@ function renderLearnClans() {
       <div class="clan-learn-top">
         <div class="clan-learn-dot"></div>
         <div class="clan-learn-name">${key.toUpperCase()}</div>
-        <span style="margin-left:auto;font-size:1.1rem">${c.emoji||'⚡'}</span>
+        <span class="clan-learn-icon">${clanIconHtml(key, 'learn-clan-sprite')}</span>
       </div>
       <div class="clan-learn-bonus">${c.bonus||'—'}</div>
     </div>`).join('');
@@ -2353,35 +2374,74 @@ function ownedTitanCount(){
 }
 const TITAN_TIERS = [10,20,30,40,50];
 const MISSIONS_BASE = [
-  { id:'m1',  icon:'⚔', title:{es:'Primera Sangre',en:'First Blood'},       desc:{es:'Gana tu primera batalla.',en:'Win your first battle.'},                 reward:50,  type:'shards' },
-  { id:'m2',  icon:'📦', title:{es:'Coleccionista',en:'Collector'},          desc:{es:'Obtén 10 cartas diferentes.',en:'Own 10 different cards.'},              reward:100, type:'shards' },
-  { id:'m3',  icon:'🃏', title:{es:'Constructor de Deck',en:'Deck Builder'}, desc:{es:'Arma un deck completo de 8 cartas.',en:'Build a full 8-card deck.'},     reward:150, type:'shards' },
-  { id:'m4',  icon:'🏪', title:{es:'Mercader',en:'Market Maker'},            desc:{es:'Lista una carta en el mercado.',en:'List a card on the market.'},         reward:80,  type:'shards' },
-  { id:'m5',  icon:'⚡', title:{es:'Veterano',en:'Veteran'},                 desc:{es:'Gana 5 batallas en total.',en:'Win 5 total battles.'},                   reward:200, type:'shards' },
-  { id:'m6',  icon:'🌟', title:{es:'Maestro del Clan',en:'Clan Master'},     desc:{es:'Sube una carta al nivel máximo.',en:'Level a card to max level.'},        reward:300, type:'shards', locked:true },
-  { id:'m7',  icon:'🏆', title:{es:'Campeón de Clan',en:'Clan Champion'},    desc:{es:'Gana 5 batallas con el mismo clan.',en:'Win 5 battles with 1 clan.'},     reward:250, type:'shards', locked:true },
-  { id:'m8',  icon:'👥', title:{es:'Fundador de Gremio',en:'Guild Founder'}, desc:{es:'Crea o únete a un gremio.',en:'Create or join a guild.'},                 reward:200, type:'shards' },
-  { id:'m9',  icon:'🔮', title:{es:'Rango Fractal',en:'Fractal Rank'},       desc:{es:'Alcanza el rango Fractura (1200+ ELO).',en:'Reach Fractura rank (1200+ ELO).'}, reward:500, type:'shards', locked:true },
-  { id:'m10', icon:'✨', title:{es:'Iniciado TITAN',en:'TITAN Initiate'},    desc:{es:'Desbloquea tu primera carta TITAN.',en:'Unlock your first TITAN card.'},  reward:400, type:'shards' },
-  { id:'m11', icon:'🎯', title:{es:'Sin Piedad',en:'No Mercy'},              desc:{es:'Haz KO a un rival 3 veces.',en:'KO a rival 3 times.'},                    reward:180, type:'shards', locked:true },
-  { id:'m12', icon:'💎', title:{es:'Gran Coleccionista',en:'Grand Collector'}, desc:{es:'Obtén 50 cartas diferentes.',en:'Own 50 different cards.'},             reward:600, type:'shards', locked:true },
+  { id:'deck_full', icon:'▣', title:{es:'Deck operativo',en:'Operational Deck'}, desc:{es:'Arma un deck completo de 8 cartas.',en:'Build a full 8-card deck.'}, reward:50, type:'shards' },
+  { id:'guild_join', icon:'◇', title:{es:'Nodo de gremio',en:'Guild Node'}, desc:{es:'Crea o únete a un gremio.',en:'Create or join a guild.'}, reward:45, type:'shards' },
+  { id:'first_titan', icon:'△', title:{es:'Señal TITAN',en:'TITAN Signal'}, desc:{es:'Desbloquea tu primera carta TITAN.',en:'Unlock your first TITAN card.'}, reward:60, type:'shards' },
+  { id:'preset_saved', icon:'▤', title:{es:'Preset archivado',en:'Archived Preset'}, desc:{es:'Guarda al menos 1 preset de deck.',en:'Save at least 1 deck preset.'}, reward:35, type:'shards' },
 ];
+const MISSION_MILESTONES = {
+  wins: [1,3,5,8,12,16,20,25,30,40,50,65,80,100],
+  battles: [3,5,10,15,20,30,40,55,70,90,120,150],
+  cards: [10,15,20,25,30,40,50,65,80,100,125,150],
+  elo: [400,700,900,1100,1200,1350,1500,1650,1800,2000],
+  level: [2,4,6,8,10,15,20,25,30,40,50],
+  presets: [2,4,6],
+};
+function missionRewardFor(index, hard = false){
+  const base = hard ? 50 : 30;
+  return Math.min(hard ? 150 : 100, base + Math.floor(index / 2) * 10);
+}
 function buildMissions(){
   const u = view.user || {};
   const cardsOwned = Object.keys(view.state.collection||{}).length;
   const deckFull   = (view.state.deck||[]).length >= 8;
   const wins       = u.battleWins || 0;
+  const battles    = u.battlesTotal || 0;
+  const elo        = u.elo || 0;
   const titans     = ownedTitanCount();
   const lvl        = playerLevel(u);
+  const presets    = (view.state.deckPresets || []).length;
   const list = MISSIONS_BASE.map(m => ({...m}));
-  list[0].done = wins >= 1;
-  list[1].done = cardsOwned >= 10;
-  list[2].done = deckFull;
-  list[4].done = wins >= 5;
-  list[7].done = !!u.guildId;
-  list[8].done = (u.elo||0) >= 1200;
-  list[9].done = titans >= 1;
-  list[11].done= cardsOwned >= 50;
+  list[0].done = deckFull;
+  list[1].done = !!u.guildId;
+  list[2].done = titans >= 1;
+  list[3].done = presets >= 1;
+  MISSION_MILESTONES.wins.forEach((n,i) => list.push({
+    id:`win_${n}`, icon:'⚔',
+    title:{es:`Victoria ${n}`, en:`Victory ${n}`},
+    desc:{es:`Gana ${n} partidas en total.`, en:`Win ${n} total battles.`},
+    reward:missionRewardFor(i, n >= 30), type:'shards', done:wins >= n
+  }));
+  MISSION_MILESTONES.battles.forEach((n,i) => list.push({
+    id:`battle_${n}`, icon:'▦',
+    title:{es:`Registro ${n}`, en:`Battle Log ${n}`},
+    desc:{es:`Juega ${n} partidas completas.`, en:`Play ${n} completed battles.`},
+    reward:missionRewardFor(i), type:'shards', done:battles >= n
+  }));
+  MISSION_MILESTONES.cards.forEach((n,i) => list.push({
+    id:`cards_${n}`, icon:'▧',
+    title:{es:`Archivo ${n}`, en:`Archive ${n}`},
+    desc:{es:`Posee ${n} cartas diferentes.`, en:`Own ${n} different cards.`},
+    reward:missionRewardFor(i, n >= 65), type:'shards', done:cardsOwned >= n
+  }));
+  MISSION_MILESTONES.elo.forEach((n,i) => list.push({
+    id:`elo_${n}`, icon:'◇',
+    title:{es:`ELO ${n}`, en:`ELO ${n}`},
+    desc:{es:`Alcanza ${n} ELO.`, en:`Reach ${n} ELO.`},
+    reward:missionRewardFor(i, n >= 1200), type:'shards', done:elo >= n
+  }));
+  MISSION_MILESTONES.level.forEach((n,i) => list.push({
+    id:`level_${n}`, icon:'⬡',
+    title:{es:`Nivel ${n}`, en:`Level ${n}`},
+    desc:{es:`Alcanza nivel de cuenta ${n}.`, en:`Reach account level ${n}.`},
+    reward:missionRewardFor(i, n >= 20), type:'shards', done:lvl >= n
+  }));
+  MISSION_MILESTONES.presets.forEach((n,i) => list.push({
+    id:`preset_${n}`, icon:'▤',
+    title:{es:`Arsenal ${n}`, en:`Arsenal ${n}`},
+    desc:{es:`Guarda ${n} presets de deck.`, en:`Save ${n} deck presets.`},
+    reward:missionRewardFor(i), type:'shards', done:presets >= n
+  }));
   TITAN_TIERS.forEach((tier,i) => {
     list.push({
       id:`mt_${tier}`, icon:'🗿',
@@ -2467,14 +2527,16 @@ const BP_PRICE_USD = 20;
 function bpRewardFor(level, track){
   if (track === 'free') {
     if (level % 3 !== 0) return null;
-    const amount = level === 30 ? 150 : (level % 9 === 0 ? 90 : 60);
+    const amount = level === 30 ? 120 : (level % 9 === 0 ? 75 : 45);
     return { kind:'shards', amount, label:`${amount} SHARDS` };
   }
   if (track === 'premium') {
     if (level === 30) return { kind:'grand_card', label:'1 GRAND' };
+    const frame = PROFILE_FRAME_CATALOG.find(f => f.unlockLevel === level);
+    if (frame) return { kind:'profile_frame', frameId:frame.id, label:frame.name };
     if (level % 9 === 0) return { kind:'random_card', label: currentLang === 'es' ? 'Carta random' : 'Random card' };
     if (level % 5 === 0) return { kind:'flux', amount:1, label:'1 FLUX' };
-    const amount = level % 10 === 0 ? 250 : (level % 4 === 0 ? 200 : 100);
+    const amount = level % 10 === 0 ? 140 : (level % 4 === 0 ? 100 : 60);
     return { kind:'shards', amount, label:`${amount} SHARDS` };
   }
   return null;
@@ -2482,11 +2544,15 @@ function bpRewardFor(level, track){
 function bpPricing(){
   return { usd: BP_PRICE_USD, flux: BP_PRICE_USD };
 }
-function bpRewardIcon(kind){
+function bpRewardIcon(kind, reward = null){
   if (kind === 'shards') return `<span class="currency-icon shards bp-currency-icon"></span>`;
   if (kind === 'flux') return `<span class="currency-icon flux bp-currency-icon"></span>`;
   if (kind === 'grand_card') return `<span class="bp-card-prize bp-grand-prize"></span>`;
   if (kind === 'random_card') return `<span class="bp-card-prize"></span>`;
+  if (kind === 'profile_frame') {
+    const frame = profileFrameById(reward?.frameId);
+    return `<span class="bp-frame-prize" style="--profile-frame:url('${frame.asset}')"></span>`;
+  }
   return `<span class="bp-card-prize"></span>`;
 }
 function ensureBpState(){
@@ -2561,6 +2627,7 @@ async function claimBpLevel(level, track){
     else if (k === 'flux') toast(`+${r.reward.amount} FLUX`);
     else if (k === 'grand_card') toast(`👑 ${r.reward.card_id || 'Grand'}`);
     else if (k === 'random_card') toast(`+ ${r.reward.card_id || (currentLang==='es'?'Carta':'Card')}`);
+    else if (k === 'profile_frame') toast(currentLang === 'es' ? 'Marco desbloqueado.' : 'Frame unlocked.');
   } else if (typeof r?.reward === 'number') {
     toast(`+${r.reward} SHARDS`);
   } else {
@@ -2630,12 +2697,12 @@ function renderBattlePass(){
     const claimed = claimedSet.has(claimedKey);
     const lockedByTier = isPremium ? !bp.premium : false;
     const canClaim = reached && !claimed && !lockedByTier;
-    const cls = r.kind==='grand_card' ? 'bp-rew-grand' : r.kind==='flux' ? 'bp-rew-flux' : r.kind==='random_card' ? 'bp-rew-card' : 'bp-rew-shards';
+    const cls = r.kind==='grand_card' ? 'bp-rew-grand' : r.kind==='flux' ? 'bp-rew-flux' : r.kind==='random_card' ? 'bp-rew-card' : r.kind==='profile_frame' ? 'bp-rew-frame' : 'bp-rew-shards';
     const stateCls = claimed ? 'claimed' : reached ? 'ready' : 'pending';
     return `
       <div class="bp-cell ${stateCls} ${lockedByTier?'locked':''}" style="width:${segWidth}px">
         <div class="bp-rew ${cls}">
-          <div class="bp-rew-icon">${bpRewardIcon(r.kind)}</div>
+          <div class="bp-rew-icon">${bpRewardIcon(r.kind, r)}</div>
           <div class="bp-rew-label">${r.label}</div>
           ${claimed
             ? `<div class="bp-rew-state">✓</div>`
@@ -3942,6 +4009,7 @@ async function hydrateFromSupabase(authUser){
     u.gameState.selectedAvatar = gs.selected_avatar || u.gameState.selectedAvatar || 'protocol-seed';
     u.gameState.selectedProfileFrame = gs.selected_profile_frame || u.gameState.selectedProfileFrame || 'basic';
     u.gameState.ownedAvatars = Array.isArray(gs.owned_avatars) && gs.owned_avatars.length ? gs.owned_avatars : (u.gameState.ownedAvatars || ['protocol-seed']);
+    u.gameState.ownedProfileFrames = Array.isArray(gs.owned_profile_frames) && gs.owned_profile_frames.length ? gs.owned_profile_frames : (u.gameState.ownedProfileFrames || ['basic']);
   }
   // Server is source of truth for collection — only override if we got data back.
   if (collection && Object.keys(collection).length){
