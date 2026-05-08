@@ -1848,7 +1848,7 @@ input,select,textarea{ max-width:100%; }
 .profile-avatar-xl,.su-avatar{background-image:var(--avatar-img);background-size:cover;background-position:center;color:transparent}
 .profile-avatar-xl{width:116px;height:116px;margin:0 auto 16px;border-radius:26px;position:relative}
 .su-avatar{position:relative}
-.profile-avatar-xl::before,.su-avatar::before{background:var(--profile-frame,url('/Assets/ui/cosmetics/profile-frame-basic.png')) center/contain no-repeat}
+.profile-avatar-xl::before,.su-avatar::before{background:var(--profile-frame,url('/Assets/ui/premium/frame-signal-v2.png')) center/contain no-repeat}
 .profile-avatar-xl::before{inset:-54%;z-index:1;pointer-events:none}
 .su-avatar::before{inset:-62%;z-index:1;pointer-events:none}
 .profile-main-card{overflow:visible}
@@ -1879,11 +1879,11 @@ input,select,textarea{ max-width:100%; }
 
 /* Profile cosmetics 2026 rebuild */
 .profile-avatar-xl{width:132px;height:132px;margin:0 auto 42px;border-radius:30px;position:relative;background-image:var(--avatar-img);background-size:cover;background-position:center;color:transparent;overflow:visible}
-.profile-avatar-xl::before{content:"";position:absolute;inset:-43%;z-index:1;pointer-events:none;background:var(--profile-frame,url('/Assets/ui/cosmetics/profile-frame-basic.png')) center/contain no-repeat;filter:drop-shadow(0 0 16px rgba(0,255,198,.2))}
+.profile-avatar-xl::before{content:"";position:absolute;inset:-43%;z-index:1;pointer-events:none;background:var(--profile-frame,url('/Assets/ui/premium/frame-signal-v2.png')) center/contain no-repeat;filter:drop-shadow(0 0 16px rgba(0,255,198,.2))}
 .profile-avatar-xl + h2,.profile-header h2,.profile-name{margin-top:8px;position:relative;z-index:3}
 .su-avatar{background-image:var(--avatar-img);background-size:cover;background-position:center;color:transparent;position:relative;border-radius:12px;overflow:visible}
-.su-avatar::before{content:"";position:absolute;inset:-48%;z-index:1;pointer-events:none;background:var(--profile-frame,url('/Assets/ui/cosmetics/profile-frame-basic.png')) center/contain no-repeat;filter:drop-shadow(0 0 9px rgba(0,255,198,.18))}
-.topbar-avatar::before{content:"";position:absolute;inset:-48%;background:var(--profile-frame,url('/Assets/ui/cosmetics/profile-frame-basic.png')) center/contain no-repeat;pointer-events:none;filter:drop-shadow(0 0 8px rgba(0,255,198,.16))}
+.su-avatar::before{content:"";position:absolute;inset:-48%;z-index:1;pointer-events:none;background:var(--profile-frame,url('/Assets/ui/premium/frame-signal-v2.png')) center/contain no-repeat;filter:drop-shadow(0 0 9px rgba(0,255,198,.18))}
+.topbar-avatar::before{content:"";position:absolute;inset:-48%;background:var(--profile-frame,url('/Assets/ui/premium/frame-signal-v2.png')) center/contain no-repeat;pointer-events:none;filter:drop-shadow(0 0 8px rgba(0,255,198,.16))}
 .cosmetics-section{gap:20px}
 .cosmetics-head{align-items:flex-end;border-bottom:1px solid var(--border);padding-bottom:8px}
 .cosmetics-head p{max-width:680px}
@@ -1903,6 +1903,30 @@ input,select,textarea{ max-width:100%; }
 .frame-choice.locked .cosmetic-copy em{color:#fbbf24}
 .bp-frame-prize{width:46px;height:46px;display:inline-block;position:relative;border-radius:12px;background:radial-gradient(circle,rgba(251,191,36,.15),rgba(7,9,14,.9))}
 .bp-frame-prize::before{content:"";position:absolute;inset:-20px;background:var(--profile-frame) center/contain no-repeat;filter:drop-shadow(0 0 12px rgba(251,191,36,.34))}
+.cosmetic-frame-preview::before,
+.bp-frame-prize::before,
+.bp-frame-chip::before,
+.profile-avatar-xl::before{
+  animation:premium-cosmetic-breathe 4.4s ease-in-out infinite;
+}
+.cosmetic-avatar-preview,
+.profile-avatar-xl,
+.su-avatar,
+.topbar-avatar{
+  box-shadow:0 0 0 1px rgba(255,255,255,.06),0 12px 28px rgba(0,0,0,.36),inset 0 0 18px rgba(255,255,255,.04);
+}
+.cosmetic-avatar-preview{
+  transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+.avatar-choice:hover .cosmetic-avatar-preview,
+.frame-choice:hover .cosmetic-frame-preview{
+  transform:translateY(-2px) scale(1.035);
+  filter:saturate(1.1) brightness(1.06);
+}
+@keyframes premium-cosmetic-breathe{
+  0%,100%{filter:drop-shadow(0 0 12px rgba(0,255,198,.18))}
+  50%{filter:drop-shadow(0 0 22px rgba(0,255,198,.34))}
+}
 .bp-rew-frame .bp-rew-label{color:#fbbf24}
 
 /* Market listing final pass: collection-grade cards */

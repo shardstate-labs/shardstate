@@ -1317,6 +1317,7 @@ function onHpImpact(barEl, color){
   const flash = document.createElement('div');
   flash.className = 'hp-impact-flash';
   flash.style.background = color;
+  flash.style.setProperty('--impact-color', color || '#22D3EE');
   barEl.appendChild(flash);
   setTimeout(()=> flash.remove(), 420);
   // Brief screen shake per hit.

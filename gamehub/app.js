@@ -402,22 +402,22 @@ function eloFrameClass(elo) {
 }
 
 const PROFILE_FRAME_CATALOG = [
-  { id:'basic', name:'Signal Frame', premium:false, unlockLevel:0, asset:'/Assets/ui/cosmetics/profile-frame-basic.png' },
-  { id:'premium-circuit', name:'Circuit Bloom', premium:true, unlockLevel:4, asset:'/Assets/ui/cosmetics/profile-frame-premium-circuit.png' },
-  { id:'premium-prism', name:'Prism Gate', premium:true, unlockLevel:8, asset:'/Assets/ui/cosmetics/profile-frame-premium-prism.png' },
-  { id:'premium-gold', name:'Aurum Crown', premium:true, unlockLevel:14, asset:'/Assets/ui/cosmetics/profile-frame-premium-gold.png' },
-  { id:'premium-void', name:'Void Halo', premium:true, unlockLevel:22, asset:'/Assets/ui/cosmetics/profile-frame-premium-void.png' },
-  { id:'premium-singularity', name:'Singularity Seal', premium:true, unlockLevel:28, asset:'/Assets/ui/cosmetics/profile-frame-premium-singularity.png' },
+  { id:'basic', name:'Signal Frame', premium:false, unlockLevel:0, asset:'/Assets/ui/premium/frame-signal-v2.png' },
+  { id:'premium-circuit', name:'Circuit Bloom', premium:true, unlockLevel:4, asset:'/Assets/ui/premium/frame-circuit-v2.png' },
+  { id:'premium-prism', name:'Prism Gate', premium:true, unlockLevel:8, asset:'/Assets/ui/premium/frame-prism-v2.png' },
+  { id:'premium-gold', name:'Aurum Crown', premium:true, unlockLevel:14, asset:'/Assets/ui/premium/frame-aurum-v2.png' },
+  { id:'premium-void', name:'Void Halo', premium:true, unlockLevel:22, asset:'/Assets/ui/premium/frame-void-v2.png' },
+  { id:'premium-singularity', name:'Singularity Seal', premium:true, unlockLevel:28, asset:'/Assets/ui/premium/frame-singularity-v2.png' },
 ];
 const PROFILE_AVATAR_CATALOG = [
-  { id:'protocol-seed', name:'Protocol Seed', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-protocol-seed.png' },
-  { id:'nexus-orb', name:'Nexus Orb', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-nexus-orb.png' },
-  { id:'tide-sigil', name:'Tide Sigil', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-tide-sigil.png' },
-  { id:'ash-spark', name:'Ash Spark', tier:'basic', price:0, asset:'/Assets/ui/cosmetics/avatar-ash-spark.png' },
-  { id:'void-eye', name:'Void Eye', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-void-eye.png' },
-  { id:'mycel-spore', name:'Mycel Spore', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-mycel-spore.png' },
-  { id:'iron-crest', name:'Iron Crest', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-iron-crest.png' },
-  { id:'singularity-core', name:'Singularity Core', tier:'premium', price:1, asset:'/Assets/ui/cosmetics/avatar-singularity-core.png' },
+  { id:'protocol-seed', name:'Protocol Seed', tier:'basic', price:0, asset:'/Assets/ui/premium/avatar-protocol-crystal.png' },
+  { id:'nexus-orb', name:'Nexus Orb', tier:'basic', price:0, asset:'/Assets/ui/premium/avatar-nexus-orb.png' },
+  { id:'tide-sigil', name:'Tide Sigil', tier:'basic', price:0, asset:'/Assets/ui/premium/avatar-tide-sigil.png' },
+  { id:'ash-spark', name:'Ash Spark', tier:'basic', price:0, asset:'/Assets/ui/premium/avatar-ash-spark.png' },
+  { id:'void-eye', name:'Void Eye', tier:'premium', price:1, asset:'/Assets/ui/premium/avatar-void-eye.png' },
+  { id:'mycel-spore', name:'Mycel Spore', tier:'premium', price:1, asset:'/Assets/ui/premium/avatar-mycel-spore.png' },
+  { id:'iron-crest', name:'Iron Crest', tier:'premium', price:1, asset:'/Assets/ui/premium/avatar-iron-crest.png' },
+  { id:'singularity-core', name:'Singularity Core', tier:'premium', price:1, asset:'/Assets/ui/premium/avatar-singularity-core.png' },
 ];
 function profileFrameById(id){ return PROFILE_FRAME_CATALOG.find(x => x.id === id) || PROFILE_FRAME_CATALOG[0]; }
 function profileAvatarById(id){ return PROFILE_AVATAR_CATALOG.find(x => x.id === id) || PROFILE_AVATAR_CATALOG[0]; }
