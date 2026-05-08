@@ -426,6 +426,7 @@ function profileCosmetics(){
   const owned = Array.isArray(gs.ownedAvatars) && gs.ownedAvatars.length ? gs.ownedAvatars : ['protocol-seed'];
   return {
     selectedAvatar: gs.selectedAvatar || 'protocol-seed',
+    customAvatarUrl: gs.customAvatarUrl || '',
     selectedFrame: gs.selectedProfileFrame || 'basic',
     ownedAvatars: Array.from(new Set(['protocol-seed', ...owned])),
     ownedFrames: Array.from(new Set(['basic', ...(Array.isArray(gs.ownedProfileFrames) ? gs.ownedProfileFrames : [])])),
@@ -441,6 +442,13 @@ function profileFrameUnlocked(frame){
 }
 function setAvatarVisual(el, avatarId){
   if (!el) return;
+  const customUrl = profileCosmetics().customAvatarUrl;
+  if (avatarId === 'custom-upload' && customUrl) {
+    el.textContent = '';
+    el.style.setProperty('--avatar-img', `url("${customUrl}")`);
+    el.setAttribute('aria-label', currentLang === 'es' ? 'Foto personalizada' : 'Custom avatar');
+    return;
+  }
   const av = profileAvatarById(avatarId);
   el.textContent = '';
   el.style.setProperty('--avatar-img', `url('${av.asset}')`);
@@ -499,6 +507,7 @@ function ensureUserDefaults(u) {
   if (!Array.isArray(u.gameState.ownedAvatars) || !u.gameState.ownedAvatars.length) u.gameState.ownedAvatars = ['protocol-seed'];
   if (!u.gameState.selectedAvatar) u.gameState.selectedAvatar = 'protocol-seed';
   if (!u.gameState.selectedProfileFrame) u.gameState.selectedProfileFrame = 'basic';
+  if (u.avatarUrl && !u.gameState.customAvatarUrl) u.gameState.customAvatarUrl = u.avatarUrl;
 }
 function resolveCurrentUser() {
   const uid = localStorage.getItem(AUTH_SESSION_KEY);
@@ -537,7 +546,7 @@ function persistToUser() {
   if (window.SHS_SYNC && u.uid) {
     SHS_SYNC.queueState(u.uid, {
       welcome_pack_claimed: !!view.state.welcomePackClaimed,
-      selected_avatar: u.gameState.selectedAvatar || 'protocol-seed',
+      selected_avatar: u.gameState.selectedAvatar === 'custom-upload' ? 'protocol-seed' : (u.gameState.selectedAvatar || 'protocol-seed'),
       selected_profile_frame: u.gameState.selectedProfileFrame || 'basic',
     });
     // Normalize collection to {cardId: qty} for the server (legacy entries
@@ -624,6 +633,13 @@ document.addEventListener('click', e => {
     renderColeccion();
     toast(currentLang === 'es' ? 'Preset copiado a tu coleccion.' : 'Preset copied to your collection.');
   }
+});
+
+document.addEventListener('change', e => {
+  const input = e.target.closest('#profile-avatar-upload');
+  if (!input) return;
+  const file = input.files?.[0];
+  if (file) uploadCustomProfileAvatar(file).finally(() => { input.value = ''; });
 });
 
 function reloadPwaFrame() {
@@ -1361,6 +1377,13 @@ function renderProfileCosmetics(){
   const bp = ensureBpState();
   const bpLvl = bp ? bpLevel(bp) : 0;
   const L = currentLang === 'es';
+  const customAvatarTile = c.customAvatarUrl ? `<button class="cosmetic-tile avatar-choice custom-avatar-choice ${c.selectedAvatar==='custom-upload'?'active owned':'owned'}" type="button" data-profile-avatar="custom-upload">
+      <span class="cosmetic-avatar-preview custom-avatar-preview" style="--avatar-img:url(&quot;${escHtml(c.customAvatarUrl)}&quot;)"></span>
+      <span class="cosmetic-copy">
+        <strong>${L?'Tu foto':'Your photo'}</strong>
+        <em>${c.selectedAvatar==='custom-upload' ? (L?'Equipada':'Equipped') : (L?'Elegir foto':'Select photo')}</em>
+      </span>
+    </button>` : '';
   const frames = PROFILE_FRAME_CATALOG.map(frame => {
     const locked = !profileFrameUnlocked(frame);
     const active = c.selectedFrame === frame.id && !locked;
@@ -1402,10 +1425,14 @@ function renderProfileCosmetics(){
       <div class="cosmetics-head avatar-head">
         <div>
           <div class="block-title">${L?'Foto de perfil':'Profile Avatar'}</div>
-          <p>${L?'Las fotos premium cuestan 1 FLUX y se equipan al comprarlas.':'Premium avatars cost 1 FLUX and equip after purchase.'}</p>
+          <p>${L?'Subi una foto propia o elegi un sprite. La imagen se recorta al centro para entrar limpia dentro del marco.':'Upload your own photo or choose a sprite. Images are center-cropped to fit cleanly inside the frame.'}</p>
         </div>
+        <label class="avatar-upload-btn">
+          <input id="profile-avatar-upload" type="file" accept="image/png,image/jpeg,image/webp"/>
+          <span>${L?'Subir foto':'Upload photo'}</span>
+        </label>
       </div>
-      <div class="cosmetic-grid">${avatars}</div>
+      <div class="cosmetic-grid">${customAvatarTile}${avatars}</div>
     </div>`;
 }
 window.renderProfileCosmetics = renderProfileCosmetics;
@@ -1430,6 +1457,16 @@ async function selectProfileFrame(frameId){
 window.selectProfileFrame = selectProfileFrame;
 
 async function selectProfileAvatar(avatarId){
+  if (avatarId === 'custom-upload') {
+    if (!profileCosmetics().customAvatarUrl) {
+      byId('profile-avatar-upload')?.click();
+      return;
+    }
+    view.user.gameState.selectedAvatar = 'custom-upload';
+    saveDb(); syncTopbar(); renderProfileCosmetics();
+    toast(currentLang === 'es' ? 'Foto equipada.' : 'Photo equipped.');
+    return;
+  }
   const av = profileAvatarById(avatarId);
   const owned = profileCosmetics().ownedAvatars.includes(av.id) || av.price === 0;
   if (!owned) {
@@ -1448,16 +1485,82 @@ async function selectProfileAvatar(avatarId){
     if (r?.error) return toast('Error: ' + (r.error.message || r.error));
     view.user.gameState.selectedAvatar = r.selected_avatar || av.id;
     if (Array.isArray(r.owned_avatars)) view.user.gameState.ownedAvatars = r.owned_avatars;
+    if (SB.upsertProfile && view.user?.uid && view.user.gameState.customAvatarUrl) {
+      await SB.upsertProfile(view.user.uid, { avatar_url:null }).catch(()=>{});
+      view.user.gameState.customAvatarUrl = '';
+      view.user.avatarUrl = '';
+    }
   } else if (window.SHS_SYNC && view.user.uid) {
     view.user.gameState.selectedAvatar = av.id;
+    view.user.gameState.customAvatarUrl = '';
     SHS_SYNC.queueState(view.user.uid, { selected_avatar:av.id });
   } else {
     view.user.gameState.selectedAvatar = av.id;
+    view.user.gameState.customAvatarUrl = '';
   }
   saveDb(); syncTopbar(); renderProfileCosmetics();
   toast(currentLang === 'es' ? 'Avatar equipado.' : 'Avatar equipped.');
 }
 window.selectProfileAvatar = selectProfileAvatar;
+
+function readImageFile(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function prepareAvatarDataUrl(file){
+  if (!/^image\/(png|jpe?g|webp)$/i.test(file?.type || '')) throw new Error('invalid_type');
+  if (file.size > 5 * 1024 * 1024) throw new Error('too_large');
+  const src = await readImageFile(file);
+  const img = await loadImage(src);
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  const scale = Math.max(size / img.width, size / img.height);
+  const w = img.width * scale;
+  const h = img.height * scale;
+  ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+  return canvas.toDataURL('image/jpeg', .86);
+}
+
+async function uploadCustomProfileAvatar(file){
+  if (!view.user) return toast(currentLang === 'es' ? 'Inicia sesion para subir foto.' : 'Log in to upload a photo.');
+  try {
+    const dataUrl = await prepareAvatarDataUrl(file);
+    view.user.gameState.customAvatarUrl = dataUrl;
+    view.user.gameState.selectedAvatar = 'custom-upload';
+    view.user.avatarUrl = dataUrl;
+    if (window.SB?.upsertProfile && view.user.uid) {
+      const { error } = await SB.upsertProfile(view.user.uid, { avatar_url:dataUrl });
+      if (error) console.warn('avatar_url upsert failed', error);
+    }
+    saveDb(); syncTopbar(); renderProfileCosmetics();
+    toast(currentLang === 'es' ? 'Foto subida y equipada.' : 'Photo uploaded and equipped.');
+  } catch(err) {
+    const msg = err?.message === 'too_large'
+      ? (currentLang === 'es' ? 'Imagen demasiado grande. Maximo 5MB.' : 'Image too large. Max 5MB.')
+      : (currentLang === 'es' ? 'No pude procesar esa imagen.' : 'Could not process that image.');
+    toast(msg);
+  }
+}
+window.uploadCustomProfileAvatar = uploadCustomProfileAvatar;
 
 // ── ACCOUNT EDIT ──────────────────────────────────────────────
 async function saveUsername(){
@@ -2533,7 +2636,7 @@ function bpRewardFor(level, track){
   if (track === 'premium') {
     if (level === 30) return { kind:'grand_card', label:'1 GRAND' };
     const frame = PROFILE_FRAME_CATALOG.find(f => f.unlockLevel === level);
-    if (frame) return { kind:'profile_frame', frameId:frame.id, label:`Marco · ${frame.name}` };
+    if (frame) return { kind:'profile_frame', frameId:frame.id, label: currentLang === 'es' ? 'Marco' : 'Frame' };
     if (level % 9 === 0) return { kind:'random_card', label: currentLang === 'es' ? 'Carta random' : 'Random card' };
     if (level % 5 === 0) return { kind:'flux', amount:1, label:'1 FLUX' };
     const amount = level % 10 === 0 ? 140 : (level % 4 === 0 ? 100 : 60);
@@ -3987,6 +4090,8 @@ async function hydrateFromSupabase(authUser){
     u.username = profile.username || u.username;
     u.referredByUid = profile.referred_by || u.referredByUid || null;
     u.referralCode = profile.referral_code || u.referralCode || '';
+    u.avatarUrl = profile.avatar_url || '';
+    u.gameState.customAvatarUrl = profile.avatar_url || u.gameState.customAvatarUrl || '';
   }
   const providers = authUser.app_metadata?.providers || authUser.identities?.map(i => i.provider) || [];
   if (!u.username && providers.includes('google') && window.SB && SB.ensureProtocolUsername) {
@@ -4006,7 +4111,7 @@ async function hydrateFromSupabase(authUser){
     u.accountXp      = gs.xp    ?? u.accountXp ?? 0;
     u.accountLevel   = gs.level ?? u.accountLevel ?? 1;
     u.gameState.welcomePackClaimed = !!gs.welcome_pack_claimed;
-    u.gameState.selectedAvatar = gs.selected_avatar || u.gameState.selectedAvatar || 'protocol-seed';
+    u.gameState.selectedAvatar = u.gameState.customAvatarUrl ? 'custom-upload' : (gs.selected_avatar || u.gameState.selectedAvatar || 'protocol-seed');
     u.gameState.selectedProfileFrame = gs.selected_profile_frame || u.gameState.selectedProfileFrame || 'basic';
     u.gameState.ownedAvatars = Array.isArray(gs.owned_avatars) && gs.owned_avatars.length ? gs.owned_avatars : (u.gameState.ownedAvatars || ['protocol-seed']);
     u.gameState.ownedProfileFrames = Array.isArray(gs.owned_profile_frames) && gs.owned_profile_frames.length ? gs.owned_profile_frames : (u.gameState.ownedProfileFrames || ['basic']);
