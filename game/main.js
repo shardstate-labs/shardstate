@@ -24,13 +24,13 @@ importFromWeb();
 // This is the defense layer behind the gamehub launchPWA modal.
 function showNoDeckOverlay(){
   const o = document.createElement('div');
-  o.style.cssText = 'position:fixed;inset:0;background:rgba(8,10,14,0.94);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:"Space Grotesk",system-ui,sans-serif;padding:24px;backdrop-filter:blur(8px)';
+  o.className = 'no-deck-overlay';
   o.innerHTML = `
-    <div style="max-width:440px;background:linear-gradient(180deg,#0f1218,#0a0c10);border:1px solid #2a2f3a;border-radius:18px;padding:36px 32px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,0.6),0 0 0 1px rgba(255,180,0,0.18);">
-      <div style="font-size:48px;line-height:1;margin-bottom:16px;color:#FFB400;text-shadow:0 0 24px rgba(255,180,0,0.5)">⚠</div>
-      <div style="font-family:Orbitron,sans-serif;font-weight:900;font-size:1.05rem;letter-spacing:0.06em;color:#fff;margin-bottom:8px">DECK REQUERIDO</div>
-      <div style="font-size:0.88rem;color:#a8aebb;line-height:1.5;margin-bottom:24px">Necesitás un deck de 8 cartas armado en el GAMEHUB antes de poder jugar. Volvé al hub para configurarlo.</div>
-      <button id="no-deck-back" style="background:linear-gradient(180deg,#00E0FF,#0095B5);color:#001218;border:none;padding:13px 28px;border-radius:10px;font-family:Orbitron,sans-serif;font-weight:900;font-size:0.85rem;letter-spacing:0.08em;cursor:pointer;box-shadow:0 4px 16px rgba(0,224,255,0.3)">VOLVER AL GAMEHUB →</button>
+    <div class="no-deck-card">
+      <div class="no-deck-icon">⚠</div>
+      <div class="no-deck-title">DECK REQUERIDO</div>
+      <div class="no-deck-copy">Necesitás un deck de 8 cartas armado en el GAMEHUB antes de poder jugar. Volvé al hub para configurarlo.</div>
+      <button id="no-deck-back" class="no-deck-btn">VOLVER AL GAMEHUB →</button>
     </div>`;
   document.body.appendChild(o);
   o.querySelector('#no-deck-back').addEventListener('click', () => {
@@ -629,6 +629,7 @@ function renderHud(){
     if(fill) fill.style.width = pct + '%';
     if(bar){
       bar.style.setProperty('--vital-pct', pct + '%');
+      bar.style.setProperty('--vital-scale', String(pct / 100));
       bar.dataset.value = value;
       bar.classList.toggle('is-empty', value <= 0);
       bar.classList.toggle('is-low', value > 0 && value <= Math.ceil(max * .25));
@@ -885,17 +886,28 @@ function cancelAction(){ hideActionPanel(); }
 function buildPulseRow(){
   const row = document.getElementById('pulse-row');
   row.innerHTML = '';
+  row.onclick = (e) => {
+    const rect = row.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setPulseAmount(Math.ceil(ratio * 12));
+  };
   for(let i = 0; i < 12; i++){
     const cap = document.createElement('div');
     cap.className = 'pulse-cap';
+    cap.dataset.pulse = String(i + 1);
+    cap.title = `${i + 1} pulsos`;
     row.appendChild(cap);
   }
 }
 
-function stepPulse(d){
+function setPulseAmount(amount){
   const max = APP.battle.pPulses - (APP.pendingColapso ? 3 : 0);
-  APP.pendingPulses = Math.max(0, Math.min(max, APP.pendingPulses + d));
+  APP.pendingPulses = Math.max(0, Math.min(max, amount|0));
   refreshActionPanel();
+}
+
+function stepPulse(d){
+  setPulseAmount(APP.pendingPulses + d);
 }
 
 function toggleColapso(){

@@ -49,6 +49,67 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 }
 .screen.active{ display:flex; }
 
+.no-deck-overlay{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  display:grid;
+  place-items:center;
+  min-width:0;
+  padding:clamp(14px,5vw,24px);
+  background:rgba(8,10,14,.94);
+  font-family:"Space Grotesk",system-ui,sans-serif;
+  backdrop-filter:blur(8px);
+  overflow:hidden;
+}
+.no-deck-card{
+  width:calc(100vw - 32px);
+  max-width:420px;
+  padding:clamp(24px,7vw,36px) clamp(18px,6vw,32px);
+  text-align:center;
+  border:1px solid #2a2f3a;
+  border-radius:18px;
+  background:linear-gradient(180deg,#0f1218,#0a0c10);
+  box-shadow:0 24px 64px rgba(0,0,0,.6),0 0 0 1px rgba(255,180,0,.18);
+}
+.no-deck-icon{
+  font-size:clamp(34px,12vw,48px);
+  line-height:1;
+  margin-bottom:16px;
+  color:#ffb400;
+  text-shadow:0 0 24px rgba(255,180,0,.5);
+}
+.no-deck-title{
+  margin-bottom:8px;
+  font-family:var(--font-head);
+  font-weight:900;
+  font-size:clamp(.9rem,4.8vw,1.05rem);
+  letter-spacing:.06em;
+  color:#fff;
+}
+.no-deck-copy{
+  max-width:34ch;
+  margin:0 auto 24px;
+  color:#a8aebb;
+  font-size:clamp(.78rem,3.8vw,.88rem);
+  line-height:1.5;
+}
+.no-deck-btn{
+  width:100%;
+  max-width:300px;
+  min-height:52px;
+  padding:13px 18px;
+  border:0;
+  border-radius:10px;
+  background:linear-gradient(180deg,#00e0ff,#0095b5);
+  color:#001218;
+  font-family:var(--font-head);
+  font-weight:900;
+  font-size:clamp(.72rem,3.7vw,.85rem);
+  letter-spacing:.08em;
+  box-shadow:0 4px 16px rgba(0,224,255,.3);
+}
+
 /* shared grid background */
 .grid-bg{
   position:absolute; inset:0;
@@ -580,13 +641,13 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   content:'';
   position:absolute;
   inset:-16px -24px -18px -16px;
-  background:url('/Assets/ui/premium/hud-hp-bar-v2.png') left center/100% 100% no-repeat;
+  background:url('/Assets/ui/premium/hud-hp-frame-empty-v3.png') left center/100% 100% no-repeat;
   z-index:3;
   pointer-events:none;
   filter:drop-shadow(0 0 8px rgba(0,255,198,.16));
 }
 .bar.pulse::after{
-  background-image:url('/Assets/ui/premium/hud-pulse-bar-v2.png');
+  background-image:url('/Assets/ui/premium/hud-pulse-frame-empty-v3.png');
   filter:drop-shadow(0 0 9px rgba(188,91,255,.22));
 }
 .bar .fill{
@@ -599,6 +660,7 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   transition: width .5s ease;
   z-index:2;
   overflow:hidden;
+  transform-origin:left center;
 }
 .bar .fill::after{
   content:'';
@@ -608,9 +670,9 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   animation:vital-shimmer 2.6s ease-in-out infinite;
 }
 .player-block.me .bar{transform:scaleX(-1)}
-.bar.hp.me  .fill{ background: var(--acc); box-shadow: 0 0 8px rgba(0,255,198,.5); }
-.bar.hp.opp .fill{ background: var(--red); box-shadow: 0 0 8px rgba(255,59,59,.5); }
-.bar.pulse  .fill{ background: var(--purple); box-shadow: 0 0 8px rgba(164,100,255,.5); }
+.bar.hp.me  .fill{ background:linear-gradient(90deg,#00ffc6,#85fff1); box-shadow:0 0 12px rgba(0,255,198,.62),inset 0 0 14px rgba(255,255,255,.2); }
+.bar.hp.opp .fill{ background:linear-gradient(90deg,#ff375e,#ff936f); box-shadow:0 0 12px rgba(255,59,59,.62),inset 0 0 14px rgba(255,255,255,.18); }
+.bar.pulse  .fill{ background:linear-gradient(90deg,#7357ff,#d86bff); box-shadow:0 0 12px rgba(164,100,255,.68),inset 0 0 14px rgba(255,255,255,.18); }
 .bar.is-low .fill{animation:vital-low .75s ease-in-out infinite}
 .bar.is-empty .fill{opacity:0}
 @keyframes vital-shimmer{0%,60%,100%{transform:translateX(-120%)}80%{transform:translateX(120%)}}
@@ -1080,7 +1142,7 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 .action-panel{
   position:absolute; left:50%; top:50%;
   transform: translate(-50%, -50%) scale(.96);
-  width: clamp(540px, 56vw, 760px);
+  width: clamp(620px, 62vw, 880px);
   background: rgba(15,17,21,0.96);
   border:1px solid var(--border-2);
   border-radius:6px;
@@ -1100,7 +1162,7 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   transform: translate(-50%, -50%) scale(1);
 }
 .ap-preview{ flex: 0 0 auto; }
-.ap-preview .card{ width:170px; cursor:default; }
+.ap-preview .card{ width:190px; cursor:default; }
 .ap-preview .card:hover{ transform:none; box-shadow: 0 8px 24px rgba(0,0,0,.6); }
 .ap-controls{ flex:1; display:flex; flex-direction:column; gap:14px; min-width:0; }
 
@@ -1156,12 +1218,12 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 .pulse-block{
   background: var(--bg);
   border:1px solid var(--border);
-  border-radius:4px;
-  padding: 12px;
+  border-radius:8px;
+  padding: 14px;
 }
 .pulse-block .row{ display:flex; align-items:center; gap:10px; }
 .step-btn{
-  width:32px; height:32px;
+  width:46px; height:46px;
   background: var(--bg2);
   border:1px solid var(--border-2);
   border-radius:3px;
@@ -1176,13 +1238,15 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 
 .pulse-row{
   flex:1; display:flex; gap:3px; align-items:center;
-  padding: 4px;
+  padding: 5px 8px;
   background: rgba(0,0,0,.4);
-  border-radius:3px;
-  height: 32px;
+  border-radius:10px;
+  height: 54px;
+  cursor:pointer;
+  touch-action:manipulation;
 }
 .pulse-cap{
-  flex:1; max-width: 22px; height: 28px;
+  flex:1; max-width: 36px; height: 44px;
   background:
     url('/Assets/ui/premium/pulse-vial-empty-v2.png') center/contain no-repeat,
     linear-gradient(180deg,rgba(180,190,220,.18),rgba(64,68,88,.26));
@@ -1191,6 +1255,7 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
   opacity:.88;
   filter:brightness(1.45) drop-shadow(0 2px 4px rgba(0,0,0,.45));
   transition: all .15s;
+  cursor:pointer;
 }
 .pulse-cap.active{
   background:url('/Assets/ui/premium/pulse-vial-full-v2.png') center/contain no-repeat;
@@ -2774,4 +2839,65 @@ body.surrender-open #screen-battle > :not(.surrender-modal){
   .bar::after{inset:-8px -12px -10px -8px!important}
   .bar .fill{left:20px!important;top:6px!important;bottom:6px!important;max-width:calc(100% - 32px)!important}
   .dmg-projectile .dmg-sprite{width:42px!important;height:42px!important;left:-21px!important;top:-21px!important}
+}
+
+/* Mobile QA lock: fit both HUD clusters and all 4 cards inside device width. */
+@media (max-width:760px){
+  .battle-hud{
+    display:grid!important;
+    grid-template-columns:minmax(0,.76fr) minmax(134px,1fr);
+    gap:6px;
+    overflow:hidden;
+  }
+  .battle-hud .player-block,
+  .battle-hud .vitals{
+    min-width:0!important;
+    width:100%!important;
+    max-width:none!important;
+  }
+  .battle-hud .player-block{
+    justify-self:start;
+  }
+  .battle-hud .vitals{
+    justify-self:end;
+    padding:5px 6px!important;
+  }
+  .vital-row{
+    grid-template-columns:22px minmax(0,1fr) 20px!important;
+    gap:4px!important;
+  }
+  .bar{
+    width:100%!important;
+    min-width:0!important;
+  }
+  .battle-field{
+    left:0!important;
+    right:0!important;
+    padding:6px 8px!important;
+    overflow:hidden;
+  }
+  .hand-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:4px!important;
+    width:100%!important;
+    max-width:390px!important;
+    margin-inline:auto!important;
+    overflow:hidden!important;
+  }
+  .hand-row .card{
+    width:calc((100vw - 44px) / 4)!important;
+    max-width:calc((100vw - 44px) / 4)!important;
+    min-width:0!important;
+  }
+  .hand-row .card .stat-pill b{font-size:clamp(11px,3.4vw,15px)!important}
+  .hand-row .card .stat-pill span{font-size:5px!important}
+  .hand-row .card .card-name{font-size:clamp(5.8px,1.65vw,7.2px)!important}
+}
+@media (max-width:480px){
+  .hand-row{max-width:330px!important}
+  .hand-row .card{
+    width:min(calc((100vw - 86px) / 4),74px)!important;
+    max-width:min(calc((100vw - 86px) / 4),74px)!important;
+  }
 }

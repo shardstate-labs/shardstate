@@ -2533,7 +2533,7 @@ function bpRewardFor(level, track){
   if (track === 'premium') {
     if (level === 30) return { kind:'grand_card', label:'1 GRAND' };
     const frame = PROFILE_FRAME_CATALOG.find(f => f.unlockLevel === level);
-    if (frame) return { kind:'profile_frame', frameId:frame.id, label:frame.name };
+    if (frame) return { kind:'profile_frame', frameId:frame.id, label:`Marco · ${frame.name}` };
     if (level % 9 === 0) return { kind:'random_card', label: currentLang === 'es' ? 'Carta random' : 'Random card' };
     if (level % 5 === 0) return { kind:'flux', amount:1, label:'1 FLUX' };
     const amount = level % 10 === 0 ? 140 : (level % 4 === 0 ? 100 : 60);
