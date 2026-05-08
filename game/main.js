@@ -622,23 +622,63 @@ function layoutHand(side, ids, faceDown){
 // ─── HUD ─────────────────────────────────────────────────────
 function renderHud(){
   const B = APP.battle;
-  const setVital = (id, value, max) => {
+  const setVital = (id, value, max, type) => {
     const fill = document.getElementById(id);
     const bar = fill?.parentElement;
     const pct = Math.max(0, Math.min(100, value / max * 100));
+    const prev = bar?.dataset.value == null ? value : Number(bar.dataset.value);
+    const prevPct = Math.max(0, Math.min(100, prev / max * 100));
     if(fill) fill.style.width = pct + '%';
     if(bar){
+      if(!bar.querySelector('.vital-ghost')){
+        const ghost = document.createElement('div');
+        ghost.className = 'vital-ghost';
+        bar.appendChild(ghost);
+      }
+      let segs = bar.querySelector('.vital-segments');
+      if(!segs){
+        segs = document.createElement('div');
+        segs.className = 'vital-segments';
+        for(let i = 0; i < max; i++){
+          const seg = document.createElement('i');
+          segs.appendChild(seg);
+        }
+        bar.appendChild(segs);
+      }
+      segs.querySelectorAll('i').forEach((seg, i) => seg.classList.toggle('lit', i < value));
       bar.style.setProperty('--vital-pct', pct + '%');
+      bar.style.setProperty('--ghost-pct', prevPct + '%');
       bar.style.setProperty('--vital-scale', String(pct / 100));
       bar.dataset.value = value;
       bar.classList.toggle('is-empty', value <= 0);
       bar.classList.toggle('is-low', value > 0 && value <= Math.ceil(max * .25));
+      if(prev !== value){
+        const up = value > prev;
+        const cls = type === 'hp' ? (up ? 'heal-change' : 'damage-change') : (up ? 'recover-change' : 'spend-change');
+        bar.classList.remove('damage-change','heal-change','spend-change','recover-change');
+        void bar.offsetWidth;
+        bar.classList.add(cls);
+        const num = bar.closest('.vital-row')?.querySelector('.num');
+        if(num){
+          num.classList.remove('num-up','num-down');
+          void num.offsetWidth;
+          num.classList.add(up ? 'num-up' : 'num-down');
+        }
+        clearTimeout(bar._vitalTimer);
+        bar._vitalTimer = setTimeout(() => {
+          bar.classList.remove('damage-change','heal-change','spend-change','recover-change');
+          num?.classList.remove('num-up','num-down');
+          bar.style.setProperty('--ghost-pct', pct + '%');
+        }, 720);
+      } else {
+        bar.style.setProperty('--ghost-pct', pct + '%');
+      }
     }
   };
-  setVital('p-hp-fill', B.pHP, 12);
-  setVital('o-hp-fill', B.oHP, 12);
-  setVital('p-pulse-fill', B.pPulses, 12);
-  setVital('o-pulse-fill', B.oPulses, 12);
+  setVital('p-hp-fill', B.pHP, 12, 'hp');
+  setVital('o-hp-fill', B.oHP, 12, 'hp');
+  setVital('p-pulse-fill', B.pPulses, 12, 'pulse');
+  setVital('o-pulse-fill', B.oPulses, 12, 'pulse');
   document.getElementById('p-hp-num').textContent     = B.pHP;
   document.getElementById('o-hp-num').textContent     = B.oHP;
   document.getElementById('p-pulse-num').textContent  = B.pPulses;
