@@ -9,7 +9,7 @@ create or replace function public.set_profile_cosmetic(
 )
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path = public
 as $$
 declare
@@ -106,7 +106,7 @@ $$;
 create or replace function public.purchase_profile_avatar(p_avatar text)
 returns jsonb
 language plpgsql
-security definer
+security invoker
 set search_path = public
 as $$
 declare
@@ -123,6 +123,8 @@ begin
   if v_uid is null then
     return jsonb_build_object('error', 'auth_required');
   end if;
+
+  perform set_config('app.shardstate_internal', '1', true);
 
   if not (p_avatar = any(v_premium_avatars)) then
     return jsonb_build_object('error', 'invalid_avatar');
@@ -188,7 +190,7 @@ language plpgsql
 set search_path = public, pg_temp
 as $$
 begin
-  if current_user in ('anon', 'authenticated') then
+  if current_user in ('anon', 'authenticated') and coalesce(current_setting('app.shardstate_internal', true), '') <> '1' then
     if tg_op = 'INSERT' then
       if coalesce(new.shards, 0) <> 0
         or coalesce(new.flux, 0) <> 0
@@ -238,3 +240,28 @@ revoke all on function public.set_profile_cosmetic(text, text) from anon;
 revoke all on function public.purchase_profile_avatar(text) from anon;
 grant execute on function public.set_profile_cosmetic(text, text) to authenticated;
 grant execute on function public.purchase_profile_avatar(text) to authenticated;
+
+do $$
+declare
+  fn record;
+begin
+  for fn in
+    select n.nspname, p.proname, pg_get_function_identity_arguments(p.oid) as args
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.prosecdef = true
+  loop
+    execute format('revoke execute on function %I.%I(%s) from anon', fn.nspname, fn.proname, fn.args);
+  end loop;
+end;
+$$;
+
+revoke execute on function public.create_referral_friend_request() from public, anon;
+revoke execute on function public.finalize_pvp_match(uuid, uuid, jsonb, text) from public, anon;
+revoke execute on function public.list_public_deck_presets() from public, anon;
+revoke execute on function public.publish_deck_preset(text, text[]) from public, anon;
+grant execute on function public.create_referral_friend_request() to authenticated;
+grant execute on function public.finalize_pvp_match(uuid, uuid, jsonb, text) to authenticated;
+grant execute on function public.list_public_deck_presets() to authenticated;
+grant execute on function public.publish_deck_preset(text, text[]) to authenticated;
