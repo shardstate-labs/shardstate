@@ -527,6 +527,17 @@ function syncFromUser() {
   if (view.state.deckInstances.length > view.state.deck.length) view.state.deckInstances.length = view.state.deck.length;
   view.state.deckPresets = gs.deckPresets  || [];
   view.state.welcomePackClaimed = !!gs.welcomePackClaimed;
+  // Drop cards no longer in the catalog (stale localStorage/DB ids from old schema).
+  if (typeof ALL_CARDS !== 'undefined' && Array.isArray(ALL_CARDS)) {
+    const _known = new Set(ALL_CARDS.map(c => c.id));
+    const _col = {};
+    Object.keys(view.state.collection || {}).forEach(id => { if (_known.has(id)) _col[id] = view.state.collection[id]; });
+    view.state.collection = _col;
+    const _deck = [], _inst = [];
+    (view.state.deck || []).forEach((id, i) => { if (_known.has(id)) { _deck.push(id); _inst.push((view.state.deckInstances || [])[i] || ''); } });
+    view.state.deck = _deck;
+    view.state.deckInstances = _inst;
+  }
   view.state.shards = u.shardsBalance ?? 0;
   view.state.flux   = u.fluxBalance   ?? 0;
   view.state.shs    = u.shsBalance    ?? 0;
