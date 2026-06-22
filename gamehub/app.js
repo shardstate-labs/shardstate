@@ -50,7 +50,7 @@ const I18N = {
     tab_mercado:'MERCADO', tab_guilds:'GREMIOS', tab_shop:'LA TIENDA',
     topbar_account_link:'Vincular cuenta', topbar_logout:'Cerrar sesión',
     panel_learn_title:'Aprender', panel_learn_sub:'Reglas, modos, rangos, clanes y mecánicas de cartas',
-    panel_missions_title:'Misiones', panel_missions_sub:'Completa objetivos para ganar SHARDS y desbloquear cartas TITAN/ECO',
+    panel_missions_title:'Misiones', panel_missions_sub:'Completa objetivos para ganar SHARDS y cartas',
     panel_community_title:'Comunidad', panel_community_sub:'Foro, Discord y presets compartidos',
     panel_jugar_title:'Jugar', panel_perfil_title:'Perfil',
     panel_coleccion_title:'Colección', panel_mercado_title:'Mercado',
@@ -157,7 +157,7 @@ const I18N = {
     tab_mercado:'MARKET', tab_guilds:'GUILDS', tab_shop:'PACK SHOP',
     topbar_account_link:'Link Account', topbar_logout:'Log out',
     panel_learn_title:'Learn', panel_learn_sub:'Game rules, modes, rankings, clans, and card mechanics',
-    panel_missions_title:'Missions', panel_missions_sub:'Complete objectives to earn SHARDS and unlock TITAN/ECO cards',
+    panel_missions_title:'Missions', panel_missions_sub:'Complete objectives to earn SHARDS and cards',
     panel_community_title:'Community', panel_community_sub:'Forum, Discord, and shared deck presets',
     panel_jugar_title:'Play', panel_perfil_title:'Profile',
     panel_coleccion_title:'Collection', panel_mercado_title:'Market',
@@ -2498,11 +2498,9 @@ function ownedTitanCount(){
     return c && c.clan === 'titans';
   }).length;
 }
-const TITAN_TIERS = [10,20,30,40,50];
 const MISSIONS_BASE = [
   { id:'deck_full', icon:'▣', title:{es:'Deck operativo',en:'Operational Deck'}, desc:{es:'Arma un deck completo de 8 cartas.',en:'Build a full 8-card deck.'}, reward:50, type:'shards' },
   { id:'guild_join', icon:'◇', title:{es:'Nodo de gremio',en:'Guild Node'}, desc:{es:'Crea o únete a un gremio.',en:'Create or join a guild.'}, reward:45, type:'shards' },
-  { id:'first_titan', icon:'△', title:{es:'Señal TITAN',en:'TITAN Signal'}, desc:{es:'Desbloquea tu primera carta TITAN.',en:'Unlock your first TITAN card.'}, reward:60, type:'shards' },
   { id:'preset_saved', icon:'▤', title:{es:'Preset archivado',en:'Archived Preset'}, desc:{es:'Guarda al menos 1 preset de deck.',en:'Save at least 1 deck preset.'}, reward:35, type:'shards' },
 ];
 const MISSION_MILESTONES = {
@@ -2524,14 +2522,12 @@ function buildMissions(){
   const wins       = u.battleWins || 0;
   const battles    = u.battlesTotal || 0;
   const elo        = u.elo || 0;
-  const titans     = ownedTitanCount();
   const lvl        = playerLevel(u);
   const presets    = (view.state.deckPresets || []).length;
   const list = MISSIONS_BASE.map(m => ({...m}));
   list[0].done = deckFull;
   list[1].done = !!u.guildId;
-  list[2].done = titans >= 1;
-  list[3].done = presets >= 1;
+  list[2].done = presets >= 1;
   MISSION_MILESTONES.wins.forEach((n,i) => list.push({
     id:`win_${n}`, icon:'⚔',
     title:{es:`Victoria ${n}`, en:`Victory ${n}`},
@@ -2568,15 +2564,6 @@ function buildMissions(){
     desc:{es:`Guarda ${n} presets de deck.`, en:`Save ${n} deck presets.`},
     reward:missionRewardFor(i), type:'shards', done:presets >= n
   }));
-  TITAN_TIERS.forEach((tier,i) => {
-    list.push({
-      id:`mt_${tier}`, icon:'🗿',
-      title:{es:`Titán Nv ${tier}`, en:`Titan Lv ${tier}`},
-      desc:{es:`Alcanza nivel ${tier} de jugador para reclamar una carta TITAN aleatoria.`,
-            en:`Reach player level ${tier} to claim a random TITAN card.`},
-      reward:1, type:'titan_card', tier, done: lvl >= tier
-    });
-  });
   return list;
 }
 function _claimedSet(){
@@ -2913,8 +2900,8 @@ window.drainBpPending = drainBpPending;
 const FORUM_KEY = 'shs_forum_v1';
 const FORUM_SEED = [
   { id:'f_seed1', title:'Best deck for beginners?',      author:'Kira',    tag:'Strategy',     ts: Date.now()-864e5*3, comments:[] },
-  { id:'f_seed2', title:'NEXUS vs IRONPACT — who wins?', author:'Voss',    tag:'Discussion',   ts: Date.now()-864e5*2, comments:[] },
-  { id:'f_seed3', title:'New patch: ECHO card rework',   author:'Admin',   tag:'Announcement', ts: Date.now()-864e5,   comments:[{author:'Voss',text:'¡Por fin!',ts:Date.now()-3600e3}] },
+  { id:'f_seed2', title:'NEXUS vs ASHBORN — who wins?', author:'Voss',    tag:'Discussion',   ts: Date.now()-864e5*2, comments:[] },
+  { id:'f_seed3', title:'New patch: clan rebalance',   author:'Admin',   tag:'Announcement', ts: Date.now()-864e5,   comments:[{author:'Voss',text:'¡Por fin!',ts:Date.now()-3600e3}] },
   { id:'f_seed4', title:'Looking for guild members',     author:'Zael',    tag:'Recruit',      ts: Date.now()-7200e3,  comments:[] },
   { id:'f_seed5', title:'Market tips for new players',   author:'Fenix',   tag:'Guide',        ts: Date.now()-600e3,   comments:[] },
 ];
