@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>SHARDSTATE — Control the Pulsos</title>
-<meta name="description" content="Competitive browser card game with 13 clans, turn-based battles, deck building, seasonal rewards, and non-transferable in-game items."/>
+<meta name="description" content="Competitive browser card game with 8 clans, turn-based battles, deck building, seasonal rewards, and non-transferable in-game items."/>
 <meta name="theme-color" content="#0A0C10"/>
 <meta name="keywords" content="TCG, trading card game, card battle, PvP, shardstate, pulsos, clans, browser game"/>
 <meta name="author" content="SHARDSTATE"/>
@@ -14,7 +14,7 @@
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://shardstate.vercel.app/"/>
 <meta property="og:title" content="SHARDSTATE — Control the Pulsos"/>
-<meta property="og:description" content="Competitive browser card game with 13 clans, turn-based battles, deck building, seasonal rewards, and non-transferable in-game items."/>
+<meta property="og:description" content="Competitive browser card game with 8 clans, turn-based battles, deck building, seasonal rewards, and non-transferable in-game items."/>
 <meta property="og:image" content="https://shardstate.vercel.app/Assets/Logo/All_logos.jpg"/>
 <meta property="og:image:width" content="1200"/>
 <meta property="og:image:height" content="630"/>
@@ -24,7 +24,7 @@
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:url" content="https://shardstate.vercel.app/"/>
 <meta name="twitter:title" content="SHARDSTATE — Control the Pulsos"/>
-<meta name="twitter:description" content="Competitive browser card game with 13 clans, turn-based battles, deck building, seasonal rewards, and non-transferable in-game items."/>
+<meta name="twitter:description" content="Competitive browser card game with 8 clans, turn-based battles, deck building, seasonal rewards, and non-transferable in-game items."/>
 <meta name="twitter:image" content="https://shardstate.vercel.app/Assets/Logo/All_logos.jpg"/>
 
 <link rel="icon" href="icon-192.png"/>
@@ -259,11 +259,18 @@ section{scroll-margin-top:64px}
 .stat-cell-label{font-size:0.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-top:8px}
 .testimonials{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .testi{padding:28px;background:var(--bg);border:1px solid var(--border)}
+.acquisition-card{position:relative;min-height:258px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.acquisition-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,255,198,0.08),transparent 38%,rgba(155,89,182,0.08));opacity:0;transition:opacity var(--tr)}
+.acquisition-card:hover::before{opacity:1}
+.testi-kicker{position:relative;font-family:var(--font-head);font-size:0.66rem;font-weight:900;letter-spacing:0.14em;text-transform:uppercase;color:var(--acc);margin-bottom:14px}
 .testi-text{font-size:0.92rem;color:var(--text);line-height:1.7;margin-bottom:20px;font-style:italic}
+.acquisition-card .testi-text{position:relative;font-style:normal;color:var(--text2)}
 .testi-author{display:flex;align-items:center;gap:12px}
 .testi-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:1px solid var(--border)}
+.acquisition-card .testi-avatar{color:var(--acc);box-shadow:0 0 18px rgba(0,255,198,0.12)}
 .testi-name{font-weight:700;font-size:0.88rem}
 .testi-rank{font-size:0.75rem;color:var(--muted)}
+.proof-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px}
 
 /* ── CTA SECTION ─────────────────────────────────────────────── */
 #play-entry{background:var(--bg);position:relative;overflow:hidden;text-align:center;padding:120px 24px}
@@ -417,7 +424,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
     <h1 class="hero-title glitch" id="hero-title" data-text="CONTROL THE PULSOS. DOMINATE THE SHARDSTATE.">
       <span id="hero-title-1">CONTROL THE </span><span class="accent" id="hero-title-accent">PULSOS.</span><br/><span id="hero-title-2">DOMINATE THE SHARDSTATE.</span>
     </h1>
-    <p class="hero-sub" id="hero-sub">Competitive browser card game where humanity is the resource. 13 clans. Strategic depth. Seasonal progression.</p>
+    <p class="hero-sub" id="hero-sub">Competitive browser card game where humanity is the resource. 8 clans. Strategic depth. Seasonal progression.</p>
     <div class="hero-actions">
       <button class="btn btn-primary" onclick="openAuth('register')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5,3 19,12 5,21"/></svg>
@@ -445,7 +452,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
       <div class="hero-stat-label" id="stat-clans-l">Clans</div>
     </div>
     <div class="hero-stat">
-      <div class="hero-stat-num">166</div>
+      <div class="hero-stat-num">96</div>
       <div class="hero-stat-label" id="stat-cards-l">Cards</div>
     </div>
     <div class="hero-stat">
@@ -602,7 +609,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
     <div class="section-header">
       <span class="label" id="cards-label">Card System</span>
       <h2 id="cards-h2">Every Card Tells a Story</h2>
-      <p id="cards-p">166 unique cards. Rarity tiers from Common to Mythic. Each one a weapon. Each one a lore fragment.</p>
+      <p id="cards-p">96 unique cards. Rarity tiers from Common to Mythic. Each one a weapon. Each one a lore fragment.</p>
     </div>
     <div class="cards-showcase" id="cards-showcase">
       <!-- Rendered by JS -->
@@ -677,24 +684,24 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
   </div>
 </section>
 
-<!-- ── SOCIAL PROOF ───────────────────────────────────────────────── -->
+<!-- ── PLAYER ACQUISITION ─────────────────────────────────────────── -->
 <section id="proof" class="section">
   <div class="container">
     <div class="section-header">
-      <span class="label" id="proof-label">Community</span>
-      <h2 id="proof-h2">Trusted by Competitive Players</h2>
+      <span class="label" id="proof-label">Open Playtest</span>
+      <h2 id="proof-h2">Help Shape the First Season</h2>
     </div>
     <div class="stats-row">
       <div class="stat-cell">
-        <div class="stat-cell-num"><span class="acc">3.2</span>K+</div>
-        <div class="stat-cell-label" id="proof-stat1">Active Players</div>
+        <div class="stat-cell-num"><span class="acc" id="proof-statnum1">Open</span></div>
+        <div class="stat-cell-label" id="proof-stat1">Browser Build</div>
       </div>
       <div class="stat-cell">
-        <div class="stat-cell-num"><span class="acc">48</span>K+</div>
-        <div class="stat-cell-label" id="proof-stat2">Battles Played</div>
+        <div class="stat-cell-num"><span class="acc" id="proof-statnum2">Free</span></div>
+        <div class="stat-cell-label" id="proof-stat2">Training Mode</div>
       </div>
       <div class="stat-cell">
-        <div class="stat-cell-num"><span class="acc">166</span></div>
+        <div class="stat-cell-num"><span class="acc">96</span></div>
         <div class="stat-cell-label" id="proof-stat3">Unique Cards</div>
       </div>
       <div class="stat-cell">
@@ -703,27 +710,34 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
       </div>
     </div>
     <div class="testimonials">
-      <div class="testi">
-        <div class="testi-text">"The clan bonus system adds a layer of depth I haven't seen in any other TCG. Running a pure ERRVOID deck against an ability-heavy opponent is a completely different game."</div>
+      <div class="testi acquisition-card">
+        <div class="testi-kicker" id="proof-card1-k">Play Now</div>
+        <div class="testi-text" id="proof-card1-t">Jump into the current browser build, test Training battles, build decks, and help us find what feels sharp or broken.</div>
         <div class="testi-author">
-          <div class="testi-avatar">⚡</div>
-          <div><div class="testi-name">VexCore_77</div><div class="testi-rank">Fractura · 1487 ELO</div></div>
+          <div class="testi-avatar">▶</div>
+          <div><div class="testi-name" id="proof-card1-name">Live Web Build</div><div class="testi-rank" id="proof-card1-rank">No install required</div></div>
         </div>
       </div>
-      <div class="testi">
-        <div class="testi-text">"Finally a game where bluffing Pulsos allocation is a real mechanic. You can outplay someone with a statistically weaker deck. The mind games are real."</div>
+      <div class="testi acquisition-card">
+        <div class="testi-kicker" id="proof-card2-k">Join Discord</div>
+        <div class="testi-text" id="proof-card2-t">Report bugs, suggest balance changes, share decks, and get early notes before the first competitive season goes live.</div>
         <div class="testi-author">
-          <div class="testi-avatar">🌊</div>
-          <div><div class="testi-name">AquaMind</div><div class="testi-rank">Abismo · 1712 ELO</div></div>
+          <div class="testi-avatar">#</div>
+          <div><div class="testi-name" id="proof-card2-name">Shardstate Community</div><div class="testi-rank" id="proof-card2-rank">Feedback channel open</div></div>
         </div>
       </div>
-      <div class="testi">
-        <div class="testi-text">"ECHO clan breaks every rule. Every card feels like a different game mode. Once you start playing ECHO you can't go back to anything else."</div>
+      <div class="testi acquisition-card">
+        <div class="testi-kicker" id="proof-card3-k">Season One</div>
+        <div class="testi-text" id="proof-card3-t">Battle Pass, ranked ladder, events, cosmetics, and public deck sharing are being tuned around real player sessions.</div>
         <div class="testi-author">
-          <div class="testi-avatar">✨</div>
-          <div><div class="testi-name">NullSingr</div><div class="testi-rank">Singularidad · 2104 ELO</div></div>
+          <div class="testi-avatar">◇</div>
+          <div><div class="testi-name" id="proof-card3-name">Roadmap in Progress</div><div class="testi-rank" id="proof-card3-rank">Built with player feedback</div></div>
         </div>
       </div>
+    </div>
+    <div class="proof-actions">
+      <button class="btn btn-primary" onclick="openAuth('register')" id="proof-main-btn">Join the Playtest</button>
+      <a class="btn btn-outline" id="proof-discord-btn" href="https://discord.gg/BTk9GUYetE" target="_blank" rel="noopener noreferrer">Open Discord</a>
     </div>
   </div>
 </section>
@@ -753,7 +767,7 @@ footer{background:var(--bg2);border-top:1px solid var(--border);padding:64px 0 3
     <div class="footer-grid">
       <div class="footer-brand">
         <h3>SHARDSTATE</h3>
-        <p id="footer-brand-p">A competitive TCG set in a fractured world where humanity is the resource and 13 clans fight for dominance over the PULSOS system.</p>
+        <p id="footer-brand-p">A competitive TCG set in a fractured world where humanity is the resource and 8 clans fight for dominance over the PULSOS system.</p>
       </div>
       <div class="footer-col">
         <h4 id="footer-col1-h">Game</h4>
@@ -867,7 +881,7 @@ const LANDING_I18N = {
     'nav-login-btn':'Log In',
     'hero-badge-text':'COMPETITIVE BROWSER CARD GAME',
     'hero-title-1':'CONTROL THE ','hero-title-accent':'PULSOS.','hero-title-2':'DOMINATE THE SHARDSTATE.',
-    'hero-sub':'Competitive browser card game where humanity is the resource. 13 clans. Strategic depth. Seasonal progression.',
+    'hero-sub':'Competitive browser card game where humanity is the resource. 8 clans. Strategic depth. Seasonal progression.',
     'hero-play-btn':'Play Now','hero-explore-btn':'Explore Clans',
     'stat-clans-l':'Clans','stat-cards-l':'Cards','stat-modes-l':'Game Modes','stat-free-n':'Free','stat-free-l':'To Play','stat-b2e-n':'Battle','stat-b2e-l':'to Earn',
     'clans-label':'13 Factions','clans-h2':'Choose Your Clan',
@@ -878,19 +892,23 @@ const LANDING_I18N = {
     'step3-h':'Clan Bonuses Activate','step3-p':'Running 3+ cards of the same clan unlocks a passive bonus. NEXUS crushes enemy ATQ. VAULT ignores Pulsos. ECHO rewrites rules entirely.',
     'step4-h':'Abilities Change Everything','step4-p':'Each card has a unique ability — Poison, Weaken, Copy, Stop. Reading the battlefield is half the game.',
     'cards-label':'Card System','cards-h2':'Every Card Tells a Story',
-    'cards-p':'166 unique cards. Rarity tiers from Common to Mythic. Each one a weapon. Each one a lore fragment.',
+    'cards-p':'96 unique cards. Rarity tiers from Common to Mythic. Each one a weapon. Each one a lore fragment.',
     'unlock-btn':'Unlock Full Collection',
     'comp-label':'Competitive','comp-h2':'Three Paths to Dominance',
     'comp-p':'Casual warmup. Ranked ladders. Seasonal events. Choose your arena.',
     'mode1-h':'Training Mode','mode1-p':'Practice mechanics, test deck builds, and learn clan interactions. No stakes. Pure skill development.','mode1-tag':'Free · No Stakes',
     'mode2-h':'Ranked Ladder','mode2-p':'Compete on the global ELO ladder. Earn Shards, climb brackets from Astilla to Singularidad.','mode2-tag':'ELO · SHARD Rewards',
     'mode3-h':'Seasonal Events','mode3-p':'Limited-time formats, special missions, and exclusive cosmetic rewards inside the game.','mode3-tag':'Events · Cosmetics',
-    'proof-label':'Community','proof-h2':'Trusted by Competitive Players',
-    'proof-stat1':'Active Players','proof-stat2':'Battles Played','proof-stat3':'Unique Cards','proof-stat4':'Factions',
+    'proof-label':'Open Playtest','proof-h2':'Help Shape the First Season',
+    'proof-statnum1':'Open','proof-statnum2':'Free','proof-stat1':'Browser Build','proof-stat2':'Training Mode','proof-stat3':'Unique Cards','proof-stat4':'Factions',
+    'proof-card1-k':'Play Now','proof-card1-t':'Jump into the current browser build, test Training battles, build decks, and help us find what feels sharp or broken.','proof-card1-name':'Live Web Build','proof-card1-rank':'No install required',
+    'proof-card2-k':'Join Discord','proof-card2-t':'Report bugs, suggest balance changes, share decks, and get early notes before the first competitive season goes live.','proof-card2-name':'Shardstate Community','proof-card2-rank':'Feedback channel open',
+    'proof-card3-k':'Season One','proof-card3-t':'Battle Pass, ranked ladder, events, cosmetics, and public deck sharing are being tuned around real player sessions.','proof-card3-name':'Roadmap in Progress','proof-card3-rank':'Built with player feedback',
+    'proof-main-btn':'Join the Playtest','proof-discord-btn':'Open Discord',
     'cta-label':'Enter the System','cta-sub':'Create your account. Build your deck. Climb the ladder. Unlock rewards inside the game.',
     'cta-main-btn-text':'Enter SHARDSTATE','cta-login-btn':'Log In',
     'cta-hint':'Browser-based · No install required · All platforms',
-    'footer-brand-p':'A competitive TCG set in a fractured world where humanity is the resource and 13 clans fight for dominance over the PULSOS system.',
+    'footer-brand-p':'A competitive TCG set in a fractured world where humanity is the resource and 8 clans fight for dominance over the PULSOS system.',
     'footer-col1-h':'Game','footer-clans':'Clans','footer-howto':'How to Play','footer-carddb':'Card Database','footer-ranked':'Ranked',
     'footer-col2-h':'Account','footer-register':'Create Account','footer-login':'Log In','footer-portal':'Web Portal',
     'footer-col3-h':'Ecosystem',
@@ -902,7 +920,7 @@ const LANDING_I18N = {
     'nav-login-btn':'Entrar',
     'hero-badge-text':'JUEGO DE CARTAS COMPETITIVO',
     'hero-title-1':'CONTROLA EL ','hero-title-accent':'PULSO.','hero-title-2':'DOMINA EL SHARDSTATE.',
-    'hero-sub':'Juego competitivo de cartas donde la humanidad es el recurso. 13 clanes. Profundidad estratégica. Progresión de temporada.',
+    'hero-sub':'Juego competitivo de cartas donde la humanidad es el recurso. 8 clanes. Profundidad estratégica. Progresión de temporada.',
     'hero-play-btn':'Jugar Ahora','hero-explore-btn':'Explorar Clanes',
     'stat-clans-l':'Clanes','stat-cards-l':'Cartas','stat-modes-l':'Modos de Juego','stat-free-n':'Jugá','stat-free-l':'Gratis','stat-b2e-n':'Luchá','stat-b2e-l':'para Ganar',
     'clans-label':'13 Facciones','clans-h2':'Elige Tu Clan',
@@ -913,19 +931,23 @@ const LANDING_I18N = {
     'step3-h':'Se Activan los Bonos de Clan','step3-p':'Tener 3+ cartas del mismo clan desbloquea un bono pasivo. NEXUS destruye el ATQ enemigo. VAULT ignora los Pulsos. ECHO reescribe las reglas.',
     'step4-h':'Las Habilidades Lo Cambian Todo','step4-p':'Cada carta tiene una habilidad única — Veneno, Debilitar, Copiar, Parar. Leer el campo de batalla es la mitad del juego.',
     'cards-label':'Sistema de Cartas','cards-h2':'Cada Carta Cuenta una Historia',
-    'cards-p':'166 cartas únicas. Niveles de rareza de Común a Mítica. Cada una es un arma. Cada una un fragmento de historia.',
+    'cards-p':'96 cartas únicas. Niveles de rareza de Común a Mítica. Cada una es un arma. Cada una un fragmento de historia.',
     'unlock-btn':'Desbloquear Colección Completa',
     'comp-label':'Competitivo','comp-h2':'Tres Caminos hacia la Dominación',
     'comp-p':'Calentamiento casual. Ranked competitivo. Eventos de temporada. Elige tu arena.',
     'mode1-h':'Modo Entrenamiento','mode1-p':'Practica mecánicas, prueba decks y aprende interacciones de clan. Sin presión competitiva. Desarrollo de habilidades puro.','mode1-tag':'Gratis · Práctica',
     'mode2-h':'Ranked Competitivo','mode2-p':'Compite en la tabla ELO global. Gana Shards, sube de Astilla a Singularidad.','mode2-tag':'ELO · Recompensas SHARD',
     'mode3-h':'Eventos de Temporada','mode3-p':'Formatos por tiempo limitado, misiones especiales y recompensas cosméticas exclusivas dentro del juego.','mode3-tag':'Eventos · Cosméticos',
-    'proof-label':'Comunidad','proof-h2':'La Confianza de Jugadores Competitivos',
-    'proof-stat1':'Jugadores Activos','proof-stat2':'Batallas Jugadas','proof-stat3':'Cartas Únicas','proof-stat4':'Facciones',
+    'proof-label':'Playtest abierto','proof-h2':'Ayuda a construir la primera temporada',
+    'proof-statnum1':'Abierto','proof-statnum2':'Gratis','proof-stat1':'Build web','proof-stat2':'Modo training','proof-stat3':'Cartas Únicas','proof-stat4':'Facciones',
+    'proof-card1-k':'Juega ahora','proof-card1-t':'Entra a la build actual desde el navegador, prueba batallas Training, arma decks y ayudanos a detectar que se siente bien o roto.','proof-card1-name':'Build web activa','proof-card1-rank':'Sin instalacion',
+    'proof-card2-k':'Unete a Discord','proof-card2-t':'Reporta bugs, sugiere cambios de balance, comparte decks y recibe notas tempranas antes de la primera temporada competitiva.','proof-card2-name':'Comunidad Shardstate','proof-card2-rank':'Canal de feedback abierto',
+    'proof-card3-k':'Temporada Uno','proof-card3-t':'Battle Pass, ranked ladder, eventos, cosmeticos y presets publicos se estan ajustando con sesiones reales de jugadores.','proof-card3-name':'Roadmap en progreso','proof-card3-rank':'Construido con feedback',
+    'proof-main-btn':'Unirme al playtest','proof-discord-btn':'Abrir Discord',
     'cta-label':'Entra al Sistema','cta-sub':'Crea tu cuenta. Construye tu deck. Sube la escalera. Desbloquea recompensas dentro del juego.',
     'cta-main-btn-text':'Entrar a SHARDSTATE','cta-login-btn':'Iniciar Sesión',
     'cta-hint':'Basado en navegador · Sin instalación · Todas las plataformas',
-    'footer-brand-p':'Un TCG competitivo en un mundo fracturado donde la humanidad es el recurso y 13 clanes luchan por el dominio del sistema PULSOS.',
+    'footer-brand-p':'Un TCG competitivo en un mundo fracturado donde la humanidad es el recurso y 8 clanes luchan por el dominio del sistema PULSOS.',
     'footer-col1-h':'Juego','footer-clans':'Clanes','footer-howto':'Cómo Jugar','footer-carddb':'Base de Cartas','footer-ranked':'Clasificados',
     'footer-col2-h':'Cuenta','footer-register':'Crear Cuenta','footer-login':'Entrar','footer-portal':'Portal Web',
     'footer-col3-h':'Ecosistema',
