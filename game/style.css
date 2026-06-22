@@ -740,7 +740,7 @@ h1,h2,h3,h4{ font-family:var(--font-head); line-height:1.1; letter-spacing:.02em
 }
 
 .battle-tools{
-  position:absolute; top:78px; right:14px; z-index:12;
+  position:absolute; top:108px; right:14px; z-index:12;
   display:flex; gap:8px; align-items:center; flex-wrap:nowrap;
   padding:5px 10px;
   background:rgba(10,12,16,.55);
@@ -2124,7 +2124,7 @@ body.surrender-open #screen-battle > :not(.surrender-modal){
   .battle-center-info{top:8px}
   .round-num{font-size:1.1rem}
   .round-tag{font-size:.5rem}
-  .battle-tools{top:58px;right:8px;gap:5px;padding:4px 6px}
+  .battle-tools{top:84px;right:8px;gap:5px;padding:4px 6px}
   .tool-btn{width:30px;height:30px}
   .round-banner{font-size:clamp(28px,12vw,54px);z-index:22;text-align:center;max-width:92vw;white-space:normal;line-height:1}
   .battle-field{
