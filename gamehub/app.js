@@ -527,17 +527,7 @@ function syncFromUser() {
   if (view.state.deckInstances.length > view.state.deck.length) view.state.deckInstances.length = view.state.deck.length;
   view.state.deckPresets = gs.deckPresets  || [];
   view.state.welcomePackClaimed = !!gs.welcomePackClaimed;
-  // Drop cards no longer in the catalog (stale localStorage/DB ids from old schema).
-  if (typeof ALL_CARDS !== 'undefined' && Array.isArray(ALL_CARDS)) {
-    const _known = new Set(ALL_CARDS.map(c => c.id));
-    const _col = {};
-    Object.keys(view.state.collection || {}).forEach(id => { if (_known.has(id)) _col[id] = view.state.collection[id]; });
-    view.state.collection = _col;
-    const _deck = [], _inst = [];
-    (view.state.deck || []).forEach((id, i) => { if (_known.has(id)) { _deck.push(id); _inst.push((view.state.deckInstances || [])[i] || ''); } });
-    view.state.deck = _deck;
-    view.state.deckInstances = _inst;
-  }
+  pruneUnknownCards();
   view.state.shards = u.shardsBalance ?? 0;
   view.state.flux   = u.fluxBalance   ?? 0;
   view.state.shs    = u.shsBalance    ?? 0;
@@ -2481,6 +2471,26 @@ function renderLearnClans() {
 // ── RENDER: MISSIONS ───────────────────────────────────────────
 function playerLevel(u){ const b = (u && u.battlesTotal) || 0; return Math.floor(b/10) + 1; }
 function _allCards(){ return (typeof ALL_CARDS!=='undefined'?ALL_CARDS:[]); }
+// Remove collection/deck entries whose card id no longer exists in the catalog
+// (stale ids from the old schema, cached in localStorage or restored by sync).
+function pruneUnknownCards(){
+  const cards = _allCards();
+  if (!cards.length) return false;
+  const known = new Set(cards.map(c => c.id));
+  let changed = false;
+  const col = {};
+  Object.keys(view.state.collection || {}).forEach(id => {
+    if (known.has(id)) col[id] = view.state.collection[id]; else changed = true;
+  });
+  view.state.collection = col;
+  const deck = [], inst = [];
+  (view.state.deck || []).forEach((id, i) => {
+    if (known.has(id)) { deck.push(id); inst.push((view.state.deckInstances || [])[i] || ''); } else changed = true;
+  });
+  view.state.deck = deck;
+  view.state.deckInstances = inst;
+  return changed;
+}
 function ownedTitanCount(){
   const col = view.state.collection || {};
   return Object.keys(col).filter(id => {
@@ -3503,6 +3513,7 @@ function getCollectionPageSize() {
 function renderCollectionPage() {
   const grid = byId('owned-cards');
   if (!grid) return;
+  if (pruneUnknownCards()) { try { persistToUser(); } catch (_) {} }
 
   const missingSection = byId('collection-section-missing');
   if (missingSection) missingSection.style.display = 'none';
